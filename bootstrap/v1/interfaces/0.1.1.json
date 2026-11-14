@@ -1,5 +1,5 @@
 {
-  "version": "0.1.0",
+  "version": "0.1.1",
   "files": {
     "/assets/favicon.ico": "32970d95c47d8f5566bea95d61cd2fd01f9104d20091f88d58dc8240617c8893",
     "/assets/fonts/OFL-Rajdhani.txt": "f62ef357d3a1c3d27edd35a6e1ba350e8a8d13499797964eeadefbf0b3b15d1f",
@@ -36,7 +36,7 @@
     "/css/views/login.css": "e41b58b1c8334cd5975c6179c9e3dfd2d3d38d71d3da3ef934dcee5cb801d927",
     "/css/views/settings.css": "7f0f4c6a0219da73edeeca061b9457343f371a87ee09042aba997c6ae480b032",
     "/css/views/share.css": "d365145db43182a6903f63ce2281cb5a4bcf598702cdf7b5733a03ef1663d655",
-    "/index.html": "2730516f12cae456e397f14a729db7b733b6d462bb36277d382de5ec087db481",
+    "/index.html": "832a607af9554860e3f4ff89d55037540b209349d469731c916d0aca38508822",
     "/js/api/BackendClient.js": "b3378084ce194082936b970444740f561448fee76257544f091d2bf299c1385f",
     "/js/api/FloodCounter.js": "7d155feb720979dae38b22a9e140ea6032d285ca6d19bf00b5606e9ab9690775",
     "/js/api/IceServers.js": "2e931b328bf5bf62024857001776c04d36a7868cc4c6995cdc2b3343b979847b",
@@ -222,9 +222,9 @@
     "/js/vendor/opus-decoder.min.d.ts": "5f5f5a7bc37b1aac85c0e58766278b375b5d5f9d4c4bf9a9c0d4dbf341023210",
     "/js/vendor/opus-decoder.min.js": "7f282f6bfc151932342ffa6fa3f89a76c035b22f1e0160a57eef85767eb608d3",
     "/js/vendor/qrcodegen-v1.8.0-es5.js": "348b0d876f9893f6f2bafae6c9d4ddb76b69651e214f2211034922a8207da3bf",
-    "/locales/en.json": "643afffbb9bf8d193e53d8424ad1c7ba33ff4a9076e63e80cf1b1a09d94e6a6a",
-    "/locales/fr.json": "3ac5395c6d40155a9658a652ee91e96df072af1636aa5ec06446edc6c72e3e6f",
-    "/locales/tr.json": "3fefdfa7effd150a44e0a27e578800439f65ca63a194823a8e3f48af5c18cae5",
-    "/locales/zh.json": "14521eba5d54a81f55b5034e5b8021e0cdd2fa27c5cae3fc794399376031c347"
+    "/locales/en.json": "627a6b0e68c8cef9a0e3d381364859c6f2ac69f2619cffcf3b29bdecb86ba438",
+    "/locales/fr.json": "870413cf470e735e1c409c31d136281c297178fa485b2c6233e654d3f3375097",
+    "/locales/tr.json": "3e7c5fb5dda0d7944d684323ac80ba149e4b06a3f1b4839fe1c79580b0a767ec",
+    "/locales/zh.json": "a693a500bdc7d4568cf1980fe202e93c7192a70c1704cbcbe4c52b4dc6e7a24b"
   }
 }
