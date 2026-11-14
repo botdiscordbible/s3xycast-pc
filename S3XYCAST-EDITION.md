@@ -58,6 +58,23 @@ upstream's history and its `v*` tags, and the two lines must not be read as one 
 The introduction server is in service at `pc.s3xycast.com` since 2026-11-14
 (`deploy/powerdns/mw-rendezvous` and the entry page behind Caddy, on a Windows machine).
 
+## Running the tests
+
+- Interface: in `frontend/`, `npm run check` then `npx vitest run`.
+- Program: `backend\tests\run_coverage.bat` builds and runs `run_tests.exe`, then
+  `run_juice_tests.exe`. The security suite, `build\mw-security-tests.exe`, is built with the
+  program (`backend\build_msvc.bat`); the update helper's rules are tested there.
+- **One of upstream's cases fails on some Windows machines, some of the time**: "A burst the
+  socket cannot take at once arrives whole and in order" (`backend/tests/test_ice_tcp_passive.c`;
+  this edition modifies neither the test nor libjuice). Its reader has a 4 KB receive buffer and
+  gives each frame 300 ms. On the machine this edition is built on, the body of a frame
+  sometimes takes longer after 13 to 29 frames (measured on 2026-11-14: the read comes back after
+  312 ms), the reader loses the framing and the case fails. The same binary passes at other
+  moments of the same day, and passes under verbose logging. With a 64 KB receive buffer on the
+  reader it passed 6 times out of 6; with 16 KB it failed 5 times out of 6. It takes a peer with
+  a very small receive window, which a browser does not have, and a stream over TCP to a browser
+  on the same machine showed no such pause. Not explained further.
+
 ## Before the first public release (not done yet)
 
 - **This repository made public.** The About window and the update check both name
