@@ -45,7 +45,7 @@
         "stepCount": "Step {{current}} of {{total}}",
         "hostTitle": "Streaming this computer",
         "hostNative": "This computer can stream its own screen — there is nothing else to install.",
-        "hostNeedsDisplay": "This computer can stream its own screen, but no screen is attached. Its card on the hosts page opens \"MoonlightWeb Virtual Display\" — if that was declined at install time, run the installer again and accept it.",
+        "hostNeedsDisplay": "This computer can stream its own screen, but no screen is attached. Its card “Screen fitted to this device” on the home page opens a virtual display — if that was declined at install time, run the installer again and accept it.",
         "hostNeedsDisplayNoDriver": "This computer can stream its own screen, but no screen is attached.",
         "done": "Done",
         "hostPermission": "Allow S3XYCast PC to record the screen in System Settings → Privacy & Security → Screen Recording, then quit and reopen S3XYCast PC (macOS only applies it on relaunch). Until then this computer cannot stream its own screen.",
@@ -84,7 +84,17 @@
         "sunshineInstallFailed": "Sunshine installation failed: {{error}}. Try again (you'll be asked for your password), uncheck Sunshine, or skip this step."
     },
     "footer": {
-        "credits": "Free software (GPL-3.0), based on MoonlightWeb by Bruno Martin",
+        "credits": "{{name}} is a modified edition of {{upstream}}, a free program created by {{author}}. Many thanks for this work.",
+        "about": "About",
+        "aboutTitle": "About {{name}}",
+        "aboutVersion": "Version {{version}}",
+        "aboutLead": "{{name}} shows your PC in the browser of your car, or of any other device: picture, sound, touch, keyboard and gamepad.",
+        "aboutFreeTitle": "Free software",
+        "aboutFree": "{{name}} is free software under the GNU General Public License, version 3: anyone may use it, study it, change it and share it under the terms of that licence. It comes with no warranty.",
+        "aboutLicenceLink": "Read the licence (GNU GPL v3)",
+        "aboutSourceLink": "Source code of this edition",
+        "aboutOriginTitle": "Where it comes from",
+        "aboutOriginLink": "See the original project",
         "tagline": "S3XYCast PC — your PC on your Tesla's screen"
     },
     "appError": {
@@ -137,6 +147,7 @@
         "unavailableMessage": "This host is on the network but S3XYCast PC isn't running",
         "certificateChangedMessage": "This host is not showing the certificate it was paired with, so nothing is sent to it. If you reinstalled its software, remove it and add it again, then pair it.",
         "remoteAccess": "At home, open this PC from another device at this address:",
+        "remoteAccessAnywhere": "From your car or anywhere else, open this PC at this address:",
         "internetDisabledHint": "To open this PC from your car or anywhere else, {{link}} in the PC settings.",
         "alsoReachableHint": "You can also connect to this server at:",
         "enableInternetLink": "enable Internet Access",
@@ -211,7 +222,7 @@
         "playerErrorsDesc": "Only when something goes wrong, this page sends a minimal error log, used strictly to improve S3XYCast PC. IP addresses, names and games are removed first."
     },
     "vdisplay": {
-        "emptyBody": "No screen is attached to this computer, and \"MoonlightWeb Virtual Display\" is not installed. Run the S3XYCast PC installer again and accept the virtual display to stream it.",
+        "emptyBody": "No screen is attached to this computer, and the virtual display is not installed. Run the S3XYCast PC installer again and accept the virtual display to stream it.",
         "emptyBodyNoDriver": "No screen is attached to this computer."
     },
     "gamepad": {
@@ -523,7 +534,7 @@
         "micOff": "Off",
         "micSystem": "System microphone",
         "micPick": "Choose a microphone…",
-        "micDeviceDesc": "Your voice reaches the host's apps as a microphone (\"MoonlightWeb Microphone\" on Linux, a virtual cable such as VB-CABLE on Windows). Only when streaming the PC that runs S3XYCast PC. It stays off at the start of each stream: turn it on with the button or the shortcut. The browser asks for permission the first time.",
+        "micDeviceDesc": "Your voice reaches the host's apps as a microphone (a virtual microphone on Linux, a virtual cable such as VB-CABLE on Windows). Only when streaming the PC that runs S3XYCast PC. It stays off at the start of each stream: turn it on with the button or the shortcut. The browser asks for permission the first time.",
         "micUnsupported": "This browser cannot capture a microphone here.",
         "micQuality": "Microphone sound",
         "micQualityVoice": "Voice: echo and noise cleaned up, 64 kbit/s",
@@ -591,10 +602,10 @@
         "algoBalGpu": "Balanced (NIS WebGPU)",
         "algoQualGl": "Quality (FSR1 WebGL2)",
         "algoQualGpu": "Quality (FSR1 WebGPU)",
-        "algoMwsrGl": "MoonlightWeb (mwsr WebGL2)",
-        "algoMwsrGpu": "MoonlightWeb (mwsr WebGPU)",
-        "algoMwsrDbGpu": "MoonlightWeb 2 (mwsr + deblocking WebGPU)",
-        "algoMwsrDbqGpu": "MoonlightWeb 3 (mwsr + QP deblocking WebGPU)",
+        "algoMwsrGl": "mwsr (WebGL2)",
+        "algoMwsrGpu": "mwsr (WebGPU)",
+        "algoMwsrDbGpu": "mwsr 2 (deblocking, WebGPU)",
+        "algoMwsrDbqGpu": "mwsr 3 (QP deblocking, WebGPU)",
         "language": "Language",
         "languageDesc": "Interface language. The page reloads when you change it.",
         "controllers": "Controllers",
@@ -615,7 +626,7 @@
         "hidDesc": "\"As itself\" sends a wheel, joystick or RC radio to the game as the real device, every axis and button, instead of an Xbox controller. Needs S3XYCast PC's own host. The first time, the browser asks which device; the switch is kept in this browser.",
         "hidHelpTitle": "Wheels and radios as themselves",
         "hidHelpMac": "This page's host is a Mac: macOS cannot recreate a wheel or a radio.",
-        "hidHelpWindows": "This page's Windows host does not have the \"MoonlightWeb Virtual HID\" driver, so it cannot recreate the device.",
+        "hidHelpWindows": "This page's Windows host does not have the virtual HID driver, so it cannot recreate the device.",
         "hidHelpNone": "Only S3XYCast PC's own host recreates the device: Sunshine, Wolf and Apollo cannot.",
         "hidHelpLinuxTitle": "Host on Linux",
         "hidHelpLinux": "Supported out of the box: every axis and button, and force feedback.",
@@ -680,7 +691,7 @@
         "copyPinTitle": "Copy PIN to clipboard",
         "pinConsumedHint": "The previous PIN was used by a remote user. Generate a new PIN to allow another session.",
         "pairRequestInternet": "Accept QR code requests from the Internet",
-        "pairRequestInternetDesc": "For the MoonlightWeb TV app: a TV outside your local network can ask to be added with a QR code. It gets in only when you type here the code it shows.",
+        "pairRequestInternetDesc": "For the TV app: a TV outside your local network can ask to be added with a QR code. It gets in only when you type here the code it shows.",
         "pairRequestInternetOn": "QR code requests from the Internet enabled",
         "pairRequestInternetOff": "QR code requests from the Internet disabled",
         "activeSessions": "Active Sessions",
@@ -787,7 +798,7 @@
         "rendezvousReady": "This address reaches this machine from anywhere. It is not published anywhere else — copy it to the devices you want to stream from.",
         "rendezvousOffline": "The line to the introduction server is down, so this address will not answer until it comes back. It is still the right address.",
         "hostCode": "Host code",
-        "hostCodeHint": "The end of the address above. Type it on the Connect page of moonlightweb.top or in the TV app, where a whole address is hard to type.",
+        "hostCodeHint": "The end of the address above: this PC's identifier.",
         "rendezvousHalted": "The introduction server refuses this version of S3XYCast PC ({reason}). This address will not answer until S3XYCast PC is updated.",
         "consentRequired": "The Internet link is paused: the permission you gave earlier described the former mechanism (public DNS record and certificate), which no longer applies to this installation. Read the description above, then tick the box again to re-enable the link under the current terms.",
         "upnpAvailableNote": "Authorizes UPnP port mapping on your router (available on this network). You can also forward ports manually.",
@@ -1370,9 +1381,9 @@
     },
     "support": {
         "title": "Buy me a coffee",
-        "desc": "MoonlightWeb is free, open source and ad-free. A coffee helps pay for the server that connects you when you are away from home, the domain and the DNS.",
+        "desc": "Free, open source and ad-free. A coffee for the author of the original project helps keep it going.",
         "action": "Buy me a coffee",
         "hideToggle": "Hide Buy me a coffee in the app",
-        "tooltip": "Support MoonlightWeb"
+        "tooltip": "Support the original project"
     }
 }

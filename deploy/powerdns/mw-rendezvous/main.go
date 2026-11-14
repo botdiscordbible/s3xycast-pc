@@ -33,11 +33,17 @@
 // Stdlib only, like mw-proxy, and for the same reason: a poisoned dependency is
 // a realistic way into this box, and there is nothing here worth importing one
 // for.
+//
+// Modified for the S3XYCast edition, 2026-11-14: the owner secret can be read
+// from a file (MW_RDV_OWNER_SECRET_FILE, see ownerSecret). Nothing else differs
+// from MoonlightWeb's mw-rendezvous.
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"net"
@@ -53,7 +59,7 @@ import (
 type config struct {
 	listen      string // MW_RDV_LISTEN             (default ":8090")
 	storePath   string // MW_RDV_STORE              (default "/data/rendezvous.json")
-	secret      []byte // MW_RDV_OWNER_SECRET       (HMAC key for the claim store)
+	secret      []byte // MW_RDV_OWNER_SECRET       (HMAC key for the claim store; or _FILE, see ownerSecret)
 	maxNewPerHr int    // MW_RDV_MAX_NEW_PER_HOUR   (default 20; 0 = unlimited)
 	// The same new claims, charged to the /48 and to the whole server: a free
 	// /48 is 65 536 per-/64 budgets, and the server's own is what bounds a flood
@@ -77,6 +83,47 @@ func mustEnv(name string) string {
 		log.Fatalf("[mw-rendezvous] required environment variable %s is empty", name)
 	}
 	return v
+}
+
+// minSecretFileBytes is the shortest secret a file may hold: 32 hex characters,
+// 128 bits. The variable is taken as it is, as it always was; a file is new,
+// and one cut short by a bad copy must not become the key in silence.
+const minSecretFileBytes = 32
+
+// readSecretFile returns the secret a file holds: its content less the white
+// space around it and a UTF-8 byte order mark, which is what a text editor or
+// a shell redirection leaves around a line.
+func readSecretFile(path string) ([]byte, error) {
+	body, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("cannot read the owner secret: %w", err)
+	}
+	secret := bytes.TrimSpace(bytes.TrimPrefix(body, []byte{0xEF, 0xBB, 0xBF}))
+	if len(secret) < minSecretFileBytes {
+		return nil, fmt.Errorf("the owner secret in %q is %d bytes long, want %d or more",
+			path, len(secret), minSecretFileBytes)
+	}
+	return secret, nil
+}
+
+// ownerSecret is the HMAC key of the claim store: MW_RDV_OWNER_SECRET, or the
+// content of the file MW_RDV_OWNER_SECRET_FILE names.
+//
+// S3XYCast edition. A container keeps its environment to itself; a Windows
+// service does not: its environment is written in the registry, where every
+// local account can read it. A file can be closed to all but the account the
+// service runs as, so that is where the key lives there. The variable wins when
+// both are set, so nothing changes for a deployment that already has one.
+func ownerSecret() []byte {
+	path := os.Getenv("MW_RDV_OWNER_SECRET_FILE")
+	if path == "" || os.Getenv("MW_RDV_OWNER_SECRET") != "" {
+		return []byte(mustEnv("MW_RDV_OWNER_SECRET"))
+	}
+	secret, err := readSecretFile(path)
+	if err != nil {
+		log.Fatalf("[mw-rendezvous] %v", err)
+	}
+	return secret
 }
 
 func envOr(name, def string) string {
@@ -103,7 +150,7 @@ func loadConfig() config {
 	return config{
 		listen:    envOr("MW_RDV_LISTEN", ":8090"),
 		storePath: envOr("MW_RDV_STORE", "/data/rendezvous.json"),
-		secret:    []byte(mustEnv("MW_RDV_OWNER_SECRET")),
+		secret:    ownerSecret(),
 		// 0 is meaningful (unlimited), so the floor is 0 rather than 1.
 		maxNewPerHr: envInt("MW_RDV_MAX_NEW_PER_HOUR", 20, 0, 100000),
 		maxNewPer48: envInt("MW_RDV_MAX_NEW_PER_48_PER_HOUR", 60, 0, 100000),

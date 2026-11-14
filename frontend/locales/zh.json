@@ -45,7 +45,7 @@
         "stepCount": "第 {{current}} 步，共 {{total}} 步",
         "hostTitle": "串流这台电脑",
         "hostNative": "这台电脑可以串流自己的屏幕 — 无需再安装任何东西。",
-        "hostNeedsDisplay": "这台电脑可以串流自己的屏幕，但没有连接屏幕。主机页面上的卡片可以打开“MoonlightWeb Virtual Display”——如果安装时拒绝了它，请重新运行安装程序并接受。",
+        "hostNeedsDisplay": "这台电脑可以串流自己的屏幕，但没有连接屏幕。主页上的“适配此设备的屏幕”卡片会打开一个虚拟显示器——如果安装时拒绝了它，请重新运行安装程序并接受。",
         "hostNeedsDisplayNoDriver": "这台电脑可以串流自己的屏幕，但没有连接屏幕。",
         "done": "完成",
         "hostPermission": "请在“系统设置 → 隐私与安全性 → 屏幕录制”中允许 S3XYCast PC 录制屏幕，然后退出并重新打开 S3XYCast PC（macOS 只在重新启动后才应用该权限）。在此之前，这台电脑无法串流自己的屏幕。",
@@ -84,7 +84,17 @@
         "sunshineInstallFailed": "Sunshine 安装失败：{{error}}。请重试（系统会要求输入密码）、取消勾选 Sunshine，或跳过此步骤。"
     },
     "footer": {
-        "credits": "自由软件（GPL-3.0），基于 Bruno Martin 的 MoonlightWeb",
+        "credits": "{{name}} 是 {{upstream}} 的修改版本，后者是由 {{author}} 创建的自由软件。衷心感谢这份工作。",
+        "about": "关于",
+        "aboutTitle": "关于 {{name}}",
+        "aboutVersion": "版本 {{version}}",
+        "aboutLead": "{{name}} 可在您车内或任何其他设备的浏览器中显示您的电脑：画面、声音、触控、键盘和手柄。",
+        "aboutFreeTitle": "自由软件",
+        "aboutFree": "{{name}} 是自由软件，采用 GNU 通用公共许可证第 3 版：任何人都可以按照该许可证的条款使用、研究、修改和分享它。本软件不提供任何担保。",
+        "aboutLicenceLink": "阅读许可证（GNU GPL v3）",
+        "aboutSourceLink": "此版本的源代码",
+        "aboutOriginTitle": "项目来源",
+        "aboutOriginLink": "查看原始项目",
         "tagline": "S3XYCast PC — 在特斯拉屏幕上使用您的电脑"
     },
     "appError": {
@@ -137,6 +147,7 @@
         "unavailableMessage": "此主机在网络中，但 S3XYCast PC 未运行",
         "certificateChangedMessage": "此主机出示的证书与配对时的证书不一致，因此不会向其发送任何内容。如果您重新安装了它的软件，请将其移除并重新添加，然后再次配对。",
         "remoteAccess": "在家时，可在其他设备上通过此地址打开这台电脑：",
+        "remoteAccessAnywhere": "在车上或其他任何地方，可通过此地址打开这台电脑：",
         "internetDisabledHint": "要在车上或其他地方打开这台电脑，请在电脑设置中{{link}}。",
         "alsoReachableHint": "您也可以通过以下地址连接到此服务器：",
         "enableInternetLink": "启用互联网访问",
@@ -211,7 +222,7 @@
         "playerErrorsDesc": "仅在出错时，本页面才会发送一份最精简的错误日志，严格用于改进 S3XYCast PC。发送前会去除 IP 地址、名称和游戏信息。"
     },
     "vdisplay": {
-        "emptyBody": "这台电脑没有连接屏幕，也没有安装“MoonlightWeb Virtual Display”。请重新运行 S3XYCast PC 安装程序并接受虚拟显示器，即可串流。",
+        "emptyBody": "这台电脑没有连接屏幕，也没有安装虚拟显示器。请重新运行 S3XYCast PC 安装程序并接受虚拟显示器，即可串流。",
         "emptyBodyNoDriver": "这台电脑没有连接屏幕。"
     },
     "gamepad": {
@@ -523,7 +534,7 @@
         "micOff": "关闭",
         "micSystem": "系统麦克风",
         "micPick": "选择麦克风…",
-        "micDeviceDesc": "你的声音会作为麦克风传到主机上的应用（Linux 上为“MoonlightWeb Microphone”，Windows 上为 VB-CABLE 等虚拟声卡）。仅在串流运行 S3XYCast PC 的电脑时可用。每次串流开始时麦克风保持关闭：请用按钮或快捷键开启。浏览器会在第一次开启时请求权限。",
+        "micDeviceDesc": "你的声音会作为麦克风传到主机上的应用（Linux 上为虚拟麦克风，Windows 上为 VB-CABLE 等虚拟声卡）。仅在串流运行 S3XYCast PC 的电脑时可用。每次串流开始时麦克风保持关闭：请用按钮或快捷键开启。浏览器会在第一次开启时请求权限。",
         "micUnsupported": "此浏览器无法在这里采集麦克风。",
         "micQuality": "麦克风音质",
         "micQualityVoice": "语音：消除回声和噪音，64 kbit/s",
@@ -591,10 +602,10 @@
         "algoBalGpu": "均衡（NIS WebGPU）",
         "algoQualGl": "画质（FSR1 WebGL2）",
         "algoQualGpu": "画质（FSR1 WebGPU）",
-        "algoMwsrGl": "S3XYCast PC（mwsr WebGL2）",
-        "algoMwsrGpu": "S3XYCast PC（mwsr WebGPU）",
-        "algoMwsrDbGpu": "S3XYCast PC 2（mwsr + 去块 WebGPU）",
-        "algoMwsrDbqGpu": "S3XYCast PC 3（mwsr + 按 QP 去块 WebGPU）",
+        "algoMwsrGl": "mwsr（WebGL2）",
+        "algoMwsrGpu": "mwsr（WebGPU）",
+        "algoMwsrDbGpu": "mwsr 2（去块，WebGPU）",
+        "algoMwsrDbqGpu": "mwsr 3（按 QP 去块，WebGPU）",
         "language": "语言",
         "languageDesc": "界面语言。更改后页面将重新加载。",
         "controllers": "手柄",
@@ -615,7 +626,7 @@
         "hidDesc": "“原样发送”会把方向盘、摇杆或航模遥控器作为真实设备发送给游戏，保留所有轴和按键，而不是模拟成 Xbox 手柄。需要 S3XYCast PC 自己的主机。首次使用时浏览器会询问是哪个设备；该开关保存在本浏览器中。",
         "hidHelpTitle": "原样发送方向盘和遥控器",
         "hidHelpMac": "此页面的主机是 Mac：macOS 无法重建方向盘或遥控器。",
-        "hidHelpWindows": "此页面的 Windows 主机没有安装“MoonlightWeb Virtual HID”驱动，无法重建该设备。",
+        "hidHelpWindows": "此页面的 Windows 主机没有安装虚拟 HID 驱动，无法重建该设备。",
         "hidHelpNone": "只有 S3XYCast PC 自己的主机能重建设备：Sunshine、Wolf 和 Apollo 不能。",
         "hidHelpLinuxTitle": "使用 Linux 主机",
         "hidHelpLinux": "开箱即用：所有轴和按键，以及力反馈。",
@@ -680,7 +691,7 @@
         "copyPinTitle": "将 PIN 码复制到剪贴板",
         "pinConsumedHint": "上一个 PIN 码已被某位远程用户使用。生成新的 PIN 码以允许另一个会话。",
         "pairRequestInternet": "接受来自互联网的二维码请求",
-        "pairRequestInternetDesc": "适用于 MoonlightWeb TV 应用：不在您本地网络中的电视可以通过二维码请求加入。只有在您于此处输入电视上显示的代码后，它才能加入。",
+        "pairRequestInternetDesc": "适用于 TV 应用：不在您本地网络中的电视可以通过二维码请求加入。只有在您于此处输入电视上显示的代码后，它才能加入。",
         "pairRequestInternetOn": "已启用来自互联网的二维码请求",
         "pairRequestInternetOff": "已禁用来自互联网的二维码请求",
         "activeSessions": "活动会话",
@@ -787,7 +798,7 @@
         "rendezvousReady": "此地址可从任何地方访问这台机器。它不会发布在其他任何地方——请将它复制到你想用来串流的设备上。",
         "rendezvousOffline": "与引导服务器的连接已断开，在恢复之前此地址不会响应。它仍然是正确的地址。",
         "hostCode": "主机代码",
-        "hostCodeHint": "即上面地址的末尾部分。在 moonlightweb.top 的 Connect 页面或 TV 应用中输入它，适用于难以输入完整地址的设备。",
+        "hostCodeHint": "即上面地址的末尾部分：这台电脑的标识。",
         "rendezvousHalted": "引导服务器拒绝此版本的 S3XYCast PC（{reason}）。在 S3XYCast PC 更新之前，此地址不会响应。",
         "consentRequired": "互联网连接已暂停：你之前给出的授权描述的是旧机制（公开 DNS 记录和证书），已不适用于此安装。请阅读上方说明，然后重新勾选以按当前条款重新启用。",
         "upnpAvailableNote": "授权在你的路由器上进行 UPnP 端口映射（此网络可用）。你也可以手动转发端口。",
@@ -1370,9 +1381,9 @@
     },
     "support": {
         "title": "请我喝杯咖啡",
-        "desc": "MoonlightWeb 免费、开源、无广告。一杯咖啡可以帮忙支付让你在外也能连回家的服务器、域名和 DNS 的费用。",
+        "desc": "免费、开源、无广告。给原始项目的作者买杯咖啡，可以帮助项目持续发展。",
         "action": "请我喝杯咖啡",
         "hideToggle": "在应用中隐藏 Buy me a coffee",
-        "tooltip": "支持 MoonlightWeb"
+        "tooltip": "支持原始项目"
     }
 }

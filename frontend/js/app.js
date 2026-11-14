@@ -184,6 +184,7 @@ import {
 import { InstanceMenu } from './ui/InstanceMenu.js';
 import { currentInstanceRef, importInstances, rememberInstance } from './util/instances.js';
 import { bootMark } from './util/bootTiming.js';
+import { mountAboutButton } from './ui/AboutDialog.js';
 
 // Every module above arrived and ran: the boot watchdog (bootWatch.js) stands down.
 window.mwBooted = true;
@@ -1219,7 +1220,11 @@ export const MoonlightApp = {
      * picked by _computeRemoteAccessUrls (rendezvous → legacy sub-domain → LAN).
      */
     _buildRemoteAccessBanner(info) {
-        let bodyHtml = `${t('hosts.remoteAccess')} ${linkHtml(info.url)}`;
+        // S3XYCast edition: the sentence says where the address works from. The
+        // Internet link opens the PC from the car or anywhere; the LAN address
+        // only at home (upstream had one neutral sentence for both).
+        const lead = t(info.remote ? 'hosts.remoteAccessAnywhere' : 'hosts.remoteAccess');
+        let bodyHtml = `${lead} ${linkHtml(info.url)}`;
         // A held connection, not a published record: while it is down the
         // address is correct and answers to nobody. Saying so beats showing a
         // link that silently fails — but only about the address on screen. With
@@ -5799,6 +5804,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     // the catalogs are in so its label is not the English one for a French
     // reader, and left alone from then on. The stream hides it in CSS.
     DiscordLink.mount();
+    // S3XYCast edition: the footer's About button (licence, where this comes
+    // from). Static markup like the footer itself, so it is wired once here.
+    mountAboutButton();
     // Arrows and pads get around the pages on a TV (nothing is attached
     // elsewhere). Before the app, so its listeners see the keys first.
     RemoteNav.init();

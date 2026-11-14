@@ -45,7 +45,7 @@
         "stepCount": "Adım {{current}} / {{total}}",
         "hostTitle": "Bu bilgisayardan yayın",
         "hostNative": "Bu bilgisayar kendi ekranını yayınlayabilir — başka bir şey kurmanız gerekmez.",
-        "hostNeedsDisplay": "Bu bilgisayar kendi ekranını yayınlayabilir, ancak bağlı bir ekran yok. Ana bilgisayarlar sayfasındaki kartı \"S3XYCast PC Sanal Ekranı\"nı açar — kurulum sırasında bu reddedildiyse yükleyiciyi yeniden çalıştırıp kabul edin.",
+        "hostNeedsDisplay": "Bu bilgisayar kendi ekranını yayınlayabilir, ancak bağlı bir ekran yok. Ana sayfadaki “Bu cihaza uyarlanmış ekran” kartı sanal bir ekran açar — kurulum sırasında bu reddedildiyse yükleyiciyi yeniden çalıştırıp kabul edin.",
         "hostNeedsDisplayNoDriver": "Bu bilgisayar kendi ekranını yayınlayabilir, ancak bağlı bir ekran yok.",
         "done": "Tamam",
         "hostPermission": "Sistem Ayarları → Gizlilik ve Güvenlik → Ekran Kaydı bölümünde S3XYCast PC'in ekranı kaydetmesine izin verin, ardından S3XYCast PC'den çıkıp yeniden açın (macOS bu izni yalnızca yeniden başlatmada uygular). O zamana kadar bu bilgisayar kendi ekranını yayınlayamaz.",
@@ -84,7 +84,17 @@
         "sunshineInstallFailed": "Sunshine kurulumu başarısız oldu: {{error}}. Yeniden deneyin (parolanız istenecek), Sunshine seçeneğinin işaretini kaldırın veya bu adımı atlayın."
     },
     "footer": {
-        "credits": "Özgür yazılım (GPL-3.0), Bruno Martin'in MoonlightWeb projesine dayanır",
+        "credits": "{{name}}, {{author}} tarafından oluşturulan özgür bir yazılım olan {{upstream}} projesinin değiştirilmiş bir sürümüdür. Bu çalışma için çok teşekkürler.",
+        "about": "Hakkında",
+        "aboutTitle": "{{name}} hakkında",
+        "aboutVersion": "Sürüm {{version}}",
+        "aboutLead": "{{name}}, bilgisayarınızı arabanızın veya başka herhangi bir cihazın tarayıcısında gösterir: görüntü, ses, dokunmatik, klavye ve oyun kumandası.",
+        "aboutFreeTitle": "Özgür yazılım",
+        "aboutFree": "{{name}}, GNU Genel Kamu Lisansı sürüm 3 kapsamında özgür bir yazılımdır: herkes onu bu lisansın koşullarına göre kullanabilir, inceleyebilir, değiştirebilir ve paylaşabilir. Hiçbir garanti verilmez.",
+        "aboutLicenceLink": "Lisansı oku (GNU GPL v3)",
+        "aboutSourceLink": "Bu sürümün kaynak kodu",
+        "aboutOriginTitle": "Nereden geliyor",
+        "aboutOriginLink": "Özgün projeyi gör",
         "tagline": "S3XYCast PC — bilgisayarınız Tesla'nızın ekranında"
     },
     "appError": {
@@ -137,6 +147,7 @@
         "unavailableMessage": "Bu ana bilgisayar ağda ama S3XYCast PC çalışmıyor",
         "certificateChangedMessage": "Bu ana bilgisayar, eşleştirildiği sertifikayı göstermiyor, bu yüzden ona hiçbir şey gönderilmiyor. Yazılımını yeniden kurduysanız kaldırıp yeniden ekleyin, ardından eşleştirin.",
         "remoteAccess": "Evde, bu bilgisayarı başka bir cihazdan şu adresten açın:",
+        "remoteAccessAnywhere": "Arabanızdan veya başka bir yerden bu bilgisayarı şu adresten açın:",
         "internetDisabledHint": "Bu bilgisayarı arabanızdan veya başka bir yerden açmak için bilgisayar ayarlarında {{link}}.",
         "alsoReachableHint": "Bu sunucuya şu adresten de bağlanabilirsiniz:",
         "enableInternetLink": "İnternet erişimini etkinleştir",
@@ -211,7 +222,7 @@
         "playerErrorsDesc": "Yalnızca bir şeyler ters gittiğinde, bu sayfa kesinlikle S3XYCast PC'i geliştirmek için kullanılan asgari bir hata günlüğü gönderir. IP adresleri, adlar ve oyunlar önce çıkarılır."
     },
     "vdisplay": {
-        "emptyBody": "Bu bilgisayara bağlı bir ekran yok ve \"S3XYCast PC Sanal Ekranı\" kurulu değil. S3XYCast PC yükleyicisini yeniden çalıştırın ve yayınlamak için sanal ekranı kabul edin.",
+        "emptyBody": "Bu bilgisayara bağlı bir ekran yok ve sanal ekran kurulu değil. S3XYCast PC yükleyicisini yeniden çalıştırın ve yayınlamak için sanal ekranı kabul edin.",
         "emptyBodyNoDriver": "Bu bilgisayara bağlı bir ekran yok."
     },
     "gamepad": {
@@ -523,7 +534,7 @@
         "micOff": "Kapalı",
         "micSystem": "Sistem mikrofonu",
         "micPick": "Bir mikrofon seçin…",
-        "micDeviceDesc": "Sesiniz ana bilgisayarın uygulamalarına mikrofon olarak ulaşır (Linux'ta \"S3XYCast PC Mikrofonu\", Windows'ta VB-CABLE gibi sanal bir kablo). Yalnızca S3XYCast PC'i çalıştıran bilgisayarı yayınlarken. Her yayının başında kapalı kalır: düğmeyle veya kısayolla açın. Tarayıcı ilk seferde izin ister.",
+        "micDeviceDesc": "Sesiniz ana bilgisayarın uygulamalarına mikrofon olarak ulaşır (Linux'ta sanal bir mikrofon, Windows'ta VB-CABLE gibi sanal bir kablo). Yalnızca S3XYCast PC'yi çalıştıran bilgisayarı yayınlarken. Her yayının başında kapalı kalır: düğmeyle veya kısayolla açın. Tarayıcı ilk seferde izin ister.",
         "micUnsupported": "Bu tarayıcı burada mikrofon yakalayamıyor.",
         "micQuality": "Mikrofon sesi",
         "micQualityVoice": "Ses: yankı ve gürültü temizlenir, 64 kbit/s",
@@ -591,10 +602,10 @@
         "algoBalGpu": "Dengeli (NIS WebGPU)",
         "algoQualGl": "Kalite (FSR1 WebGL2)",
         "algoQualGpu": "Kalite (FSR1 WebGPU)",
-        "algoMwsrGl": "MoonlightWeb (mwsr WebGL2)",
-        "algoMwsrGpu": "MoonlightWeb (mwsr WebGPU)",
-        "algoMwsrDbGpu": "MoonlightWeb 2 (mwsr + engelleme giderme WebGPU)",
-        "algoMwsrDbqGpu": "MoonlightWeb 3 (mwsr + QP engelleme giderme WebGPU)",
+        "algoMwsrGl": "mwsr (WebGL2)",
+        "algoMwsrGpu": "mwsr (WebGPU)",
+        "algoMwsrDbGpu": "mwsr 2 (engelleme giderme, WebGPU)",
+        "algoMwsrDbqGpu": "mwsr 3 (QP engelleme giderme, WebGPU)",
         "language": "Dil",
         "languageDesc": "Arayüz dili. Değiştirdiğinizde sayfa yeniden yüklenir.",
         "controllers": "Denetleyiciler",
@@ -615,7 +626,7 @@
         "hidDesc": "\"Kendisi olarak\", bir direksiyonu, joystick'i veya RC radyoyu Xbox denetleyicisi yerine gerçek cihaz olarak, her ekseni ve düğmesiyle oyuna gönderir. S3XYCast PC'in kendi ana bilgisayarını gerektirir. İlk seferde tarayıcı hangi cihaz olduğunu sorar; anahtar bu tarayıcıda saklanır.",
         "hidHelpTitle": "Direksiyonlar ve radyolar kendileri olarak",
         "hidHelpMac": "Bu sayfanın ana bilgisayarı bir Mac: macOS bir direksiyonu veya radyoyu yeniden oluşturamaz.",
-        "hidHelpWindows": "Bu sayfanın Windows ana bilgisayarında \"S3XYCast PC Sanal HID\" sürücüsü yok, bu yüzden cihazı yeniden oluşturamaz.",
+        "hidHelpWindows": "Bu sayfanın Windows ana bilgisayarında sanal HID sürücüsü yok, bu yüzden cihazı yeniden oluşturamaz.",
         "hidHelpNone": "Cihazı yalnızca S3XYCast PC'in kendi ana bilgisayarı yeniden oluşturur: Sunshine, Wolf ve Apollo oluşturamaz.",
         "hidHelpLinuxTitle": "Linux'ta ana bilgisayar",
         "hidHelpLinux": "Kutudan çıktığı gibi desteklenir: her eksen ve düğme, ayrıca kuvvet geri bildirimi.",
@@ -680,7 +691,7 @@
         "copyPinTitle": "PIN'i panoya kopyala",
         "pinConsumedHint": "Önceki PIN bir uzak kullanıcı tarafından kullanıldı. Başka bir oturuma izin vermek için yeni bir PIN oluşturun.",
         "pairRequestInternet": "İnternetten QR kod isteklerini kabul et",
-        "pairRequestInternetDesc": "MoonlightWeb TV uygulaması için: yerel ağınızın dışındaki bir TV, QR kodla eklenmeyi isteyebilir. Yalnızca burada gösterdiği kodu yazdığınızda içeri girer.",
+        "pairRequestInternetDesc": "TV uygulaması için: yerel ağınızın dışındaki bir TV, QR kodla eklenmeyi isteyebilir. Yalnızca burada gösterdiği kodu yazdığınızda içeri girer.",
         "pairRequestInternetOn": "İnternetten QR kod istekleri etkinleştirildi",
         "pairRequestInternetOff": "İnternetten QR kod istekleri devre dışı bırakıldı",
         "activeSessions": "Etkin Oturumlar",
@@ -787,7 +798,7 @@
         "rendezvousReady": "Bu adres bu makineye her yerden ulaşır. Başka hiçbir yerde yayımlanmaz — yayın yapmak istediğiniz cihazlara kopyalayın.",
         "rendezvousOffline": "Tanıştırma sunucusuna giden hat kesildi, bu yüzden bu adres o geri gelene kadar yanıt vermeyecek. Yine de doğru adres.",
         "hostCode": "Ana bilgisayar kodu",
-        "hostCodeHint": "Yukarıdaki adresin sonu. moonlightweb.top sitesinin Bağlan sayfasında veya TV uygulamasında, tam bir adresin yazılması zorken bunu yazın.",
+        "hostCodeHint": "Yukarıdaki adresin sonu: bu bilgisayarın kimliği.",
         "rendezvousHalted": "Tanıştırma sunucusu S3XYCast PC'in bu sürümünü reddediyor ({reason}). S3XYCast PC güncellenene kadar bu adres yanıt vermeyecek.",
         "consentRequired": "İnternet bağlantısı duraklatıldı: daha önce verdiğiniz izin, artık bu kurulum için geçerli olmayan eski mekanizmayı (genel DNS kaydı ve sertifika) tanımlıyordu. Yukarıdaki açıklamayı okuyun, ardından bağlantıyı güncel koşullarla yeniden etkinleştirmek için kutuyu tekrar işaretleyin.",
         "upnpAvailableNote": "Yönlendiricinizde UPnP bağlantı noktası eşlemesine yetki verir (bu ağda kullanılabilir). Bağlantı noktalarını elle de yönlendirebilirsiniz.",
@@ -1370,9 +1381,9 @@
     },
     "support": {
         "title": "Bana bir kahve ısmarla",
-        "desc": "MoonlightWeb ücretsiz, açık kaynaklı ve reklamsız. Bir kahve, evden uzaktayken sizi bağlayan sunucunun, alan adının ve DNS'in masrafını karşılamaya yardımcı olur.",
+        "desc": "Ücretsiz, açık kaynaklı ve reklamsız. Özgün projenin yazarına bir kahve, projenin sürmesine yardımcı olur.",
         "action": "Bana bir kahve ısmarla",
         "hideToggle": "Uygulamada \"Bana bir kahve ısmarla\"yı gizle",
-        "tooltip": "MoonlightWeb'i destekle"
+        "tooltip": "Özgün projeyi destekle"
     }
 }

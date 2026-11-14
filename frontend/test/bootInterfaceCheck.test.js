@@ -40,7 +40,7 @@ const INDEX = readFileSync(join(REPO, 'frontend', 'index.html'), 'utf8')
     .split('__MW_VERSION__')
     .join(VERSION);
 /** The main page as the tunnel serves it: CRLF, and the machine's name written in. */
-const SERVED_INDEX = INDEX.replace('content="MoonlightWeb"', 'content="MoonlightWeb [PC]"').replace(
+const SERVED_INDEX = INDEX.replace('content="S3XYCast PC"', 'content="S3XYCast PC [PC]"').replace(
     /\n/g,
     '\r\n',
 );
@@ -270,7 +270,7 @@ describe('where the check is enforced', () => {
             'This machine serves a modified interface.',
         );
         expect(document.getElementById('note').textContent).toBe(
-            'MoonlightWeb only opens the official one, so nothing from it was run.',
+            'S3XYCast PC only opens the official one, so nothing from it was run.',
         );
         expect(cachesStub.shell()).toEqual([]);
         expect(sw.told).toEqual([]);

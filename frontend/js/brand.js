@@ -24,6 +24,23 @@
  */
 export const BRAND_NAME = 'S3XYCast PC';
 
-/** The project this edition is made from, credited in the footer (GPL-3.0). */
+/**
+ * The project this edition is made from and its author. Their names are kept,
+ * as the project's COPYRIGHT file asks of a fork and as the GPL asks of an
+ * interactive program, in one place of the interface: the About window
+ * (ui/AboutDialog.js), a click away from the footer. Nowhere else on screen.
+ */
 export const UPSTREAM_NAME = 'MoonlightWeb';
+export const UPSTREAM_AUTHOR = 'Bruno Martin';
+export const UPSTREAM_YEAR = '2026';
 export const UPSTREAM_URL = 'https://github.com/linckosz/moonlight-web';
+
+/** The licence the program is under, to read in full. */
+export const LICENCE_URL = 'https://www.gnu.org/licenses/gpl-3.0.html';
+
+/**
+ * Where this edition's own source is published. Empty until it is: the About
+ * window then leaves the link out rather than send the reader to a dead page.
+ * It has to be set before the program is handed to anyone (GPL-3.0, §6).
+ */
+export const EDITION_SOURCE_URL = '';

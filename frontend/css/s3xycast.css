@@ -189,10 +189,27 @@ h2 {
     font-size: var(--fs-xs);
     border-top: 1px solid var(--border-1);
 }
-.app-footer a {
+/* The About button: a quiet link to the eye, a real target to a finger. */
+.app-footer-about {
+    min-height: 40px;
+    padding: 8px 12px;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: none;
     color: var(--text-2);
+    font: inherit;
     text-decoration: underline;
+    text-decoration-color: var(--border-2);
     text-underline-offset: 3px;
+    cursor: pointer;
+}
+.app-footer-about:hover {
+    color: var(--text-1);
+    text-decoration-color: currentColor;
+}
+.app-footer-about:focus-visible {
+    outline: 2px solid var(--focus-ring, #fab125);
+    outline-offset: 2px;
 }
 
 /* ── Buttons ───────────────────────────────────────────────────────────── */
@@ -695,6 +712,79 @@ textarea {
     font-family: inherit;
 }
 
+/* ── About (ui/AboutDialog.js) ─────────────────────────────────────────── */
+/* What the program is, its licence, and the project it is made from: the one
+   window that names it. Built on the share pop-in's overlay and box. */
+.about-box {
+    width: min(540px, 100%);
+    padding: 26px 26px 22px;
+    border-radius: var(--radius-lg);
+    background: var(--surface-2);
+    text-align: left;
+}
+.about-head {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 16px;
+}
+.about-logo {
+    flex: none;
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    background: #000 url('/assets/s3xycast-logo.svg') center / cover no-repeat;
+}
+.about-box h3 {
+    margin: 0;
+    font-size: var(--fs-xl);
+    font-weight: 800;
+    letter-spacing: -0.01em;
+}
+.about-version {
+    margin-top: 2px;
+    color: var(--text-3);
+    font-family: var(--font-mono);
+    font-size: var(--fs-sm);
+}
+.about-lead {
+    margin: 0 0 16px;
+    color: var(--text-1);
+    font-size: var(--fs-md);
+    line-height: 1.55;
+}
+.about-part {
+    padding: 14px 0 10px;
+    border-top: 1px solid var(--border-1);
+}
+.about-part-title {
+    margin-bottom: 6px;
+    color: var(--text-1);
+    font-weight: 700;
+}
+.about-part-text {
+    margin: 0 0 6px;
+    color: var(--text-2);
+    font-size: var(--fs-sm);
+    line-height: 1.55;
+}
+.about-copyright {
+    color: var(--text-3);
+}
+.about-link {
+    display: inline-block;
+    margin-right: 18px;
+    padding: 8px 0;
+    color: var(--text-1);
+    font-size: var(--fs-sm);
+    text-decoration: underline;
+    text-decoration-color: var(--border-2);
+    text-underline-offset: 3px;
+}
+.about-link:hover {
+    text-decoration-color: currentColor;
+}
+
 /* ── A phone's width ───────────────────────────────────────────────────── */
 @media (max-width: 640px) {
     .hosts-header {
@@ -711,5 +801,26 @@ textarea {
     .login-box {
         padding: 24px 18px 20px;
         border-radius: 22px;
+    }
+    .about-overlay {
+        padding: 12px;
+    }
+    .about-box {
+        padding: 20px 18px 16px;
+        border-radius: 22px;
+    }
+    .about-logo {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+    }
+    .about-box h3 {
+        font-size: var(--fs-lg);
+    }
+    .about-lead {
+        font-size: var(--fs-sm);
+    }
+    .about-part {
+        padding: 12px 0 6px;
     }
 }

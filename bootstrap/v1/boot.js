@@ -357,7 +357,7 @@ function paintInstances(choosing) {
         // An identifier this browser has never reached names nothing it can
         // show — and only a page that has given up may say so out loud, never
         // once the machine has answered.
-        const label = current ? current.name : choosing && !answered ? 'No server found' : '';
+        const label = current ? current.name : choosing && !answered ? tr('No server found') : '';
         if (!label) {
             mount.hidden = true;
             return;
@@ -371,7 +371,7 @@ function paintInstances(choosing) {
         return;
     }
 
-    const label = current ? current.name : 'Choose a machine';
+    const label = current ? current.name : tr('Choose a machine');
     mount.hidden = false;
 
     mount.className = 'instance-menu has-menu';
@@ -381,7 +381,7 @@ function paintInstances(choosing) {
     btn.className = 'instance-btn';
     btn.setAttribute('aria-haspopup', 'menu');
     btn.setAttribute('aria-expanded', 'false');
-    btn.title = 'Switch to another machine';
+    btn.title = tr('Switch to another machine');
     const name = setText(document.createElement('span'), label);
     name.className = 'instance-name';
     btn.appendChild(name);
@@ -394,7 +394,7 @@ function paintInstances(choosing) {
     panel.className = 'instance-panel';
     panel.setAttribute('role', 'menu');
     panel.hidden = true;
-    const title = setText(document.createElement('p'), 'Your machines');
+    const title = setText(document.createElement('p'), tr('Your machines'));
     title.className = 'instance-panel-title';
     panel.appendChild(title);
 
@@ -586,7 +586,7 @@ const policy = interfacePolicy(location.hostname);
 /** The machine serves an interface that is not the official one. */
 function refusal(why) {
     const err = new Error('This machine serves a modified interface.');
-    err.hint = 'MoonlightWeb only opens the official one, so nothing from it was run.';
+    err.hint = 'S3XYCast PC only opens the official one, so nothing from it was run.';
     err.refused = true;
     err.why = why;
     return err;
@@ -1266,7 +1266,7 @@ async function main() {
     if (!hostId) {
         fail(
             'This address does not name a machine.',
-            'A MoonlightWeb link ends in a 26-character identifier. Your machine shows ' +
+            'A S3XYCast PC link ends in a 26-character identifier. Your machine shows ' +
                 'its own on its settings page and in its tray menu.',
         );
         return;
