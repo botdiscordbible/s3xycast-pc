@@ -17,6 +17,7 @@
 
 #include "backend/GamepadDriver.h"
 
+#include "common/Edition.h"
 #include "common/Logger.h"
 #include "common/WinSystemPath.h"
 #include "network/AddressRace.h"
@@ -69,7 +70,7 @@ QString stagingDir()
 #ifdef Q_OS_WIN
     const QString base = qEnvironmentVariable("LOCALAPPDATA");
     if (!base.isEmpty() && !mw::win::isUnderSystem32(base))
-        return base + QStringLiteral("/MoonlightWeb/driver");
+        return base + QLatin1Char('/') + mw::edition::productName() + QStringLiteral("/driver");
     // A service has either no LOCALAPPDATA or SYSTEM's own, under System32 —
     // where the 32-bit WiX bundle cannot find itself (see isUnderSystem32). The
     // install directory is admin-only, which is the property that matters here.
@@ -227,7 +228,7 @@ void install(std::function<void(Result, QString)> done)
 
     QNetworkAccessManager* nam = new QNetworkAccessManager();
     QNetworkRequest req{QUrl(downloadUrl())};
-    req.setRawHeader("User-Agent", "MoonlightWeb");
+    req.setRawHeader("User-Agent", "S3XYCastPC");
     req.setAttribute(QNetworkRequest::RedirectPolicyAttribute,
                      QNetworkRequest::NoLessSafeRedirectPolicy);
     AddressRace::enableOn(req);

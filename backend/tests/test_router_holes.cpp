@@ -116,15 +116,17 @@ QByteArray readFile(const QString& path)
 void run_router_holes_tests()
 {
     SECTION("RouterHoles: the words on the router's page, and the tag");
-    CHECK(describe(Kind::Tunnel, -1, {}) == QStringLiteral("MoonlightWeb tunnel"));
-    CHECK(describe(Kind::Streams, -1, {}) == QStringLiteral("MoonlightWeb streams"));
-    CHECK(describe(Kind::Media, 3, {}) == QStringLiteral("MoonlightWeb media slot 3"));
+    CHECK(describe(Kind::Tunnel, -1, {}) == QStringLiteral("S3XYCast PC tunnel"));
+    CHECK(describe(Kind::Streams, -1, {}) == QStringLiteral("S3XYCast PC streams"));
+    CHECK(describe(Kind::Media, 3, {}) == QStringLiteral("S3XYCast PC media slot 3"));
     CHECK(describe(Kind::Tcp443, -1, QStringLiteral("a3f9c1")) ==
-          QStringLiteral("MoonlightWeb TCP 443 a3f9c1"));
+          QStringLiteral("S3XYCast PC TCP 443 a3f9c1"));
     CHECK(describe(Kind::Tunnel, -1, QStringLiteral("a3f9c1")) ==
-          QStringLiteral("MoonlightWeb tunnel a3f9c1"));
-    // The longest of them, which a router has to give back whole
-    CHECK_EQ(describe(Kind::Media, 23, QStringLiteral("a3f9c1")).size(), 33);
+          QStringLiteral("S3XYCast PC tunnel a3f9c1"));
+    // The longest of them, which a router has to give back whole. One
+    // character under upstream's 33 (S3XYCast edition: its own name), so a
+    // router that kept upstream's whole keeps this one.
+    CHECK_EQ(describe(Kind::Media, 23, QStringLiteral("a3f9c1")).size(), 32);
     CHECK(validTag(QStringLiteral("a3f9c1")) && validTag(QStringLiteral("000000")));
     for (const char* bad : {"", "a3f9c", "a3f9c1d", "A3F9C1", "a3f9g1", "a3 9c1"})
         CHECK(!validTag(QString::fromLatin1(bad)));

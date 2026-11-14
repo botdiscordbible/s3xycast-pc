@@ -114,7 +114,7 @@ UpdateChecker::UpdateChecker(QString currentVersion, bool relayEnabled, QObject*
     , m_nam(new QNetworkAccessManager(this))
 {
     if (!m_relayUrl.isEmpty())
-        Logger::info(QStringLiteral("[Update] checking via the MoonlightWeb update relay"));
+        Logger::info(QStringLiteral("[Update] checking via the S3XYCast PC update relay"));
 }
 
 QString UpdateChecker::releasesApiUrl()
@@ -136,7 +136,7 @@ void UpdateChecker::setRelayEnabled(bool enabled)
     m_relayUrl = url;
     Logger::info(m_relayUrl.isEmpty()
                      ? QStringLiteral("[Update] checking GitHub directly, reporting nothing")
-                     : QStringLiteral("[Update] checking via the MoonlightWeb update relay"));
+                     : QStringLiteral("[Update] checking via the S3XYCast PC update relay"));
 }
 
 QJsonObject UpdateChecker::statusJson()
@@ -223,7 +223,7 @@ void UpdateChecker::fetchFrom(const QString& url, bool viaRelay)
     // GitHub rejects requests without a User-Agent; the Accept header pins the
     // stable v3 media type. The relay answers with GitHub's own payload, so it
     // takes the same headers.
-    req.setRawHeader("User-Agent", "MoonlightWeb-UpdateChecker");
+    req.setRawHeader("User-Agent", "S3XYCastPC-UpdateChecker");
     req.setRawHeader("Accept", "application/vnd.github+json");
     // The relay gates on the same restricted key as the DNS API. A build
     // without that key never reaches here — buildRelayUrl() returns empty and

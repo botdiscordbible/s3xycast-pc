@@ -482,13 +482,13 @@ add_executable(mw-server
 # packages) and in its state, ports, introduction server, icons and version.
 # See src/common/Edition.h. Local builds default to prod so the binary name the
 # scripts and skills launch does not move; they get the DEV look with --dev.
-set(MW_EDITION "prod" CACHE STRING "Edition to build: prod (MoonlightWeb) or dev (MoonlightWebDev)")
+set(MW_EDITION "prod" CACHE STRING "Edition to build: prod (S3XYCastPC) or dev (S3XYCastPCDev)")
 set_property(CACHE MW_EDITION PROPERTY STRINGS prod dev)
 if(MW_EDITION STREQUAL "dev")
-    set(MW_APP_NAME "MoonlightWebDev")
+    set(MW_APP_NAME "S3XYCastPCDev")
     target_compile_definitions(mw-server PRIVATE MW_EDITION_DEV)
 elseif(MW_EDITION STREQUAL "prod")
-    set(MW_APP_NAME "MoonlightWeb")
+    set(MW_APP_NAME "S3XYCastPC")
 else()
     message(FATAL_ERROR "MW_EDITION must be prod or dev (got '${MW_EDITION}')")
 endif()

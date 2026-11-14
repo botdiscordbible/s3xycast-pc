@@ -44,7 +44,7 @@ QNetworkRequest GeoIpService::lookupRequest(const QString& ip)
     url.setQuery(query);
 
     QNetworkRequest req(url);
-    req.setRawHeader("User-Agent", "MoonlightWeb/1.0");
+    req.setRawHeader("User-Agent", "S3XYCastPC/1.0");
     // The provider has IPv6 addresses. Over HTTP/2, behind an IPv6 that drops
     // packets, the lookup would fail at its timeout, and that empty answer is
     // cached for a day.

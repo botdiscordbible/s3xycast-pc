@@ -641,7 +641,7 @@ void registerAuthRoutes(HttpServer& server, AuthManager& authManager, GeoIpServi
         resp.statusCode = 200;
         resp.contentType = "text/plain; charset=utf-8";
         resp.headers["Content-Disposition"] =
-            "attachment; filename=\"moonlightweb-certificate.txt\"";
+            "attachment; filename=\"s3xycast-pc-certificate.txt\"";
         resp.body = token.toUtf8();
         return resp;
     });

@@ -99,7 +99,7 @@ void run_mdns_advertiser_tests()
     CHECK_EQ(MdnsAdvertiser::instanceName(QStringLiteral("pc.home.lan"), false),
              QStringLiteral("pc"));
     CHECK_EQ(MdnsAdvertiser::instanceName(QStringLiteral("  "), false),
-             QStringLiteral("MoonlightWeb"));
+             QStringLiteral("S3XYCast PC"));
 
     const QString longName(80, QLatin1Char('x'));
     CHECK_EQ(MdnsAdvertiser::instanceName(longName, false).toUtf8().size(), 63);

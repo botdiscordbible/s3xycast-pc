@@ -1242,7 +1242,7 @@ std::pair<int, QJsonObject> ComputerManager::handleAddManualHost(const QString& 
 
     QNetworkRequest req(url);
     req.setTransferTimeout(NvHTTP::REQUEST_TIMEOUT_MS);
-    req.setRawHeader("User-Agent", "MoonlightWeb/0.1");
+    req.setRawHeader("User-Agent", "S3XYCastPC/0.1");
 
     QNetworkAccessManager nam;
     QNetworkReply* reply = nam.get(req);
@@ -1922,7 +1922,7 @@ void ComputerManager::handleRestartHost(const QString& uuid, ResponseCallback re
     if (!backend) {
         respond(HttpResponse::json(
             {{"status", "error"},
-             {"message", "This host has no control API MoonlightWeb can restart it through"}},
+             {"message", "This host has no control API S3XYCast PC can restart it through"}},
             501));
         return;
     }
@@ -2263,7 +2263,7 @@ void ComputerManager::startBoxArtFetch(const QString& uuid, int appId)
 
     QNetworkRequest artReq(artUrl);
     artReq.setTransferTimeout(5000);
-    artReq.setRawHeader("User-Agent", "MoonlightWeb/0.1");
+    artReq.setRawHeader("User-Agent", "S3XYCastPC/0.1");
     // Close immediately — don't leave the TLS socket pooled ~120s holding
     // Sunshine's single-threaded HTTPS server (see NvHTTP::closeWhenDone).
     artReq.setRawHeader("Connection", "close");

@@ -783,7 +783,7 @@ bool CertManager::generateSelfSignedCert()
     QFile::remove(certDir + "cert.pem");
 
     if (!generateSelfSignedToFiles(certDir + "cert.pem", certDir + "key.pem", sans,
-                                   "MoonlightWeb")) {
+                                   "S3XYCast PC")) {
         Logger::error("Failed to generate self-signed certificate (libcrypto)");
         return false;
     }
@@ -838,7 +838,7 @@ void CertManager::ensureLocalSslConfig()
         // Replace the old cert with one naming the current addresses.
         QFile::remove(certPath);
         bool keptKey = false;
-        if (!generateSelfSignedToFiles(certPath, keyPath, sans, "MoonlightWeb", true, &keptKey)) {
+        if (!generateSelfSignedToFiles(certPath, keyPath, sans, "S3XYCast PC", true, &keptKey)) {
             Logger::error("[CERT] Cannot generate local self-signed cert (libcrypto)");
             return;
         }

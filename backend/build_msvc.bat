@@ -11,7 +11,7 @@ REM
 REM  Optional overrides (set before running):
 REM      set QTDIR=C:\Qt\6.11.0\msvc2022_64    Qt kit, if not auto-detected
 REM      set BUILD_DIR=build                   build directory (default: build)
-REM      set MW_EDITION=dev                    the DEV edition (MoonlightWebDev.exe,
+REM      set MW_EDITION=dev                    the DEV edition (S3XYCastPCDev.exe,
 REM                                            see src/common/Edition.h) — give it
 REM                                            its own BUILD_DIR, e.g. build-devedition
 REM      set BUILD_JOBS=2                      cap the parallel compile (a machine
@@ -90,14 +90,14 @@ where ninja >nul 2>&1 || (
 REM ---- Configure + build ----
 REM  Failures are tested with `neq 0`, never `if errorlevel 1`: the latter is a
 REM  signed >= comparison, and cmake returns -1 when the link step fails (a
-REM  locked MoonlightWeb.exe gives LNK1104 -> -1). That slipped straight through
+REM  locked S3XYCastPC.exe gives LNK1104 -> -1). That slipped straight through
 REM  and the script went on to announce a successful build.
 REM  MW_EDITION is passed only when set: an existing build directory keeps the
 REM  edition it was configured with (the CMake cache holds it).
 set "EDITION_ARG="
 if defined MW_EDITION set "EDITION_ARG=-DMW_EDITION=%MW_EDITION%"
-set "MW_EXE=MoonlightWeb.exe"
-if /i "%MW_EDITION%"=="dev" set "MW_EXE=MoonlightWebDev.exe"
+set "MW_EXE=S3XYCastPC.exe"
+if /i "%MW_EDITION%"=="dev" set "MW_EXE=S3XYCastPCDev.exe"
 echo [BUILD] Configuring (Ninja, Release)...
 cmake -S "%ROOT%\backend" -B "%BUILD_DIR%" -G Ninja ^
     -DCMAKE_BUILD_TYPE=Release ^

@@ -53,7 +53,7 @@ constexpr bool inAnyList(int port)
 }
 // The question whose answer is known is only known if nobody writes there.
 static_assert(!inAnyList(mw::routerholes::kKnownQuestionPort),
-              "the port the sweep asks about first is one a MoonlightWeb may hold");
+              "the port the sweep asks about first is one a S3XYCast PC may hold");
 
 /// What a router may say of an entry: an address in figures, a port, and a
 /// description that is text.

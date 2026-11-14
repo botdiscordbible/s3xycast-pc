@@ -63,6 +63,11 @@ inline constexpr char kEditionRendezvousUrl[] = "https://pc.s3xycast.com";
 // overrides it.
 inline constexpr char kEditionStunUrl[] = "stun:stun.cloudflare.com:3478";
 
+/// The organisation the state is filed under (QCoreApplication's, so the
+/// folder above the application's in AppData and the QSettings key): the
+/// edition's own, so that nothing of it lands in upstream's.
+inline constexpr char kOrganizationName[] = "S3XYCast";
+
 // Ports a DEV identity listens on by default, clear of the production 80/443
 // and of the GameStream ranges (47984-48010 stock, 48100+ for MultiSeat seats).
 // The signaling base also seeds the control channel (+2) and the per-slot
@@ -88,7 +93,7 @@ QString versionFor(const QString& base, bool dev);
 /// The launcher's name: what the installer registered this build under (the
 /// executable, the service, the scheduled tasks, the LaunchAgent). A property
 /// of the build alone — a --dev run of the production binary is still started
-/// from MoonlightWeb.exe, and must not go looking for a DEV install's tasks.
+/// from S3XYCastPC.exe, and must not go looking for a DEV install's tasks.
 QString productNameFor(bool devBuild);
 
 // ── This process ─────────────────────────────────────────────────────────────

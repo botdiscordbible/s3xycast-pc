@@ -323,7 +323,7 @@ public:
     {
         if (!m_Core || m_Sweep.isEmpty()) return;
         if (!m_Core->sweepBelieved(m_Sweep)) {
-            Logger::info(QStringLiteral("[UPNP] Asked about a port no MoonlightWeb ever maps, the "
+            Logger::info(QStringLiteral("[UPNP] Asked about a port no S3XYCast PC ever maps, the "
                                         "router did not answer that it has no such entry: "
                                         "nothing an earlier run left on it is removed"));
             m_Sweep.clear();

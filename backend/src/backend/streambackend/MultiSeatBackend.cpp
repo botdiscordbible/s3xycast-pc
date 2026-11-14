@@ -191,7 +191,7 @@ void MultiSeatBackend::pairSeat(const MultiSeatSeat& seat, const QString& addres
             Logger::info(QStringLiteral("MultiSeat: pushing PIN to the Apollo web UI of seat %1")
                              .arg(accountName));
             m_PinPusher->sendPin(announced, m_PairUser, m_PairPassword,
-                                 QStringLiteral("moonlightweb"), webUiPort, address);
+                                 QStringLiteral("S3XYCast PC"), webUiPort, address);
         },
         [this, seatId, accountName, cb](const PairingChain::Result& result) {
             if (result.outcome == PairingChain::Outcome::Paired) {
@@ -310,7 +310,7 @@ void MultiSeatBackend::ensurePaired(BackendVoidCallback cb)
                     "3. Restrict port 9550 to this server's address with a New-NetFirewallRule "
                     "-RemoteAddress rule — otherwise the key is reachable from every machine "
                     "on the network.\n"
-                    "Installing MoonlightWeb on the MultiSeat machine avoids all of this.");
+                    "Installing S3XYCast PC on the MultiSeat machine avoids all of this.");
             }
             cb(false, mapped);
             return;

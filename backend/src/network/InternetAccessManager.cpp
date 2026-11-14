@@ -471,7 +471,7 @@ QString InternetAccessManager::detectPublicIpViaHttp()
 
         QByteArray request = QStringLiteral("GET / HTTP/1.1\r\n"
                                             "Host: %1\r\n"
-                                            "User-Agent: MoonlightWeb/1.0\r\n"
+                                            "User-Agent: S3XYCastPC/1.0\r\n"
                                             "Connection: close\r\n\r\n")
                                  .arg(host)
                                  .toUtf8();

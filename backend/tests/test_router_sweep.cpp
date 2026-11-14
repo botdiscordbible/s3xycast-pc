@@ -534,8 +534,8 @@ void run_router_sweep_tests()
         CHECK(r.ok && r.claim.external == 3478 && r.claim.tcp);
         CHECK(b.record.lines == (QList<Hole>{tunnelLine(3478), tunnelLine(3478, true)}));
         // What the router's page shows ends with this installation's tag
-        CHECK(b.gw.table[udp(3478)].description == QStringLiteral("MoonlightWeb tunnel a3f9c1"));
-        CHECK(b.gw.table[tcp(3478)].description == QStringLiteral("MoonlightWeb tunnel a3f9c1"));
+        CHECK(b.gw.table[udp(3478)].description == QStringLiteral("S3XYCast PC tunnel a3f9c1"));
+        CHECK(b.gw.table[tcp(3478)].description == QStringLiteral("S3XYCast PC tunnel a3f9c1"));
         // What this run holds is not something an earlier one left
         CHECK(b.core.sweepList().isEmpty());
         CHECK(b.core.sweep(tunnelLine(3478)).outcome == Swept::HeldAgain);
@@ -558,7 +558,7 @@ void run_router_sweep_tests()
         CHECK(slot.ok && slot.claim.external == 46100 && slot.claim.internal == second);
         CHECK(b.record.lines == (QList<Hole>{mediaLine(1, 46100), mediaLine(1, 46100, true)}));
         CHECK(b.gw.table[udp(46100)].description ==
-              QStringLiteral("MoonlightWeb media slot 1 a3f9c1"));
+              QStringLiteral("S3XYCast PC media slot 1 a3f9c1"));
         const auto shared =
             b.core.claim(RouterPortCore::muxRequest(false, RouterPortCore::kMuxBlock, {}));
         CHECK(shared.ok && shared.claim.external == mw::routerports::kMediaBasePort);
@@ -569,7 +569,7 @@ void run_router_sweep_tests()
         // Its TCP hole alongside, and its line
         CHECK(shared.claim.tcp && b.record.has(mw::routerports::kMediaBasePort, true));
         CHECK(b.gw.table[udp(mw::routerports::kMediaBasePort)].description ==
-              QStringLiteral("MoonlightWeb streams a3f9c1"));
+              QStringLiteral("S3XYCast PC streams a3f9c1"));
         // Every line the policy notes is one this kind of instance may have
         for (const Hole& noted : std::as_const(b.record.lines))
             CHECK(mw::routerholes::allowed(false, noted));
@@ -728,7 +728,7 @@ void run_router_sweep_tests()
         TableGateway gw;
         RouterPortCore core(gw, kAlwaysFree);
         CHECK(core.claim(RouterPortCore::tunnelRequest(false, {})).ok);
-        CHECK(gw.table[udp(3478)].description == QStringLiteral("MoonlightWeb tunnel"));
+        CHECK(gw.table[udp(3478)].description == QStringLiteral("S3XYCast PC tunnel"));
     }
 
     SECTION("RouterSweep: what the record says is what the router shows");

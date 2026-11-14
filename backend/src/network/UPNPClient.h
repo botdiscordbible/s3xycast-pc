@@ -52,7 +52,7 @@ public:
     // protocol: "TCP" or "UDP" (default: "UDP" for backward compat).
     // Returns true if the mapping was added successfully.
     bool addPortMapping(uint16_t externalPort, uint16_t internalPort, uint32_t leaseDurationSec = 0,
-                        const std::string& desc = "MoonlightWeb",
+                        const std::string& desc = "S3XYCast PC",
                         const std::string& protocol = "UDP");
 
     // What the IGD answered when asked for the mapping of one external port.

@@ -425,6 +425,15 @@ void run_log_scrubber_tests()
         QString(R"~([RDV] line up — "https://stream.moonlightweb.top/(link)")~"));
     CHECK_EQ(s.scrubLine("  From the internet: https://stream.dev.moonlightweb.top/wwj7jmmpb"),
              QString("  From the internet: https://stream.dev.moonlightweb.top/(link)"));
+    // S3XYCast edition: the link on its own entry server names the machine
+    // just as much, and is hidden the same way.
+    CHECK_EQ(
+        s.scrubLine(R"~([RDV] line up — "https://pc.s3xycast.com/41zvnyqjdnybgwhw8f20martz4")~"),
+        QString(R"~([RDV] line up — "https://pc.s3xycast.com/(link)")~"));
+    CHECK_EQ(s.scrubLine("  From the internet: https://PC.S3XYCast.com/wwj7jmmpb"),
+             QString("  From the internet: https://PC.S3XYCast.com/(link)"));
+    CHECK_EQ(s.scrubLine("served https://pc.s3xycast.com/v1/boot.js"),
+             QString("served https://pc.s3xycast.com/v1/boot.js"));
     CHECK_EQ(s.scrubLine("[k3j4 guest 2@192.168.1.20] page /p/Zx81-abcdefgh — Mozilla/5.0"),
              QString("[k3j4 guest 2@192.168.x.{a2}] page /p/(link) — Mozilla/5.0"));
     CHECK_EQ(s.scrubLine("[k3j4 owner@192.168.1.20] page /41zvnyqjdnybgwhw8f20martz4 — x"),

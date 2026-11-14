@@ -26,7 +26,7 @@ namespace {
 const QString kTcp = QStringLiteral("TCP");
 const QString kUdp = QStringLiteral("UDP");
 const QString kTag = QStringLiteral("a3f9c1");
-const QString kText = QStringLiteral("MoonlightWeb TCP 443 a3f9c1");
+const QString kText = QStringLiteral("S3XYCast PC TCP 443 a3f9c1");
 const QString kPublic = QStringLiteral("1.2.3.4");
 const QString kLan = QStringLiteral("192.168.1.20");
 const QString kFormerLan = QStringLiteral("192.168.1.77");
@@ -326,7 +326,7 @@ void stepByStep()
         Rig r;
         r.notes.note(lineUnder(kLan));
         r.box.table[{kPort, kTcp}] =
-            rowOf(kLan, kBlock, QStringLiteral("MoonlightWeb TCP 443 ffffff"));
+            rowOf(kLan, kBlock, QStringLiteral("S3XYCast PC TCP 443 ffffff"));
         CHECK(r.claim(wanted()).step == 2);
         CHECK(r.box.removes == 0 && r.box.has443());
     }

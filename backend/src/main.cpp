@@ -613,9 +613,9 @@ static QString notRunningText(quint16 persistedPort)
 {
     if (answersOnThisMachine(persistedPort))
         return QStringLiteral(
-            "MoonlightWeb is running under another account: run this command as that account\n"
+            "S3XYCast PC is running under another account: run this command as that account\n"
             "(for the system service: with sudo).\n");
-    return QStringLiteral("MoonlightWeb is not running — start it first "
+    return QStringLiteral("S3XYCast PC is not running — start it first "
                           "(sudo systemctl start moonlightweb).\n");
 }
 
@@ -624,18 +624,16 @@ static QString notRunningText(quint16 persistedPort)
 // audit log records the exact words that were shown — same contract as the
 // wizard's checkbox text (frontend/js/ui/SetupView.js).
 static const char* kCliInternetConsent =
-    "MoonlightWeb will make this machine reachable from outside your local "
-    "network. While the link is on, your router is asked (UPnP) to open a "
-    "streaming port during each session, and whoever connects reaches this "
-    "machine directly - each side of a peer-to-peer connection sees the "
-    "other's public IP address. A future update will add an outgoing "
-    "connection to the MoonlightWeb introduction server, which then sees this "
-    "machine's public IP address and when it is online. No public DNS record "
+    "S3XYCast PC will make this machine reachable from outside your local "
+    "network. While the link is on, this machine keeps an outgoing "
+    "connection to the S3XYCast entry server (pc.s3xycast.com), which sees "
+    "its public IP address and when it is online. Your router is asked "
+    "(UPnP) to open a streaming port during each session, and whoever "
+    "connects reaches this machine directly - each side of a peer-to-peer "
+    "connection sees the other's public IP address. No public DNS record "
     "is created, no certificate is issued for this machine, and ports 80/443 "
     "are not opened. You can turn the link off at any time from the Admin "
-    "page. (An instance that already holds a moonlightweb.top sub-domain "
-    "keeps it, and its existing behaviour, until the announced shutdown of "
-    "the DNS service in February 2027.)";
+    "page.";
 
 // stdin is a terminal — i.e. there is a human who can answer a prompt.
 static bool stdinIsInteractive()
@@ -656,7 +654,7 @@ static int runStatusCommand(quint16 persistedHttpsPort)
         if (answersOnThisMachine(persistedHttpsPort))
             out << notRunningText(persistedHttpsPort);
         else
-            out << "MoonlightWeb is not running (nothing answers on this machine).\n"
+            out << "S3XYCast PC is not running (nothing answers on this machine).\n"
                 << "\n"
                 << "  systemd:  sudo systemctl status moonlightweb\n"
                 << "  logs:     ~/.local/share/MoonlightWeb/MoonlightWeb/logs/moonlightweb.log\n";
@@ -673,7 +671,7 @@ static int runStatusCommand(quint16 persistedHttpsPort)
     const QString portSuffix = httpsPort == 443 ? QString() : QStringLiteral(":%1").arg(httpsPort);
     const bool headless = setup.value("headless").toBool(false);
 
-    out << "MoonlightWeb " << server.value("version").toString() << " — running";
+    out << "S3XYCast PC " << server.value("version").toString() << " — running";
     if (headless) out << " (headless)";
     out << "\n\n";
 
@@ -1870,7 +1868,7 @@ int main(int argc, char* argv[])
     // place that reports it reads it from here.
     QCoreApplication::setApplicationName(mw::edition::dataName());
     QCoreApplication::setApplicationVersion(mw::edition::version());
-    QCoreApplication::setOrganizationName("MoonlightWeb");
+    QCoreApplication::setOrganizationName(QLatin1String(mw::edition::kOrganizationName));
 
     // Dock (macOS) / taskbar icon fallback: without this the Dock shows an
     // empty icon when the bundle .icns is missing or unreadable.
@@ -2046,7 +2044,7 @@ int main(int argc, char* argv[])
 
     // Parse command line
     QCommandLineParser parser;
-    parser.setApplicationDescription("MoonlightWeb streaming server");
+    parser.setApplicationDescription(mw::edition::displayName() + QStringLiteral(" streaming server"));
     parser.addHelpOption();
     parser.addVersionOption();
 
@@ -2400,7 +2398,7 @@ int main(int argc, char* argv[])
         return runStreamWorker(app);
     }
 
-    Logger::info("MoonlightWeb server starting...");
+    Logger::info(mw::edition::displayName() + QStringLiteral(" server starting..."));
     Logger::info("Version: " + QCoreApplication::applicationVersion());
     // Which QPA plugin won the fallback list — "offscreen" is the whole story
     // behind a missing tray icon or an admin page that never opened by itself,
@@ -7718,7 +7716,7 @@ int main(int argc, char* argv[])
             resp.statusCode = 200;
             resp.contentType = "text/csv; charset=utf-8";
             resp.headers["Content-Disposition"] =
-                "attachment; filename=\"moonlightweb-connections.csv\"";
+                "attachment; filename=\"s3xycast-pc-connections.csv\"";
             resp.headers["Cache-Control"] = "no-store";
             resp.body = QByteArrayLiteral("\xEF\xBB\xBF") +
                         connectionHistory.download(QDateTime::currentDateTime());

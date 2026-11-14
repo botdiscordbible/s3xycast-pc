@@ -108,7 +108,7 @@ std::string noCableReason(const std::string& device, bool steamSeen)
         return "no playback device named like \"" + device +
                "\" (settings.json mic_device) is active on this PC";
     std::string why = "this PC has no virtual audio cable to play the microphone into. Install "
-                      "VB-CABLE (vb-audio.com/Cable): MoonlightWeb plays into its \"CABLE "
+                      "VB-CABLE (vb-audio.com/Cable): S3XYCast PC plays into its \"CABLE "
                       "Input\", and apps record it as \"CABLE Output\"";
     if (steamSeen)
         why += ". Steam's \"Steam Streaming Microphone\" is not used: it does not convert the "

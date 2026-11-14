@@ -67,8 +67,9 @@ QString onOff(bool on, bool fromCli)
 QByteArray aboutText()
 {
     QString s;
-    s += QStringLiteral("MoonlightWeb %1 (%2)\n")
-             .arg(QCoreApplication::applicationVersion(), mw::edition::displayName());
+    s += QStringLiteral("%2 %1 (%3)\n")
+             .arg(QCoreApplication::applicationVersion(), mw::edition::displayName(),
+                  mw::edition::dataName());
     s += QStringLiteral("Archived: %1\n")
              .arg(QDateTime::currentDateTime().toString(Qt::ISODateWithMs));
     s += QStringLiteral("System: %1, %2 %3, %4\n")
@@ -91,7 +92,7 @@ QByteArray aboutText()
 // No machine name in it: a file's name shows wherever it is attached.
 QString archiveName()
 {
-    return QStringLiteral("moonlightweb-logs-%1.zip")
+    return QStringLiteral("s3xycast-pc-logs-%1.zip")
         .arg(QDateTime::currentDateTime().toString(QStringLiteral("yyyyMMdd-HHmmss")));
 }
 

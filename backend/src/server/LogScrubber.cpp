@@ -17,6 +17,8 @@
 
 #include "LogScrubber.h"
 
+#include "common/Edition.h"
+
 #include <QHostAddress>
 #include <QRegularExpression>
 #include <QSet>
@@ -398,8 +400,14 @@ QString LogScrubber::scrubLine(QString line)
     line.replace(window, QStringLiteral("\\1") + kHidden);
 
     // ── Links that open this instance ────────────────────────────────────────
-    static const QRegularExpression rdv =
-        re(R"(\b((?:stream|app)(?:\.dev)?\.moonlightweb\.top)/(?!\(link\))([A-Za-z0-9_-]{6,}))");
+    // S3XYCast edition: its own entry server first, then upstream's names (a
+    // machine that ran MoonlightWeb before may still hold them in an old log).
+    static const QRegularExpression rdv(
+        QStringLiteral(R"~(\b()~") +
+            QRegularExpression::escape(QLatin1String(mw::edition::kEditionDomain)) +
+            QStringLiteral(
+                R"~(|(?:stream|app)(?:\.dev)?\.moonlightweb\.top)/(?!\(link\))([A-Za-z0-9_-]{6,}))~"),
+        QRegularExpression::CaseInsensitiveOption);
     line.replace(rdv, QStringLiteral("\\1/(link)"));
     static const QRegularExpression share(
         QStringLiteral(R"((?<![A-Za-z0-9_])/p/[A-Za-z0-9_-]{6,})"));

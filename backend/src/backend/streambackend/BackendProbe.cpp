@@ -223,7 +223,7 @@ void probeSunshineRest(const QString& address, quint16 httpPort,
         const QByteArray crlf = "\r\n";
         const QByteArray req = "GET /api/apps HTTP/1.1" + crlf + "Host: " + address.toUtf8() + ':' +
                                QByteArray::number(port) + crlf + "Connection: close" + crlf +
-                               "User-Agent: MoonlightWeb" + crlf + crlf;
+                               "User-Agent: S3XYCastPC" + crlf + crlf;
         sock->write(req);
     });
 

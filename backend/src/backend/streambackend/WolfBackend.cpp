@@ -102,7 +102,7 @@ void WolfBackend::announcePin(const QString& pin, const QSet<QString>& knownSecr
     if (attemptsLeft <= 0) {
         Logger::warning(
             QStringLiteral("Wolf auto-pair: no pairing request appeared on the host; "
-                           "is MoonlightWeb reaching the same Wolf it is pairing with?"));
+                           "is S3XYCast PC reaching the same Wolf it is pairing with?"));
         return;
     }
 

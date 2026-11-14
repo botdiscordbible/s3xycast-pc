@@ -20,10 +20,10 @@ void run_edition_tests()
 
     // State: three separate homes. A plain --dev run keeps the name every
     // existing dev instance already stores its pairings under.
-    CHECK_EQ(dataNameFor(false, false), QStringLiteral("MoonlightWeb"));
-    CHECK_EQ(dataNameFor(true, false), QStringLiteral("MoonlightWebDev"));
-    CHECK_EQ(dataNameFor(false, true), QStringLiteral("MoonlightWeb-dev"));
-    CHECK_EQ(dataNameFor(true, true), QStringLiteral("MoonlightWebDev-dev"));
+    CHECK_EQ(dataNameFor(false, false), QStringLiteral("S3XYCastPC"));
+    CHECK_EQ(dataNameFor(true, false), QStringLiteral("S3XYCastPCDev"));
+    CHECK_EQ(dataNameFor(false, true), QStringLiteral("S3XYCastPC-dev"));
+    CHECK_EQ(dataNameFor(true, true), QStringLiteral("S3XYCastPCDev-dev"));
 
     // What a person reads: production, or DEV — whichever way it became DEV.
     // S3XYCast edition: the edition's own name.
@@ -34,8 +34,8 @@ void run_edition_tests()
 
     // The launcher's name follows the build only: a --dev run of the production
     // binary must not look for a DEV install's service or tasks.
-    CHECK_EQ(productNameFor(false), QStringLiteral("MoonlightWeb"));
-    CHECK_EQ(productNameFor(true), QStringLiteral("MoonlightWebDev"));
+    CHECK_EQ(productNameFor(false), QStringLiteral("S3XYCastPC"));
+    CHECK_EQ(productNameFor(true), QStringLiteral("S3XYCastPCDev"));
 
     // The version carries the suffix once, and only in DEV.
     CHECK_EQ(versionFor(QStringLiteral("0.3.0"), false), QStringLiteral("0.3.0"));
@@ -64,7 +64,7 @@ void run_edition_tests()
     init(2, withFlag);
     CHECK(devFlag());
     CHECK(isDev());
-    CHECK_EQ(dataName(), QStringLiteral("MoonlightWeb-dev"));
+    CHECK_EQ(dataName(), QStringLiteral("S3XYCastPC-dev"));
     CHECK_EQ(defaultHttpPort(), kDevHttpPort);
     CHECK_EQ(defaultHttpsPort(), kDevHttpsPort);
     CHECK_EQ(iconAsset(QStringLiteral("icon-512.png")), QStringLiteral("assets/dev/icon-512.png"));

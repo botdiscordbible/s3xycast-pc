@@ -212,7 +212,7 @@ bool UPNPClient::discover(int timeoutMs)
 // which, so that no log carries a mark an installation keeps for life.
 [[maybe_unused]] static std::string shownDescription(const std::string& desc)
 {
-    static const std::string product = "MoonlightWeb ";
+    static const std::string product = "S3XYCast PC ";
     if (desc.size() < product.size() + 7 || desc.compare(0, product.size(), product) != 0)
         return desc;
     const size_t tagAt = desc.size() - 6;

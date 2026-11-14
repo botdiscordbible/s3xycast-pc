@@ -53,8 +53,8 @@ void run_host_upload_cap_tests()
 {
     SECTION("HostUploadCap — the policies are named after the worker");
     {
-        CHECK_EQ(capName(4242), std::string("MoonlightWeb host cap 4242"));
-        CHECK_EQ(streamName(4242), std::string("MoonlightWeb stream 4242"));
+        CHECK_EQ(capName(4242), std::string("S3XYCast PC host cap 4242"));
+        CHECK_EQ(streamName(4242), std::string("S3XYCast PC stream 4242"));
     }
 
     SECTION("HostUploadCap — a quote in the path cannot end the literal");
@@ -69,11 +69,11 @@ void run_host_upload_cap_tests()
         const std::string s =
             onScript(4242, "C:\\Program Files\\MoonlightWeb\\MoonlightWeb.exe", 20, 34);
         // Leftovers of workers no longer running.
-        CHECK(has(s, "'^MoonlightWeb (host cap|stream) (\\d+)$'"));
+        CHECK(has(s, "'^S3XYCast PC (host cap|stream) (\\d+)$'"));
         CHECK(has(s, "Get-Process -Id ([int]$Matches[2])"));
         // The exemption: this executable, its own DSCP, no cap, and the highest
         // precedence, or the cap wins over it.
-        const size_t stream = s.find("New-NetQosPolicy -Name 'MoonlightWeb stream 4242'");
+        const size_t stream = s.find("New-NetQosPolicy -Name 'S3XYCast PC stream 4242'");
         CHECK(stream != std::string::npos);
         CHECK(has(
             s, "-AppPathNameMatchCondition 'C:\\Program Files\\MoonlightWeb\\MoonlightWeb.exe'"));
@@ -83,7 +83,7 @@ void run_host_upload_cap_tests()
         CHECK(has(streamLine, " -Precedence 255 "));
         CHECK(!has(streamLine, "-ThrottleRateActionBitsPerSecond"));
         // The cap: everything, 20 Mbit/s in bits per second, ActiveStore only.
-        const size_t cap = s.find("New-NetQosPolicy -Name 'MoonlightWeb host cap 4242'");
+        const size_t cap = s.find("New-NetQosPolicy -Name 'S3XYCast PC host cap 4242'");
         CHECK(cap != std::string::npos);
         CHECK(stream < cap);
         CHECK(!has(s.substr(cap, s.find('\n', cap) - cap), "-Precedence"));
@@ -107,7 +107,7 @@ void run_host_upload_cap_tests()
     SECTION("HostUploadCap — off: the cap first, twice, 5 s apart");
     {
         const std::string s = offScript(4242);
-        CHECK(has(s, "$names = 'MoonlightWeb host cap 4242', 'MoonlightWeb stream 4242'"));
+        CHECK(has(s, "$names = 'S3XYCast PC host cap 4242', 'S3XYCast PC stream 4242'"));
         CHECK(has(s, "foreach ($round in 1, 2)"));
         CHECK(has(s, "Start-Sleep -Seconds 5"));
         CHECK(has(s, "Remove-NetQosPolicy -Name $n -PolicyStore ActiveStore -Confirm:$false"));

@@ -187,7 +187,7 @@ bool pairSunshine(ComputerManager& computers, const QString& user, const QString
     // and getservercert is already in flight, letting Sunshine attach the PIN to
     // the pending request.
     QTimer::singleShot(800, rest, [rest, pin, user, pass, restPort]() {
-        rest->sendPin(pin, user, pass, QStringLiteral("MoonlightWeb"), restPort);
+        rest->sendPin(pin, user, pass, QStringLiteral("S3XYCast PC"), restPort);
     });
 
     // Drive the (asynchronous) pairing chain to completion under a local event

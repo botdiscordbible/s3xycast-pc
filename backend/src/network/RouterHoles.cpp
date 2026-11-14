@@ -189,10 +189,10 @@ QString describe(Kind kind, int slot, const QString& tag)
 {
     QString text;
     switch (kind) {
-    case Kind::Tunnel: text = QStringLiteral("MoonlightWeb tunnel"); break;
-    case Kind::Streams: text = QStringLiteral("MoonlightWeb streams"); break;
-    case Kind::Media: text = QStringLiteral("MoonlightWeb media slot %1").arg(slot); break;
-    case Kind::Tcp443: text = QStringLiteral("MoonlightWeb TCP 443"); break;
+    case Kind::Tunnel: text = QStringLiteral("S3XYCast PC tunnel"); break;
+    case Kind::Streams: text = QStringLiteral("S3XYCast PC streams"); break;
+    case Kind::Media: text = QStringLiteral("S3XYCast PC media slot %1").arg(slot); break;
+    case Kind::Tcp443: text = QStringLiteral("S3XYCast PC TCP 443"); break;
     }
     return tag.isEmpty() ? text : text + QLatin1Char(' ') + tag;
 }

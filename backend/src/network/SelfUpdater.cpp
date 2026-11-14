@@ -322,7 +322,7 @@ QString SelfUpdater::start()
     const QString method = elevationMethod();
     if (method.isEmpty())
         return QStringLiteral("This platform has no unattended update path — "
-                              "update MoonlightWeb on the host manually");
+                              "update S3XYCast PC on the host manually");
 
     m_method = method;
     m_recheckDone = false;
@@ -375,7 +375,7 @@ QString SelfUpdater::beginDownload()
     m_percent = 0;
 
     QNetworkRequest req{QUrl(url)};
-    req.setRawHeader("User-Agent", "MoonlightWeb-SelfUpdater");
+    req.setRawHeader("User-Agent", "S3XYCastPC-SelfUpdater");
     req.setAttribute(QNetworkRequest::RedirectPolicyAttribute,
                      QNetworkRequest::NoLessSafeRedirectPolicy);
     AddressRace::enableOn(req);
@@ -564,7 +564,7 @@ QString SelfUpdater::startViaSystemTask(const QString& program, const QStringLis
     QString xml = QStringLiteral(
         "<?xml version=\"1.0\" encoding=\"UTF-16\"?>\r\n"
         "<Task version=\"1.2\" xmlns=\"http://schemas.microsoft.com/windows/2004/02/mit/task\">\r\n"
-        "  <RegistrationInfo><Author>MoonlightWeb</Author></RegistrationInfo>\r\n"
+        "  <RegistrationInfo><Author>S3XYCast PC</Author></RegistrationInfo>\r\n"
         "  <Principals><Principal id=\"Author\">"
         "<UserId>S-1-5-18</UserId>" // LocalSystem: we are already SYSTEM, so no prompt
         "<RunLevel>HighestAvailable</RunLevel></Principal></Principals>\r\n"
@@ -877,7 +877,7 @@ void SelfUpdater::armWatchdog()
     connect(m_watchdog, &QTimer::timeout, this, [this]() {
         // Keep the staged installer: a prompt may still be waiting for someone
         // on the host desktop, and it is that file it would run.
-        fail(QStringLiteral("The installer did not go through — MoonlightWeb is still "
+        fail(QStringLiteral("The installer did not go through — S3XYCast PC is still "
                             "running the old version. Check the host PC."),
              false);
     });

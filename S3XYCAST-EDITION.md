@@ -19,6 +19,10 @@ desktop, with sound, touch as a mouse, keyboard and controller. It ships no game
 | 2026-11-14 | **Name and look.** The interface is called S3XYCast PC and wears the S3XYCast site's look: `frontend/css/s3xycast.css` (loaded last, over upstream's design tokens), `frontend/js/brand.js`, the icons under `frontend/assets/`, the texts in `frontend/locales/`. Upstream's community invite and donation button are hidden: this edition's users are helped by S3XYCast. |
 | 2026-11-14 | **Its own servers, never upstream's.** The program registers with this edition's introduction server (`pc.s3xycast.com`: `mw::edition::kEditionDomain`, `kEditionRendezvousUrl`), finds its public address through a public STUN server (`kEditionStunUrl`) and looks for updates in this edition's own releases. Nothing goes to MoonlightWeb's servers. The entry page (`bootstrap/`) carries the edition's name and look, speaks French to a French browser (`bootstrap/v1/words.js`), and lets an unreleased interface through on a loopback address only. |
 | 2026-11-14 | **About window.** The footer's credit line became an About button (`frontend/js/ui/AboutDialog.js`): the licence, the absence of warranty, MoonlightWeb's name, author and copyright line, and links to the licence and to the project. It is the one place of the interface that names upstream; the catalogues take both names from `frontend/js/brand.js` and no longer write them (`frontend/test/AboutDialog.test.js` holds that). |
+| 2026-11-14 | **Its own product identity.** `mw::edition::productNameFor` is `S3XYCastPC` (`S3XYCastPCDev` for a DEV build) and the organisation is `S3XYCast` (`kOrganizationName`): the executable, the data folder, the scheduled tasks, the local channels and the staging folders are the edition's own, so that on a machine that also has MoonlightWeb it never reads or writes MoonlightWeb's. What a router lists (UPnP), what a certificate, Sunshine's device list, a Windows QoS policy or a downloaded file is called, and what the program says about itself, read S3XYCast PC; its requests are signed `S3XYCastPC`. The drivers keep the names they were signed under (`MoonlightWeb Virtual HID`, the VDD package); the virtual display takes the product's name. |
+| 2026-11-14 | **Consent text.** The Internet-access agreement says what this edition does: the S3XYCast entry server by name, and the public STUN servers that are actually asked. Wizard, admin page, installer and command line, in every language they speak. |
+| 2026-11-14 | **Log scrubbing.** A log shared for support hides the machine's link on this edition's entry server, as it hides one on upstream's (`LogScrubber.cpp`). |
+| 2026-11-14 | **Introduction server.** `mw-rendezvous` can read its owner secret from a file (`MW_RDV_OWNER_SECRET_FILE`), for a Windows service whose environment would otherwise sit in the registry. |
 | 2026-11-14 | **Plain words.** The home page, the login page and the admin page say what they do in everyday words (a native host's screens are "Screen fitted to this device" and "PC screen 1"; the session name is folded under "More options"). |
 
 Upstream's stylesheets are not edited: the look is one additional file, so that taking a new
@@ -36,9 +40,14 @@ input drivers, and everything else not listed above are upstream's, unmodified.
   behind a TLS front) still has to be installed there. The entry page refuses, by design, an
   interface that is not one of the published releases: each release of this edition needs its list
   in `bootstrap/v1/interfaces/` (`scripts/interface-list.mjs`), and upstream's lists removed.
-- **Its own product identity**: executable, data folder, scheduled tasks and installer names
-  (`mw::edition::productNameFor`, `backend/installer/`), an update channel that points at this
-  edition's releases, and upstream's census switched off.
+- **Its Windows installer.** `backend/installer/moonlightweb.iss` and `deploy.bat` still carry
+  upstream's names: the application id, the folders under `%AppData%`, the registry keys and the
+  task authors have to become the edition's (the program already looks for them under its own
+  name), and the staged update keeps upstream's file name until then (`SelfUpdater`,
+  `UpdateApply`). The update channel points at this edition's releases, which do not exist yet.
+- **Versions.** The edition has its own line of versions, tagged `vX.Y.Z` on its branch (the build
+  reads the nearest tag). A release is: the list of its interface built and committed, the tag,
+  the build, and the list published on the entry server before any machine installs it.
 - **Font licences next to the fonts**: Overpass (Red Hat, SIL Open Font License 1.1,
   <https://github.com/RedHatOfficial/Overpass>) and Geist Mono (Vercel, SIL Open Font License 1.1,
   <https://github.com/vercel/geist-font>), in `frontend/assets/fonts/`.

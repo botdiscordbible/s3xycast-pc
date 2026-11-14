@@ -409,7 +409,7 @@ public:
     /// native engine can; a GameStream host has no way to, and says so.
     virtual QString hidUnavailableReason() const
     {
-        return QStringLiteral("the HID passthrough needs MoonlightWeb's native host");
+        return QStringLiteral("the HID passthrough needs S3XYCast PC's native host");
     }
     /// The page's hidattach. Empty on success, otherwise why the device was
     /// refused (for the page and the log).

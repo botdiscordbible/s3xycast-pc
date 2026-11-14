@@ -39,12 +39,12 @@ namespace mw::hostcap {
 
 std::string capName(unsigned long pid)
 {
-    return "MoonlightWeb host cap " + std::to_string(pid);
+    return "S3XYCast PC host cap " + std::to_string(pid);
 }
 
 std::string streamName(unsigned long pid)
 {
-    return "MoonlightWeb stream " + std::to_string(pid);
+    return "S3XYCast PC stream " + std::to_string(pid);
 }
 
 std::string psQuote(const std::string& s)
@@ -67,7 +67,7 @@ std::string onScript(unsigned long pid, const std::string& exePath, unsigned mbp
     s += "$ErrorActionPreference = 'Stop'\n";
     // A worker that died with its cap on: its process id runs no more.
     s += "Get-NetQosPolicy -PolicyStore ActiveStore | Where-Object { $_.Name -match "
-         "'^MoonlightWeb (host cap|stream) (\\d+)$' -and -not (Get-Process -Id ([int]$Matches[2]) "
+         "'^S3XYCast PC (host cap|stream) (\\d+)$' -and -not (Get-Process -Id ([int]$Matches[2]) "
          "-ErrorAction SilentlyContinue) } | ForEach-Object { Remove-NetQosPolicy -Name $_.Name "
          "-PolicyStore ActiveStore -Confirm:$false; \"swept $($_.Name)\" }\n";
     s += "foreach ($n in " + cap + ", " + stream +

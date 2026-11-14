@@ -87,7 +87,7 @@ public:
     {
         if (!hostIsHere)
             return "the host is another machine, and a microphone can only reach the one "
-                   "MoonlightWeb runs on";
+                   "S3XYCast PC runs on";
         if (!owner) return "an invited player cannot send a microphone";
         return {};
     }

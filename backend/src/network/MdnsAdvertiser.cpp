@@ -38,7 +38,7 @@ QString MdnsAdvertiser::instanceName(const QString& hostName, bool dev)
     QString name = hostName.trimmed();
     // A host name may come fully qualified: its first label is the machine.
     name = name.section(QLatin1Char('.'), 0, 0);
-    if (name.isEmpty()) name = QStringLiteral("MoonlightWeb");
+    if (name.isEmpty()) name = QStringLiteral("S3XYCast PC");
     const QString suffix = dev ? QStringLiteral(" DEV") : QString();
     // One DNS label: 63 bytes of UTF-8, the suffix kept whole.
     while (!name.isEmpty() && (name + suffix).toUtf8().size() > 63)

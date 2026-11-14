@@ -84,7 +84,7 @@ public:
     /// chain announces the PIN when stage 1 goes out rather than when the host
     /// has parked it, so across a network the PIN can arrive first.
     void sendPin(const QString& pin, const QString& user, const QString& pass,
-                 const QString& deviceName = QStringLiteral("moonlightweb"), quint16 port = 47990,
+                 const QString& deviceName = QStringLiteral("S3XYCast PC"), quint16 port = 47990,
                  const QString& host = QStringLiteral("127.0.0.1"));
 
 private:

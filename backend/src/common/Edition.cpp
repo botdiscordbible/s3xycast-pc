@@ -42,7 +42,9 @@ constexpr bool kDevBuild =
 
 QString productNameFor(bool devBuild)
 {
-    return devBuild ? QStringLiteral("MoonlightWebDev") : QStringLiteral("MoonlightWeb");
+    // S3XYCast edition: its own product name, so that it is installed, started and
+    // keeps its state beside upstream's on the same machine, never in its place.
+    return devBuild ? QStringLiteral("S3XYCastPCDev") : QStringLiteral("S3XYCastPC");
 }
 
 QString dataNameFor(bool devBuild, bool devFlag)
@@ -59,9 +61,9 @@ QString productName()
 
 QString displayNameFor(bool devBuild, bool devFlag)
 {
-    // S3XYCast edition: the name people read is the edition's. The launcher's
-    // name and the state's (productNameFor, dataNameFor) are still upstream's:
-    // the installer, the scheduled tasks and the drivers are keyed on them.
+    // S3XYCast edition: the name people read is the edition's, with its space.
+    // The launcher's name and the state's (productNameFor, dataNameFor) are the
+    // same name without it.
     return devBuild || devFlag ? QStringLiteral("S3XYCast PC Dev") : QStringLiteral("S3XYCast PC");
 }
 

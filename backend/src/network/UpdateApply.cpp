@@ -266,7 +266,7 @@ QString fetchLatestRelease(QJsonObject* release)
     QNetworkAccessManager nam;
     nam.setProxy(QNetworkProxy::NoProxy);
     QNetworkRequest req(url);
-    req.setRawHeader("User-Agent", "MoonlightWeb-UpdateApply");
+    req.setRawHeader("User-Agent", "S3XYCastPC-UpdateApply");
     req.setRawHeader("Accept", "application/vnd.github+json");
     req.setAttribute(QNetworkRequest::RedirectPolicyAttribute,
                      QNetworkRequest::ManualRedirectPolicy);

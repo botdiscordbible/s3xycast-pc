@@ -243,7 +243,7 @@ HttpResponse StaticFileHandler::serveFile(const QString& requestPath,
     // The name a home-screen shortcut takes: a DEV identity's must say so, like
     // its desktop and tray entries. The page itself keeps its title.
     if (ext == "webmanifest" && mw::edition::isDev())
-        resp.body.replace("\"MoonlightWeb\"", "\"MoonlightWebDev\"");
+        resp.body.replace("\"S3XYCast PC\"", "\"S3XYCast PC Dev\"");
 
     resp.headers["ETag"] = etag;
     resp.headers["Last-Modified"] = httpDate(lastModified);
