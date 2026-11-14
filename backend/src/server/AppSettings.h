@@ -1080,6 +1080,18 @@ public:
     /// Persist an encoded digest. An empty value falls back to the default.
     void setAdminPasswordDigest(const QString& digest);
 
+    // ── Personal access code (S3XYCast edition) ─────────────────────────────
+    // The owner's own code, which signs a new device in from anywhere (see
+    // AuthManager::validateAccessCode). Stored only as a PBKDF2 digest, like
+    // the admin password: a forgotten code is replaced from the host.
+
+    /// Encoded digest ("pbkdf2-sha256$<iters>$<salt>$<key>"), empty when no
+    /// personal code has been chosen: nothing then signs in that way.
+    QString accessCodeDigest() const;
+
+    /// Persist an encoded digest. An empty value removes the code.
+    void setAccessCodeDigest(const QString& digest);
+
     /// Whether the LAN may unlock admin access at all. Default: true.
     bool remoteAdminEnabled() const;
 

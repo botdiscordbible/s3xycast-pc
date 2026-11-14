@@ -216,6 +216,42 @@ public:
 
     static constexpr int MIN_ADMIN_PASSWORD_LEN = 8;
 
+    // ── Personal access code (S3XYCast edition) ─────────────────────────────
+    // A third way to a session, for an owner who is away from the host and
+    // cannot read a PIN there (in the car, the house empty). A code they chose
+    // on the host: persistent and reusable, so stored as a PBKDF2 digest like
+    // the admin password. Unlike that password it ADMITS a new device, exactly
+    // as a PIN does, so it is counted more strictly than one: on its own
+    // per-address counter (a wrong code never locks PIN login, nor the reverse)
+    // and, from outside the LAN, on one counter shared by the whole internet —
+    // an address costs nothing to change there. Until a code is set,
+    // validateAccessCode() matches nothing.
+
+    /// Why a code was not accepted by setAccessCode().
+    enum class AccessCodeRefusal
+    {
+        None,
+        TooShort,
+        TooLong,
+        TooWeak,    ///< one repeated character, a run of digits, or a household word
+        Unavailable ///< no settings store to keep it in
+    };
+
+    /// True when the owner chose a personal code.
+    bool accessCodeSet() const;
+    /// What setAccessCode() would answer for @p code, without storing anything.
+    static AccessCodeRefusal checkAccessCode(const QString& code);
+    /// Replace the code (trimmed, NFKC). Sessions it opened earlier stay: a
+    /// device is revoked from the sessions table, as after a PIN.
+    AccessCodeRefusal setAccessCode(const QString& code);
+    /// Forget the code: nothing signs in that way until a new one is chosen.
+    void clearAccessCode();
+    /// Rate-limited verification; always InvalidPin when no code is set.
+    ValidateResult validateAccessCode(const QString& ip, const QString& code);
+
+    static constexpr int MIN_ACCESS_CODE_LEN = 6;
+    static constexpr int MAX_ACCESS_CODE_LEN = 64;
+
     // ── Session management ─────────────────────────────────────────────────
     /// @param ephemeral The visitor declined "remember me": keep the session out
     ///                  of sessions.json and expire it after

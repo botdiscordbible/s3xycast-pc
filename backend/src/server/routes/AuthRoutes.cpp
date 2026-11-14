@@ -113,6 +113,50 @@ void registerAuthRoutes(HttpServer& server, AuthManager& authManager, GeoIpServi
             }
         }
 
+        // -- Personal access code (S3XYCast edition) ----------------------------
+        // The owner's own code, typed where no PIN can be read (in the car, the
+        // house empty). A session like a PIN's, and nothing is spent: the code
+        // stays the owner's. Counted on its own counters (validateAccessCode).
+        const QString code = body["code"].toString();
+        if (!code.isEmpty()) {
+            const auto result = authManager.validateAccessCode(
+                AuthManager::attemptAddress(req.clientAddress, req.headers), code);
+
+            QJsonObject obj;
+            switch (result.result) {
+            case AuthManager::Valid: {
+                const QString token =
+                    authManager.createSession(req.clientAddress, machineName, false, !remember);
+                geoIpService.lookupIp(
+                    req.clientAddress,
+                    [&authManager, token](const QString& city, const QString& country) {
+                        authManager.setSessionGeo(token, city, country);
+                    });
+
+                obj["status"] = "ok";
+                obj["auth_method"] = "access_code";
+                obj["remembered"] = remember;
+                bindKeyFromLoginBody(authManager, token, body, obj, settings);
+                HttpResponse resp = HttpResponse::json(obj);
+                resp.headers["Set-Cookie"] =
+                    sessionCookie(token, remember, authManager.cookieMaxAgeFor(token));
+                return resp;
+            }
+            case AuthManager::InvalidPin:
+                obj["status"] = "error";
+                obj["error"] = "invalid_code";
+                obj["remaining"] = result.remainingAttempts;
+                obj["lockout_seconds"] = result.lockoutSeconds;
+                return HttpResponse::json(obj, 401);
+            case AuthManager::RateLimited:
+                obj["status"] = "error";
+                obj["error"] = "rate_limited";
+                obj["lockout_seconds"] = result.lockoutSeconds;
+                return HttpResponse::json(obj, 429);
+            }
+            return HttpResponse::error(500, "Internal error");
+        }
+
         // ── PIN validation (default path) ──────────────────────────────
         if (pin.isEmpty()) return HttpResponse::error(400, "Missing 'pin' field");
 
@@ -454,6 +498,46 @@ void registerAuthRoutes(HttpServer& server, AuthManager& authManager, GeoIpServi
         obj["remote_admin_enabled"] = authManager.remoteAdminEnabled();
         obj["remote_admin_internet"] = authManager.remoteAdminInternet();
         obj["admin_password_set"] = authManager.adminPasswordSet();
+        return HttpResponse::json(obj);
+    });
+
+    // POST /api/admin/access-code — choose, replace or remove the owner's
+    // personal access code (S3XYCast edition; admin only). Body {code}, or
+    // {clear: true} to remove it. A code is refused when it is too short, too
+    // long, or one anybody would try first: it faces the internet for good.
+    server.router()->post("/api/admin/access-code", [&authManager](const HttpRequest& req) {
+        if (!req.isLocal) return HttpResponse::error(403, "Only available from localhost");
+
+        const QJsonObject body = QJsonDocument::fromJson(req.body).object();
+        const QString code = body["code"].toString();
+        if (code.isEmpty()) {
+            if (!body["clear"].toBool(false))
+                return HttpResponse::error(400, "Missing 'code' (or 'clear')");
+            authManager.clearAccessCode();
+        } else {
+            QJsonObject refused;
+            refused["status"] = "error";
+            switch (authManager.setAccessCode(code)) {
+            case AuthManager::AccessCodeRefusal::None: break;
+            case AuthManager::AccessCodeRefusal::TooShort:
+                refused["error"] = "too_short";
+                refused["min_length"] = AuthManager::MIN_ACCESS_CODE_LEN;
+                return HttpResponse::json(refused, 400);
+            case AuthManager::AccessCodeRefusal::TooLong:
+                refused["error"] = "too_long";
+                refused["max_length"] = AuthManager::MAX_ACCESS_CODE_LEN;
+                return HttpResponse::json(refused, 400);
+            case AuthManager::AccessCodeRefusal::TooWeak:
+                refused["error"] = "too_weak";
+                return HttpResponse::json(refused, 400);
+            case AuthManager::AccessCodeRefusal::Unavailable:
+                return HttpResponse::error(500, "The code could not be stored");
+            }
+        }
+
+        QJsonObject obj;
+        obj["status"] = "ok";
+        obj["access_code_set"] = authManager.accessCodeSet();
         return HttpResponse::json(obj);
     });
 

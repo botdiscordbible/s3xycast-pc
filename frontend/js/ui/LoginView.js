@@ -18,12 +18,15 @@
 /**
  * MoonlightWeb — Login View
  *
- * Authentication for remote visitors. Supports two methods:
+ * Authentication for remote visitors. Supports three methods:
  *   1. PIN-based (default): user enters the PIN shown on the admin page
  *   2. Certificate-based (alternative): user uploads a certificate file
+ *   3. Personal code (S3XYCast edition): the owner types the code they chose
+ *      on the host — the one way in that needs nobody near the host's screen
  *
  * When certificate authentication is enabled on the server, the UI shows
- * a toggle between PIN and certificate modes.
+ * a toggle between PIN and certificate modes. When the owner chose a personal
+ * code, its form is the one shown first, with a way back to the PIN.
  */
 import { BackendClient } from '../api/BackendClient.js';
 import { Toast } from './Toast.js';
@@ -35,6 +38,10 @@ import { tunnelHostId } from '../net/tunnelBridge.js';
 
 /** The session name last signed in under (see rememberedMachineName). */
 const MACHINE_NAME_KEY = 'mw-session-name';
+
+/** A personal code's length, in characters (AuthManager::MIN/MAX_ACCESS_CODE_LEN). */
+const ACCESS_CODE_MIN = 6;
+const ACCESS_CODE_MAX = 64;
 
 export class LoginView {
     /**
@@ -69,6 +76,12 @@ export class LoginView {
         this._hostName = '';
         this._certAuthAvailable = false; // Server has cert auth enabled
         this._certMode = false; // User chose cert upload mode
+        // S3XYCast edition: the owner's personal code (AuthManager::validateAccessCode).
+        // When one exists it is the form shown first: whoever opens this page
+        // away from the host has no PIN to read, and that is what the code is for.
+        this._accessCodeAvailable = false; // the owner chose a code on the host
+        this._codeMode = false; // the personal-code form is the one on screen
+        this._codeVisible = false; // "Show the code" ticked
         this._selectedFileName = '';
         this._localUrl = ''; // https://localhost[:port] — the host machine's way back in
         // The other machines this browser has already been to (see _renderServerField).
@@ -113,11 +126,17 @@ export class LoginView {
             }
             this._loading = false;
             this._certAuthAvailable = status.cert_auth_enabled || false;
+            this._accessCodeAvailable = status.access_code_set === true;
+            this._codeMode = this._accessCodeAvailable;
             const hostName = status.display_name;
             this._hostName = typeof hostName === 'string' ? hostName.trim() : '';
-            this._remaining = status.remaining !== undefined ? status.remaining : 3;
-            if (status.lockout_seconds > 0) {
-                this._startLockoutTimer(status.lockout_seconds);
+            // The attempts and the lockout the host reports here are the PIN's:
+            // the personal code is counted apart, and its form starts clean.
+            if (!this._codeMode) {
+                this._remaining = status.remaining !== undefined ? status.remaining : 3;
+                if (status.lockout_seconds > 0) {
+                    this._startLockoutTimer(status.lockout_seconds);
+                }
             }
             this.render();
             this.bindEvents();
@@ -246,9 +265,23 @@ export class LoginView {
                         `
                                 : this._certMode
                                   ? this._renderCertForm()
-                                  : this._renderPinForm()
+                                  : this._codeMode
+                                    ? this._renderCodeForm()
+                                    : this._renderPinForm()
                         }
                     </div>
+
+                    ${
+                        !this._loading && this._accessCodeAvailable && !this._certMode
+                            ? `
+                        <div id="login-code-toggle" class="u-mt-3 u-center">
+                            <button id="btn-toggle-code-mode" class="btn btn-link">
+                                ${this._codeMode ? t('login.usePinNotCode') : t('login.useCodeInstead')}
+                            </button>
+                        </div>
+                    `
+                            : ''
+                    }
 
                     ${
                         !this._loading && this._certAuthAvailable
@@ -257,7 +290,9 @@ export class LoginView {
                             <button id="btn-toggle-auth-method" class="btn btn-link">
                                 ${
                                     this._certMode
-                                        ? t('login.usePinInstead')
+                                        ? this._accessCodeAvailable
+                                            ? t('login.useCodeInstead')
+                                            : t('login.usePinInstead')
                                         : t('login.useCertInstead')
                                 }
                             </button>
@@ -269,7 +304,7 @@ export class LoginView {
                     ${
                         !this._loading && !this._certMode
                             ? `
-                        <p class="login-hint">${t('login.pinHint')}</p>
+                        <p class="login-hint">${this._codeMode ? t('login.codeHint') : t('login.pinHint')}</p>
                     `
                             : ''
                     }
@@ -327,6 +362,64 @@ export class LoginView {
                                autocomplete="off"
                                ${this._lockoutRemaining > 0 ? 'disabled' : ''} />
                     </div>
+                </div>
+
+                ${this._renderRememberField()}
+
+                ${this._error ? `<p id="login-error" class="login-error">${this.esc(this._error)}</p>` : '<p id="login-error" class="login-error"></p>'}
+                <p id="login-remaining" class="login-remaining">${this._showRemaining() ? this.esc(t('login.attemptsRemaining', { count: this._remaining })) : ''}</p>
+                ${
+                    this._lockoutRemaining > 0
+                        ? `
+                    <div id="login-lockout" class="login-lockout">
+                        ${t('login.lockout', { seconds: `<span id="login-lockout-countdown">${this._lockoutRemaining}</span>` })}
+                    </div>
+                `
+                        : '<div id="login-lockout" class="login-lockout" style="display:none;"></div>'
+                }
+                <button id="btn-login-unlock" class="btn btn-neutral login-submit"
+                        disabled
+                        ${this._lockoutRemaining > 0 || this._submitting ? 'disabled' : ''}>
+                    ${this._submitting ? t('common.verifying') : t('login.unlock')}
+                </button>
+            </div>
+        `;
+    }
+
+    /**
+     * S3XYCast edition: the owner's personal code, for a device that is nowhere
+     * near the host's screen and so has no PIN to read. Same fields around it
+     * as the PIN form, and the same ids for the error, the attempts and the
+     * lockout, which the shared helpers below update.
+     */
+    _renderCodeForm() {
+        return `
+            <div class="login-form login-form--code">
+                ${this._sessionKeyRefused ? `<p class="login-subtitle" id="login-session-key-refused">${t('login.sessionOtherBrowser')}</p>` : ''}
+                <p class="login-subtitle">${t('login.codeSubtitle')}</p>
+
+                <!-- Machine name -->
+                <div class="login-field">
+                    <label class="login-label" for="login-machine-input">${t('login.nameSession')}</label>
+                    <input type="text" id="login-machine-input" class="login-input"
+                           placeholder="${this.esc(t('login.namePlaceholder'))}"
+                           value="${this.esc(this._machineName)}"
+                           maxlength="24"
+                           autocomplete="off" />
+                </div>
+
+                <!-- Personal code -->
+                <div class="login-field login-field--code">
+                    <label class="login-label" for="login-code-input">${t('login.codeLabel')}</label>
+                    <input type="${this._codeVisible ? 'text' : 'password'}" id="login-code-input" class="login-input"
+                           maxlength="${ACCESS_CODE_MAX}"
+                           placeholder="${this.esc(t('login.codePlaceholder'))}"
+                           autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false"
+                           ${this._lockoutRemaining > 0 ? 'disabled' : ''} />
+                    <label class="login-remember-label login-code-show-label" for="login-code-show">
+                        <input type="checkbox" id="login-code-show" ${this._codeVisible ? 'checked' : ''} />
+                        <span>${t('login.codeShow')}</span>
+                    </label>
                 </div>
 
                 ${this._renderRememberField()}
@@ -502,8 +595,24 @@ export class LoginView {
 
         if (this._certMode) {
             this._bindCertEvents();
+        } else if (this._codeMode) {
+            this._bindCodeEvents();
         } else {
             this._bindPinEvents();
+        }
+
+        // Personal code <-> PIN. The two are counted apart on the host: what
+        // one form showed of attempts and lockout says nothing about the other.
+        const codeToggle = this.container.querySelector('#btn-toggle-code-mode');
+        if (codeToggle) {
+            codeToggle.addEventListener('click', (e) => {
+                e.preventDefault();
+                this._codeMode = !this._codeMode;
+                this._resetAttemptState();
+                this.render();
+                this.bindEvents();
+                this._focusInput();
+            });
         }
 
         // The session name, kept in state for the same reason as "Remember
@@ -531,6 +640,8 @@ export class LoginView {
             toggleBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 this._certMode = !this._certMode;
+                // Back from the certificate: to the personal code when there is one.
+                if (!this._certMode) this._codeMode = this._accessCodeAvailable;
                 this._error = '';
                 this._selectedFileName = '';
                 this.render();
@@ -826,6 +937,118 @@ export class LoginView {
         }
     }
 
+    // ── Personal code (S3XYCast edition) ──────────────────────────────────────
+
+    /** What one form showed of attempts and lockout, forgotten for the other. */
+    _resetAttemptState() {
+        this._stopLockoutTimer();
+        this._lockoutRemaining = 0;
+        this._remaining = 3;
+        this._wrongPinHere = false;
+        this._error = '';
+    }
+
+    _bindCodeEvents() {
+        const input = this.container.querySelector('#login-code-input');
+        const machineInput = this.container.querySelector('#login-machine-input');
+        const btn = this.container.querySelector('#btn-login-unlock');
+        if (!input || !btn) return;
+
+        // Counted in characters, as the host counts them.
+        const longEnough = () => [...input.value.trim()].length >= ACCESS_CODE_MIN;
+        const sync = () => {
+            btn.disabled = !longEnough() || this._lockoutRemaining > 0 || this._submitting;
+        };
+        input.addEventListener('input', sync);
+        input.addEventListener('keydown', (e) => {
+            if (e.key !== 'Enter') return;
+            e.preventDefault();
+            if (!btn.disabled) this._submitCode(input, machineInput, btn);
+        });
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (!btn.disabled) this._submitCode(input, machineInput, btn);
+        });
+
+        // "Show the code": a car's keyboard is easy to mistype on, and three
+        // wrong codes are a lockout. Kept in state for the re-render an error makes.
+        const show = this.container.querySelector('#login-code-show');
+        if (show) {
+            show.addEventListener('change', () => {
+                this._codeVisible = show.checked;
+                input.type = show.checked ? 'text' : 'password';
+            });
+        }
+        sync();
+    }
+
+    async _submitCode(input, machineInput, btn) {
+        if (this._submitting) return;
+        this._submitting = true;
+        btn.disabled = true;
+        btn.textContent = t('common.verifying');
+
+        const code = input.value.trim();
+        const machineName = machineInput ? machineInput.value.trim() : '';
+
+        try {
+            const result = await BackendClient.validateAccessCode(
+                code,
+                machineName,
+                this._remember,
+            );
+
+            if (result.status === 'ok') {
+                LoginView._rememberMachineName(machineName);
+                Toast.success(t('login.authSuccess'));
+                this._releaseServerField();
+                this.onAuthenticated();
+                return;
+            }
+            // An answer that is neither a session nor an error: say so rather
+            // than leave the button on "Verifying".
+            this._handleCodeError(new Error(t('login.verificationFailed')), input, btn);
+        } catch (err) {
+            this._handleCodeError(err, input, btn);
+        }
+    }
+
+    _handleCodeError(err, input, btn) {
+        this._submitting = false;
+        btn.disabled = false;
+        btn.textContent = t('login.unlock');
+        input.value = '';
+        input.focus();
+
+        let errorMsg = t('login.invalidCode');
+        const statusCode = err.statusCode || 0;
+        const body = err.responseBody || {};
+
+        if (statusCode === 429) {
+            errorMsg = t('login.tooManyAttempts');
+            if (body.lockout_seconds > 0) {
+                this._startLockoutTimer(body.lockout_seconds);
+            }
+        } else if (statusCode === 401) {
+            this._wrongPinHere = true;
+            if (body.lockout_seconds > 0) {
+                this._startLockoutTimer(body.lockout_seconds);
+            }
+            if (body.remaining !== undefined) {
+                this._remaining = body.remaining;
+            } else {
+                this._remaining = Math.max(0, this._remaining - 1);
+            }
+        } else {
+            errorMsg = err.message || t('login.connectionError');
+        }
+
+        this._error = errorMsg;
+        this.render();
+        this.bindEvents();
+        this._focusInput();
+    }
+
     async _submitCertificate(file, machineInput, btn, certInput) {
         if (this._submitting) return;
         this._submitting = true;
@@ -968,7 +1191,10 @@ export class LoginView {
     _updateLockoutDisplay() {
         const lockout = this.container.querySelector('#login-lockout');
         const countdown = this.container.querySelector('#login-lockout-countdown');
-        const input = this.container.querySelector('#login-pin-input');
+        // Whichever of the two forms is on screen: the PIN's field or the code's.
+        const input =
+            this.container.querySelector('#login-pin-input') ||
+            this.container.querySelector('#login-code-input');
         const btn = this.container.querySelector('#btn-login-unlock');
 
         if (lockout) lockout.style.display = '';
@@ -980,6 +1206,11 @@ export class LoginView {
     _focusInput() {
         if (this._certMode) {
             const input = this.container.querySelector('#login-cert-input');
+            if (input && !input.disabled) {
+                setTimeout(() => input.focus(), 100);
+            }
+        } else if (this._codeMode) {
+            const input = this.container.querySelector('#login-code-input');
             if (input && !input.disabled) {
                 setTimeout(() => input.focus(), 100);
             }

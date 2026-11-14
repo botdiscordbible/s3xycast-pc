@@ -97,6 +97,10 @@ void registerAuthStatusRoute(RestRouter& router, AuthManager& authManager, AuthS
         obj["requires_pin"] = !trustedWithoutPin;
         obj["active_sessions"] = authManager.activeSessionCount();
         obj["cert_auth_enabled"] = authManager.certAuthEnabled();
+        // S3XYCast edition: whether the owner chose a personal code. Said to
+        // everyone, like cert_auth_enabled: it is what puts the field on the
+        // login page, and a stranger learns nothing they could not try.
+        obj["access_code_set"] = authManager.accessCodeSet();
         // Tells the frontend to offer the admin page behind a password prompt.
         // Mirrors exactly what /api/auth/admin-unlock will accept, so the
         // button never appears where the unlock would be refused.

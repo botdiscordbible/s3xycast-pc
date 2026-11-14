@@ -748,6 +748,118 @@ AuthManager::ValidateResult AuthManager::validateAdminPassword(const QString& ip
     return result;
 }
 
+// ── Personal access code (S3XYCast edition) ───────────────────────────────────
+
+namespace {
+// One bucket for every attempt on the personal code from outside the LAN, for
+// the reason kInternetAdminBucket gives. It matters more here: this secret
+// admits a device, where the admin password only promotes one already in.
+const QString kInternetCodeBucket = QStringLiteral("code|internet");
+
+/// The code as it is stored and compared: no space around it, one Unicode form
+/// (a phone and a car keyboard do not always send the same one).
+QString normalizedAccessCode(const QString& code)
+{
+    return code.trimmed().normalized(QString::NormalizationForm_KC);
+}
+
+/// A code anyone would try first: one character repeated, digits that follow
+/// one another (up or down, 9 next to 0), or a word every list starts with.
+bool isWeakAccessCode(const QString& code)
+{
+    const QString lower = code.toLower();
+    bool same = true;
+    bool rising = true;
+    bool falling = true;
+    for (qsizetype i = 1; i < lower.size(); ++i) {
+        const QChar a = lower.at(i - 1);
+        const QChar b = lower.at(i);
+        if (a != b) same = false;
+        const bool digits = a.isDigit() && b.isDigit();
+        const int step = digits ? (b.digitValue() - a.digitValue() + 10) % 10 : -1;
+        if (step != 1) rising = false;
+        if (step != 9) falling = false;
+    }
+    if (same || rising || falling) return true;
+
+    static const char* const kHousehold[] = {
+        "password", "passw0rd",   "motdepasse", "azerty",    "azertyuiop",   "qwerty",
+        "qwertz",   "qwertyuiop", "abcdef",     "abc123",    "iloveyou",     "letmein",
+        "welcome",  "admin123",   "tesla123",   "s3xycast",  "moonlight",    "moonlightweb",
+    };
+    for (const char* word : kHousehold)
+        if (lower == QLatin1String(word)) return true;
+    return false;
+}
+} // namespace
+
+bool AuthManager::accessCodeSet() const
+{
+    return m_settings && !m_settings->accessCodeDigest().isEmpty();
+}
+
+AuthManager::AccessCodeRefusal AuthManager::checkAccessCode(const QString& code)
+{
+    const QString clean = normalizedAccessCode(code);
+    // Counted in characters, not UTF-16 units: three emoji are not six.
+    const qsizetype length = clean.toUcs4().size();
+    if (length < MIN_ACCESS_CODE_LEN) return AccessCodeRefusal::TooShort;
+    if (length > MAX_ACCESS_CODE_LEN) return AccessCodeRefusal::TooLong;
+    if (isWeakAccessCode(clean)) return AccessCodeRefusal::TooWeak;
+    return AccessCodeRefusal::None;
+}
+
+AuthManager::AccessCodeRefusal AuthManager::setAccessCode(const QString& code)
+{
+    if (!m_settings) return AccessCodeRefusal::Unavailable;
+    const AccessCodeRefusal refusal = checkAccessCode(code);
+    if (refusal != AccessCodeRefusal::None) return refusal;
+
+    m_settings->setAccessCodeDigest(encodePassword(normalizedAccessCode(code)));
+    Logger::info("[Auth] Personal access code set");
+    return AccessCodeRefusal::None;
+}
+
+void AuthManager::clearAccessCode()
+{
+    if (!m_settings) return;
+    m_settings->setAccessCodeDigest(QString());
+    Logger::info("[Auth] Personal access code removed");
+}
+
+AuthManager::ValidateResult AuthManager::validateAccessCode(const QString& ip, const QString& code)
+{
+    cleanupExpired();
+
+    // Own counters, so a wrong code never locks anyone out of PIN login.
+    const QString bucket = QStringLiteral("code|") + rateLimitKey(ip);
+    const bool internet = !isLanAddress(ip);
+    int locked = bucketLockout(bucket);
+    if (internet) locked = qMax(locked, bucketLockout(kInternetCodeBucket));
+    if (locked > 0) {
+        Logger::info(
+            QString("[Auth] Personal code rate limited for %1: %2s remaining").arg(ip).arg(locked));
+        return {RateLimited, 0, locked};
+    }
+
+    // No code chosen → nothing can match, and the attempt is counted all the
+    // same: asking whether there is one is what a stranger would do first.
+    bool matched = false;
+    if (m_settings) {
+        const QString digest = m_settings->accessCodeDigest();
+        matched = !digest.isEmpty() && passwordMatches(digest, normalizedAccessCode(code));
+    }
+    ValidateResult result = recordAttempt(bucket, matched, ip, QStringLiteral("personal code"));
+    if (internet) {
+        // The stricter of the two counters is the caller's answer.
+        const ValidateResult shared = recordAttempt(kInternetCodeBucket, matched, ip,
+                                                    QStringLiteral("personal code (internet)"));
+        result.remainingAttempts = qMin(result.remainingAttempts, shared.remainingAttempts);
+        result.lockoutSeconds = qMax(result.lockoutSeconds, shared.lockoutSeconds);
+    }
+    return result;
+}
+
 QString AuthManager::createSession(const QString& ip, const QString& machineName, bool isHost,
                                    bool ephemeral, bool viaTunnel)
 {

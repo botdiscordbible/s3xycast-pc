@@ -746,6 +746,44 @@ export class BackendClient {
     }
 
     /**
+     * S3XYCast edition: sign in with the owner's personal code instead of a
+     * PIN (AuthManager::validateAccessCode). The same route and the same
+     * answer as a PIN's, and this browser's key is registered the same way:
+     * the visitor has just proven they hold the owner's secret.
+     *
+     * @param {string} code
+     * @param {string} machineName
+     * @param {boolean} remember See validatePin.
+     */
+    static async validateAccessCode(code, machineName, remember = true) {
+        const identity = await loadOrCreateIdentity();
+        const resp = await this.post('/api/auth/validate', {
+            code,
+            machine_name: machineName,
+            remember: remember !== false,
+            public_key: identity?.publicKeyBase64 || undefined,
+        });
+        if (resp?.host_public_key) {
+            await rememberHostIdentity(resp.host_public_key, resp.host_id);
+        }
+        this._hadSession = true;
+        return resp;
+    }
+
+    /**
+     * S3XYCast edition, admin only: choose or replace the owner's personal
+     * code. The host answers 400 with `too_short`, `too_long` or `too_weak`.
+     */
+    static async setAccessCode(code) {
+        return this.post('/api/admin/access-code', { code });
+    }
+
+    /** S3XYCast edition, admin only: remove the personal code. */
+    static async clearAccessCode() {
+        return this.post('/api/admin/access-code', { clear: true });
+    }
+
+    /**
      * Register this browser's MW-BIND-v1 key on a session created before the
      * mechanism existed, and collect the host's own identity.
      *

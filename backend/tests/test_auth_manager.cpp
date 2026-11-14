@@ -1463,6 +1463,90 @@ void run_auth_manager_tests()
     }
     auth.destroyAllSessions();
 
+    // -- Personal access code (S3XYCast edition) ------------------------------
+    // Nothing signs in that way until the owner chose a code.
+    {
+        using Refusal = AuthManager::AccessCodeRefusal;
+        const QString codeIp = "192.168.6.20";
+        CHECK(!auth.accessCodeSet());
+        CHECK(settings.accessCodeDigest().isEmpty());
+        CHECK(auth.validateAccessCode(codeIp, "tournesol-42").result == AuthManager::InvalidPin);
+
+        // Too short, too long, or the first thing anybody would try: refused,
+        // and nothing is stored. The length is checked first.
+        CHECK(auth.setAccessCode("abc12") == Refusal::TooShort);
+        CHECK(auth.setAccessCode(QString(65, QLatin1Char('x'))) == Refusal::TooLong);
+        CHECK(auth.setAccessCode("000000") == Refusal::TooWeak);
+        CHECK(auth.setAccessCode("123456") == Refusal::TooWeak);
+        CHECK(auth.setAccessCode("987654") == Refusal::TooWeak);
+        CHECK(auth.setAccessCode("890123") == Refusal::TooWeak); // 9 sits next to 0
+        CHECK(auth.setAccessCode("Azerty") == Refusal::TooWeak);
+        CHECK(auth.setAccessCode("  s3xycast ") == Refusal::TooWeak);
+        CHECK(AuthManager::checkAccessCode("135790") == Refusal::None);
+        CHECK(AuthManager::checkAccessCode(QString(64, QLatin1Char('x')) + "y") == Refusal::TooLong);
+        CHECK(!auth.accessCodeSet());
+
+        CHECK(auth.setAccessCode("  tournesol-42 ") == Refusal::None);
+        CHECK(auth.accessCodeSet());
+
+        // The plaintext is never stored: what lands in settings is a PBKDF2 digest.
+        const QString codeDigest = settings.accessCodeDigest();
+        CHECK(codeDigest.startsWith("pbkdf2-sha256$"));
+        CHECK(!codeDigest.contains("tournesol"));
+
+        // The space around it is nobody's secret; the case of a letter is.
+        CHECK(auth.validateAccessCode(codeIp, "tournesol-42").result == AuthManager::Valid);
+        CHECK(auth.validateAccessCode(codeIp, " tournesol-42  ").result == AuthManager::Valid);
+        CHECK(auth.validateAccessCode(codeIp, "Tournesol-42").result == AuthManager::InvalidPin);
+        CHECK(auth.validateAccessCode(codeIp, "").result == AuthManager::InvalidPin);
+
+        // Its counters are its own: a burst of wrong codes leaves PIN login
+        // alone, and locks the right code out from that address for a while.
+        const QString burstIp = "192.168.6.21";
+        for (int i = 0; i < 3; ++i)
+            auth.validateAccessCode(burstIp, "wrong-code");
+        CHECK(auth.isRateLimited(burstIp) == false);
+        CHECK(auth.validateAccessCode(burstIp, "tournesol-42").result ==
+              AuthManager::RateLimited);
+
+        // From the internet every address shares one more counter: three wrong
+        // codes from three addresses lock the fourth out as well. The LAN never
+        // feeds that counter and keeps its own.
+        CHECK(auth.validateAccessCode("198.51.100.1", "wrong-code").result ==
+              AuthManager::InvalidPin);
+        CHECK(auth.validateAccessCode("198.51.100.2", "wrong-code").result ==
+              AuthManager::InvalidPin);
+        {
+            const AuthManager::ValidateResult third =
+                auth.validateAccessCode("198.51.100.3", "wrong-code");
+            CHECK(third.result == AuthManager::InvalidPin);
+            CHECK(third.lockoutSeconds > 0);
+            CHECK_EQ(third.remainingAttempts, 2); // the shared counter's tier: 5 - 3
+        }
+        CHECK(auth.validateAccessCode("198.51.100.4", "tournesol-42").result ==
+              AuthManager::RateLimited);
+        CHECK(auth.validateAccessCode("192.168.6.22", "tournesol-42").result == AuthManager::Valid);
+
+        // One Unicode form: the same accented letter typed as one character or
+        // as a letter and its accent is the same code.
+        CHECK(auth.setAccessCode(QString::fromUtf8("caf\xC3\xA9-2026")) == Refusal::None);
+        CHECK(auth.validateAccessCode("192.168.6.23", QString::fromUtf8("cafe\xCC\x81-2026")).result ==
+              AuthManager::Valid);
+        // Replacing the code: the old one stops working at once.
+        CHECK(auth.validateAccessCode("192.168.6.23", "tournesol-42").result ==
+              AuthManager::InvalidPin);
+
+        // A session it opened is an ordinary one, and outlives the code.
+        const QString car = auth.createSession("198.51.100.9", "Tesla");
+        auth.clearAccessCode();
+        CHECK(!auth.accessCodeSet());
+        CHECK(settings.accessCodeDigest().isEmpty());
+        CHECK(auth.validateSession(car));
+        CHECK(auth.validateAccessCode("192.168.6.24", QString::fromUtf8("caf\xC3\xA9-2026")).result ==
+              AuthManager::InvalidPin);
+        auth.destroyAllSessions();
+    }
+
     // ── LAN address classification (gates the unlock) ──────────────────────
     CHECK(AuthManager::isLanAddress("127.0.0.1"));
     CHECK(AuthManager::isLanAddress("::1"));

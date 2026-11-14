@@ -50,6 +50,10 @@ export class AdminView {
     // fast; the backend refuses anything shorter regardless.
     static MIN_ADMIN_PASSWORD_LEN = 8;
 
+    // S3XYCast edition. Mirrors AuthManager::MIN_ACCESS_CODE_LEN, to fail fast
+    // as above; the backend also refuses a code that is too easy to guess.
+    static MIN_ACCESS_CODE_LEN = 6;
+
     constructor(container, onClose, options) {
         this.container = container;
         this.onClose = onClose || (() => {});
@@ -70,6 +74,9 @@ export class AdminView {
         // so until one is set the door is advertised but opens for nobody.
         this._remoteAdminEnabled = true;
         this._adminPasswordSet = false;
+        // S3XYCast edition: whether the owner chose a personal code, the one
+        // that signs a device in from anywhere (AuthManager::validateAccessCode).
+        this._accessCodeSet = false;
         // Whether the password is also accepted from the internet, through the
         // rendezvous. Off by default: the LAN's door does not turn into the
         // internet's unless the owner asks for exactly that.
@@ -397,6 +404,7 @@ export class AdminView {
             this._hasAdminAccess = !!status.is_localhost;
             this._isRealHostMachine = !!status.is_host_machine;
             this._adminUnlockAvailable = !!status.admin_unlock_available;
+            this._accessCodeSet = !!status.access_code_set;
             if (status.remote_admin_enabled !== undefined) {
                 this._remoteAdminEnabled = !!status.remote_admin_enabled;
                 this._adminPasswordSet = !!status.admin_password_set;
@@ -474,6 +482,57 @@ export class AdminView {
     async _clearAdminPassword() {
         if (!confirm(t('admin.remoteAdminConfirmRemove'))) return;
         await this._postRemoteAdmin({ clear: true }, t('admin.remoteAdminRemoved'));
+    }
+
+    // S3XYCast edition: choose or replace the owner's personal code. The host
+    // has the last word (too short, too long, too easy to guess); what was
+    // typed stays in the field when it says no.
+    async _saveAccessCode(code) {
+        const clean = code.trim();
+        if ([...clean].length < AdminView.MIN_ACCESS_CODE_LEN) {
+            Toast.warning(t('admin.accessCodeTooShort', { count: AdminView.MIN_ACCESS_CODE_LEN }));
+            return;
+        }
+        try {
+            const result = await BackendClient.setAccessCode(clean);
+            this._accessCodeSet = !!result.access_code_set;
+            Toast.success(t('admin.accessCodeSaved'));
+        } catch (err) {
+            const body = err.responseBody || {};
+            if (body.error === 'too_short') {
+                Toast.warning(
+                    t('admin.accessCodeTooShort', {
+                        count: body.min_length || AdminView.MIN_ACCESS_CODE_LEN,
+                    }),
+                );
+            } else if (body.error === 'too_long') {
+                Toast.warning(t('admin.accessCodeTooLong', { count: body.max_length || 64 }));
+            } else if (body.error === 'too_weak') {
+                Toast.warning(t('admin.accessCodeTooWeak'));
+            } else {
+                console.error('[Admin] Failed to save the personal code:', err);
+                Toast.error(t('admin.accessCodeSaveFailed', { message: err.message }));
+            }
+            return;
+        }
+        this.render();
+        this.bindEvents();
+    }
+
+    // Remove the personal code: away from the host, a PIN is needed again.
+    // Devices it signed in stay in — they are revoked from Active sessions.
+    async _clearAccessCode() {
+        if (!confirm(t('admin.accessCodeConfirmRemove'))) return;
+        try {
+            const result = await BackendClient.clearAccessCode();
+            this._accessCodeSet = !!result.access_code_set;
+            Toast.success(t('admin.accessCodeRemoved'));
+        } catch (err) {
+            console.error('[Admin] Failed to remove the personal code:', err);
+            Toast.error(t('admin.accessCodeSaveFailed', { message: err.message }));
+        }
+        this.render();
+        this.bindEvents();
     }
 
     // Open or close the LAN door entirely. Closing it revokes every unlock.
@@ -878,6 +937,8 @@ export class AdminView {
                 </div>
 
                 ${this._rememberMeRiskHtml()}
+
+                ${this._renderAccessCode()}
 
                 <!-- PIN (localhost only) -->
                 ${
@@ -1607,6 +1668,25 @@ export class AdminView {
         const clearPassBtn = this.container.querySelector('#btn-clear-admin-password');
         if (clearPassBtn) {
             clearPassBtn.addEventListener('click', () => this._clearAdminPassword());
+        }
+
+        // S3XYCast edition: the owner's personal code.
+        const setAccessCodeBtn = this.container.querySelector('#btn-set-access-code');
+        const accessCodeInput = this.container.querySelector('#admin-access-code');
+        if (setAccessCodeBtn && accessCodeInput) {
+            setAccessCodeBtn.addEventListener('click', () =>
+                this._saveAccessCode(accessCodeInput.value),
+            );
+            accessCodeInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this._saveAccessCode(accessCodeInput.value);
+                }
+            });
+        }
+        const clearAccessCodeBtn = this.container.querySelector('#btn-clear-access-code');
+        if (clearAccessCodeBtn) {
+            clearAccessCodeBtn.addEventListener('click', () => this._clearAccessCode());
         }
 
         // Internet Access checkbox toggle
@@ -2470,6 +2550,47 @@ export class AdminView {
                                 </label>
                                 <p class="setting-desc">${t('admin.pairRequestInternetDesc')}</p>
                             </div>`;
+    }
+
+    /**
+     * S3XYCast edition: the owner's personal code, above the PIN it stands in
+     * for — the way into this PC from a car or a phone, with nobody here to
+     * read a PIN. Admin only, like the PIN. The code is never shown again once
+     * saved: the host keeps a digest, so this section only says whether one
+     * exists and takes a new one.
+     */
+    _renderAccessCode() {
+        if (!this._isLocalhost()) return '';
+        return `
+                <div class="settings-section" id="admin-section-access-code">
+                    <h3 class="settings-section-title">${t('admin.accessCode')}</h3>
+                    <div class="settings-field u-pt-0">
+                        <p class="setting-desc">${t('admin.accessCodeDesc')}</p>
+                        ${
+                            this._accessCodeSet
+                                ? `<p class="settings-hint" id="admin-access-code-state">${t('admin.accessCodeSet')}</p>`
+                                : `<div class="settings-status settings-status-pending" id="admin-access-code-state">
+                                       ${t('admin.accessCodeNone')}
+                                   </div>`
+                        }
+                        <input type="password" id="admin-access-code" class="settings-input u-mt-2"
+                               autocomplete="new-password" maxlength="64"
+                               placeholder="${this.esc(t('admin.accessCodePlaceholder', { count: AdminView.MIN_ACCESS_CODE_LEN }))}" />
+                        <div class="u-mt-2">
+                            <button class="btn btn-neutral" id="btn-set-access-code">
+                                ${this._accessCodeSet ? t('admin.accessCodeChange') : t('admin.accessCodeChoose')}
+                            </button>
+                            ${
+                                this._accessCodeSet
+                                    ? `<button class="btn btn-secondary" id="btn-clear-access-code">
+                                ${t('admin.accessCodeRemove')}
+                            </button>`
+                                    : ''
+                            }
+                        </div>
+                        <p class="settings-hint u-mt-2">${t('admin.accessCodeHint')}</p>
+                    </div>
+                </div>`;
     }
 
     _renderRemoteAdmin() {

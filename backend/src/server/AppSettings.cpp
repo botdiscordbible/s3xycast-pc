@@ -2197,6 +2197,24 @@ void AppSettings::setAdminPasswordDigest(const QString& digest)
     writeAll(obj);
 }
 
+// ── Personal access code (S3XYCast edition) ────────────────────────────
+
+QString AppSettings::accessCodeDigest() const
+{
+    QJsonObject obj = readAll();
+    return obj.value("access_code").toString();
+}
+
+void AppSettings::setAccessCodeDigest(const QString& digest)
+{
+    QJsonObject obj = readAll();
+    if (digest.isEmpty())
+        obj.remove("access_code");
+    else
+        obj["access_code"] = digest;
+    writeAll(obj);
+}
+
 bool AppSettings::remoteAdminEnabled() const
 {
     QJsonObject obj = readAll();
