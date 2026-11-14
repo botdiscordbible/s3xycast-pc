@@ -1,5 +1,8 @@
 ﻿; ===========================================================================
-;  MoonlightWeb — interactive Windows installer (Inno Setup 6).
+;  S3XYCast PC — interactive Windows installer (Inno Setup 6.6 or newer).
+;  The S3XYCast edition of MoonlightWeb's installer (GPL-3.0, (C) 2026 Bruno
+;  Martin; modified for the S3XYCast edition, 2026-11-14: its own names, its own
+;  application id, its own folders and keys — see S3XYCAST-EDITION.md).
 ;
 ;  Produces a stepped wizard (MoonlightWeb-installer-<version>-win-<arch>.exe) that:
 ;    1. installs the app + Start-Menu shortcuts (app, admin page, uninstaller),
@@ -59,26 +62,36 @@
 ; folder, the exe, the service, the scheduled tasks, the firewall rule, the
 ; shortcuts and the per-user state under %AppData%\MoonlightWeb\<name> — so the
 ; two editions never share one of them. See backend/src/common/Edition.h.
+; S3XYCast edition. MyAppName is the product's technical name, with no space:
+; the exe, the folder, the tasks, the registry keys — what the program itself
+; looks for (mw::edition::productNameFor). MyAppDisplayName is what a person
+; reads: the wizard, the shortcuts, the list of installed programs. MyAppOrg is
+; the folder and the key the state is filed under (mw::edition::
+; kOrganizationName). The AppIds are the edition's own: it installs beside
+; MoonlightWeb, never over it, and each uninstalls without the other noticing.
 #ifdef DevEdition
-  #define MyAppName "MoonlightWebDev"
-  #define MyAppId "{5B1E7A8C-8D0E-4F53-8D6F-E1373C70AFE6}"
+  #define MyAppName "S3XYCastPCDev"
+  #define MyAppDisplayName "S3XYCast PC Dev"
+  #define MyAppId "{0AEF3097-8A5B-4C76-89AC-D1DBCA86750F}"
   #define MyIconFile "..\..\frontend\assets\dev\favicon.ico"
 #else
-  #define MyAppName "MoonlightWeb"
-  #define MyAppId "{6F2C9E4A-7B3D-4E5F-9A1C-2D8E4B6F0A33}"
+  #define MyAppName "S3XYCastPC"
+  #define MyAppDisplayName "S3XYCast PC"
+  #define MyAppId "{C6065C40-325B-4A90-B5DF-DA21D4F95EB4}"
   #define MyIconFile "..\..\frontend\assets\favicon.ico"
 #endif
+#define MyAppOrg "S3XYCast"
 #define MyAppExe MyAppName + ".exe"
 
 [Setup]
 ; "{{" is Inno's escape for a literal brace.
 AppId={#StringChange(MyAppId, "{", "{{")}
-AppName={#MyAppName}
+AppName={#MyAppDisplayName}
 AppVersion={#MyAppVersion}
-AppPublisher=MoonlightWeb
-AppPublisherURL=https://github.com/linckosz/moonlight-web
+AppPublisher=S3XYCast
+AppPublisherURL=https://s3xycast.com
 DefaultDirName={autopf}\{#MyAppName}
-DefaultGroupName={#MyAppName}
+DefaultGroupName={#MyAppDisplayName}
 DisableProgramGroupPage=yes
 OutputBaseFilename={#MyAppName}-installer-{#MyAppVersion}-win-{#MyArch}
 Compression=lzma2
@@ -108,7 +121,7 @@ SetupIconFile={#MyIconFile}
 WizardSmallImageFile=..\..\frontend\assets\logo-512.png
 ; Add/Remove Programs entry shows the app icon (embedded in the exe).
 UninstallDisplayIcon={app}\{#MyAppExe}
-UninstallDisplayName={#MyAppName}
+UninstallDisplayName={#MyAppDisplayName}
 PrivilegesRequired=admin
 ; Do NOT let Inno's Restart Manager pass deal with the running MoonlightWeb.
 ; That pass happens while "Preparing to Install", i.e. BEFORE ssInstall — before
@@ -138,8 +151,11 @@ Name: "zh"; MessagesFile: "ChineseSimplified.isl"
 ; InternetPageBody keeps the literal product name in both editions: it is the
 ; consent the app's own setup wizard shows word for word, and the text recorded
 ; as agreed to (frontend/test/InternetConsentText.test.js holds the two together).
+; S3XYCast edition: the virtual display is described by what it does. Its card
+; on the home page reads "Screen fitted to this device" (apps.fittedScreen in
+; the catalogues), and Windows lists it under the product's own name.
 ; --- English ---
-en.AutoStartTask=Start {#MyAppName} at logon
+en.AutoStartTask=Start {#MyAppDisplayName} at logon
 en.InternetPageCaption=Internet Link
 en.InternetPageDesc=Allow access from the Internet?
 en.InternetPageBody=S3XYCast PC can allow streaming from outside your local network, in a highly secure way.%n%nStreaming is direct, from this PC to the browser you invited. While a session runs, your router is asked (UPnP) to open a single port, closed again when the session ends. It carries nothing but the encrypted stream, and every connection on it has to authenticate first.%n%nThe S3XYCast entry server (pc.s3xycast.com) introduces the two sides, so nothing about this PC is published. No public DNS record, no certificate for this machine, and ports 80/443 stay closed. Your public IP address is listed nowhere: only that server and whoever holds the link you sent ever see it. To learn its own public address, this PC asks a public STUN server (Cloudflare, or Google and Nextcloud as a fallback).%n%nYou can turn this off at any time from the Admin page.
@@ -147,27 +163,27 @@ en.InternetPageOption=Allow the Internet link (recommended)
 en.InternetBtnSkip=&Skip
 en.InternetBtnAccept=&Accept
 en.VDisplayPageCaption=Virtual Display
-en.VDisplayPageDesc=Install "MoonlightWeb Virtual Display"?
-en.VDisplayPageBody=MoonlightWeb can give this PC a screen of its own to stream: "MoonlightWeb Virtual Display", a virtual monitor that appears as a card on the hosts page.%n%nIt is off by default. Opening its card turns it on, makes it the primary display and streams it; when the last stream ends it is turned off again and your previous primary display gets its role back. A PC with no monitor attached — installed through a TV, then left in a cupboard — streams through it.%n%nThe driver is the open-source Virtual Display Driver (MIT, signed), installed silently and in addition to any virtual display you already have. Only uninstalling MoonlightWeb removes it.
-en.VDisplayPageOption=Install "MoonlightWeb Virtual Display" (recommended)
-en.RunApp=Launch {#MyAppName}
+en.VDisplayPageDesc=Install the virtual display?
+en.VDisplayPageBody=S3XYCast PC can give this PC one more screen, made to be streamed: a virtual display that takes the size of the device watching (your car, your phone). It shows on the home page as "Screen fitted to this device".%n%nIt is off by default. Opening its card turns it on, makes it the primary display and streams it; when the last stream ends it is turned off again and your previous primary display gets its role back. A PC with no monitor attached streams through it.%n%nThe driver is the open-source Virtual Display Driver (MIT, signed), installed silently and in addition to any virtual display you already have. Only uninstalling S3XYCast PC removes it.
+en.VDisplayPageOption=Install the virtual display (recommended)
+en.RunApp=Launch {#MyAppDisplayName}
 en.RunAdmin=Open the admin page
-en.ProvisionPageCaption=Setting up {#MyAppName}
+en.ProvisionPageCaption=Setting up {#MyAppDisplayName}
 en.ProvisionPageDesc=Finalizing the installation
-en.ProvisionWorking=Please wait while {#MyAppName} finishes setting up...
+en.ProvisionWorking=Please wait while {#MyAppDisplayName} finishes setting up...
 en.ResolveLinkWait=Preparing the link to the admin page...
 en.TaskArecord=Enable the Internet link
 en.ButtonUpdate=&Update
-en.UpdatePageCaption=Update {#MyAppName}
+en.UpdatePageCaption=Update {#MyAppDisplayName}
 en.UpdatePageDesc=A newer version will replace the installed one
-en.UpdateReadyMemo={#MyAppName} %1 is installed and will be updated to %2.%n%nYour settings, the Internet link and your paired hosts are kept as they are. There is nothing to configure.
-en.UpdateReadyMemoFresh={#MyAppName} will be updated to %1.%n%nYour settings, the Internet link and your paired hosts are kept as they are. There is nothing to configure.
-en.UninstConfigTitle=Uninstall {#MyAppName}
-en.UninstConfigBody=Your configuration is kept by default: if you install {#MyAppName} again, it starts up exactly as you left it.
+en.UpdateReadyMemo={#MyAppDisplayName} %1 is installed and will be updated to %2.%n%nYour settings, the Internet link and your paired hosts are kept as they are. There is nothing to configure.
+en.UpdateReadyMemoFresh={#MyAppDisplayName} will be updated to %1.%n%nYour settings, the Internet link and your paired hosts are kept as they are. There is nothing to configure.
+en.UninstConfigTitle=Uninstall {#MyAppDisplayName}
+en.UninstConfigBody=Your configuration is kept by default: if you install {#MyAppDisplayName} again, it starts up exactly as you left it.
 en.UninstConfigOption=Also delete my configuration
 en.UninstConfigDetail=Settings, accounts, certificates and host pairings are erased for good.
 ; --- French ---
-fr.AutoStartTask=Démarrer {#MyAppName} à l'ouverture de session
+fr.AutoStartTask=Démarrer {#MyAppDisplayName} à l'ouverture de session
 fr.InternetPageCaption=Lien Internet
 fr.InternetPageDesc=Autoriser l'accès depuis Internet ?
 fr.InternetPageBody=S3XYCast PC peut autoriser le streaming depuis l'extérieur de votre réseau local, de façon hautement sécurisée.%n%nLe streaming est direct, de ce PC vers le navigateur que vous avez invité. Pendant une session, votre box se voit demander (UPnP) l'ouverture d'un seul port, refermé à la fin de la session. Il ne transporte rien d'autre que le flux chiffré, et toute connexion dessus doit d'abord s'authentifier.%n%nLe serveur d'entrée de S3XYCast (pc.s3xycast.com) met les deux côtés en relation : rien de ce PC n'est publié. Aucun enregistrement DNS public, aucun certificat pour cette machine, et les ports 80/443 restent fermés. Votre adresse IP publique n'est listée nulle part : seuls ce serveur et la personne à qui vous avez donné le lien la voient. Pour connaître sa propre adresse publique, ce PC interroge un serveur STUN public (Cloudflare, ou Google et Nextcloud en secours).%n%nDésactivable à tout moment depuis la page admin.
@@ -175,27 +191,27 @@ fr.InternetPageOption=Autoriser le lien Internet (recommandé)
 fr.InternetBtnSkip=&Passer
 fr.InternetBtnAccept=&Accepter
 fr.VDisplayPageCaption=Écran virtuel
-fr.VDisplayPageDesc=Installer « MoonlightWeb Virtual Display » ?
-fr.VDisplayPageBody=MoonlightWeb peut donner à ce PC un écran à lui, à diffuser : « MoonlightWeb Virtual Display », un moniteur virtuel qui apparaît comme une carte sur la page des hôtes.%n%nIl est éteint par défaut. Ouvrir sa carte l'allume, en fait l'écran principal et le diffuse ; à la fin du dernier stream il s'éteint et votre écran principal précédent retrouve son rôle. Un PC sans moniteur — installé depuis une TV, puis rangé dans un placard — diffuse grâce à lui.%n%nLe pilote est le Virtual Display Driver open source (MIT, signé), installé silencieusement et en plus de tout écran virtuel déjà présent. Seule la désinstallation de MoonlightWeb le retire.
-fr.VDisplayPageOption=Installer « MoonlightWeb Virtual Display » (recommandé)
-fr.RunApp=Lancer {#MyAppName}
+fr.VDisplayPageDesc=Installer l'écran virtuel ?
+fr.VDisplayPageBody=S3XYCast PC peut donner à ce PC un écran en plus, fait pour être diffusé : un écran virtuel, qui prend la taille de l'appareil qui regarde (votre voiture, votre téléphone). Il apparaît sur l'accueil sous le nom « Écran adapté à cet appareil ».%n%nIl est éteint par défaut. Ouvrir sa carte l'allume, en fait l'écran principal et le diffuse ; à la fin de la diffusion il s'éteint et votre écran principal retrouve son rôle. Un PC sans écran branché diffuse grâce à lui.%n%nLe pilote est le Virtual Display Driver open source (licence MIT, signé), installé silencieusement et en plus de tout écran virtuel déjà présent. Seule la désinstallation de S3XYCast PC le retire.
+fr.VDisplayPageOption=Installer l'écran virtuel (recommandé)
+fr.RunApp=Lancer {#MyAppDisplayName}
 fr.RunAdmin=Ouvrir la page admin
-fr.ProvisionPageCaption=Configuration de {#MyAppName}
+fr.ProvisionPageCaption=Configuration de {#MyAppDisplayName}
 fr.ProvisionPageDesc=Finalisation de l'installation
-fr.ProvisionWorking=Veuillez patienter pendant la fin de la configuration de {#MyAppName}...
+fr.ProvisionWorking=Veuillez patienter pendant la fin de la configuration de {#MyAppDisplayName}...
 fr.ResolveLinkWait=Préparation du lien vers la page admin...
 fr.TaskArecord=Activer le lien Internet
 fr.ButtonUpdate=&Mettre à jour
-fr.UpdatePageCaption=Mise à jour de {#MyAppName}
+fr.UpdatePageCaption=Mise à jour de {#MyAppDisplayName}
 fr.UpdatePageDesc=Une version plus récente va remplacer celle installée
-fr.UpdateReadyMemo={#MyAppName} %1 est installé et va être mis à jour vers %2.%n%nVos réglages, le lien Internet et vos hôtes appairés sont conservés tels quels. Il n'y a rien à configurer.
-fr.UpdateReadyMemoFresh={#MyAppName} va être mis à jour vers %1.%n%nVos réglages, le lien Internet et vos hôtes appairés sont conservés tels quels. Il n'y a rien à configurer.
-fr.UninstConfigTitle=Désinstallation de {#MyAppName}
-fr.UninstConfigBody=Votre configuration est conservée par défaut : si vous réinstallez {#MyAppName}, il redémarrera exactement dans l'état où vous l'avez laissé.
+fr.UpdateReadyMemo={#MyAppDisplayName} %1 est installé et va être mis à jour vers %2.%n%nVos réglages, le lien Internet et vos hôtes appairés sont conservés tels quels. Il n'y a rien à configurer.
+fr.UpdateReadyMemoFresh={#MyAppDisplayName} va être mis à jour vers %1.%n%nVos réglages, le lien Internet et vos hôtes appairés sont conservés tels quels. Il n'y a rien à configurer.
+fr.UninstConfigTitle=Désinstallation de {#MyAppDisplayName}
+fr.UninstConfigBody=Votre configuration est conservée par défaut : si vous réinstallez {#MyAppDisplayName}, il redémarrera exactement dans l'état où vous l'avez laissé.
 fr.UninstConfigOption=Supprimer aussi ma configuration
 fr.UninstConfigDetail=Les réglages, comptes, certificats et appairages d'hôtes seront définitivement effacés.
 ; --- Simplified Chinese ---
-zh.AutoStartTask=登录时启动 {#MyAppName}
+zh.AutoStartTask=登录时启动 {#MyAppDisplayName}
 zh.InternetPageCaption=互联网链接
 zh.InternetPageDesc=是否允许从互联网访问？
 zh.InternetPageBody=S3XYCast PC 可以以高度安全的方式，允许从本地网络之外进行串流。%n%n串流是点对点直连的，从这台电脑直接到您邀请的浏览器。会话进行期间，会通过 UPnP 请求路由器只开放一个端口，会话结束后即被关闭。该端口只承载加密后的串流，任何连接都必须先通过身份验证。%n%n由 S3XYCast 的入口服务器（pc.s3xycast.com）为双方牵线，这台电脑无需公开任何信息。不会创建公开 DNS 记录，不会为这台机器签发证书，端口 80/443 保持关闭。您的公网 IP 地址不会被列在任何地方：只有该服务器以及持有您所发送链接的人才能看到。为了得知自己的公网地址，这台电脑会向公共 STUN 服务器查询（Cloudflare，无法连接时改用 Google 和 Nextcloud）。%n%n可随时在管理页面关闭。
@@ -203,23 +219,23 @@ zh.InternetPageOption=允许互联网链接（推荐）
 zh.InternetBtnSkip=跳过(&S)
 zh.InternetBtnAccept=接受(&A)
 zh.VDisplayPageCaption=虚拟显示器
-zh.VDisplayPageDesc=是否安装“MoonlightWeb Virtual Display”？
-zh.VDisplayPageBody=MoonlightWeb 可以为这台电脑提供一个专属的串流屏幕：“MoonlightWeb Virtual Display”，一个在主机页面上显示为卡片的虚拟显示器。%n%n它默认处于关闭状态。打开其卡片即可开启它、将其设为主显示器并进行串流；最后一个串流结束后它会再次关闭，您之前的主显示器恢复原来的角色。没有连接显示器的电脑——通过电视安装后放进柜子里——就靠它来串流。%n%n驱动程序是开源的 Virtual Display Driver（MIT 许可，已签名），静默安装，且与您已有的任何虚拟显示器并存。只有卸载 MoonlightWeb 才会将其移除。
-zh.VDisplayPageOption=安装“MoonlightWeb Virtual Display”（推荐）
-zh.RunApp=启动 {#MyAppName}
+zh.VDisplayPageDesc=是否安装虚拟显示器？
+zh.VDisplayPageBody=S3XYCast PC 可以为这台电脑增加一块专门用于串流的屏幕：一个虚拟显示器，它会采用观看设备（您的汽车、手机）的尺寸。它在主页上显示为“适配此设备的屏幕”。%n%n它默认处于关闭状态。打开其卡片即可开启它、将其设为主显示器并进行串流；最后一个串流结束后它会再次关闭，您之前的主显示器恢复原来的角色。没有连接显示器的电脑就靠它来串流。%n%n驱动程序是开源的 Virtual Display Driver（MIT 许可，已签名），静默安装，且与您已有的任何虚拟显示器并存。只有卸载 S3XYCast PC 才会将其移除。
+zh.VDisplayPageOption=安装虚拟显示器（推荐）
+zh.RunApp=启动 {#MyAppDisplayName}
 zh.RunAdmin=打开管理页面
-zh.ProvisionPageCaption=正在设置 {#MyAppName}
+zh.ProvisionPageCaption=正在设置 {#MyAppDisplayName}
 zh.ProvisionPageDesc=正在完成安装
-zh.ProvisionWorking=请稍候，{#MyAppName} 正在完成设置...
+zh.ProvisionWorking=请稍候，{#MyAppDisplayName} 正在完成设置...
 zh.ResolveLinkWait=正在准备通往管理页面的链接...
 zh.TaskArecord=启用互联网链接
 zh.ButtonUpdate=更新(&U)
-zh.UpdatePageCaption=更新 {#MyAppName}
+zh.UpdatePageCaption=更新 {#MyAppDisplayName}
 zh.UpdatePageDesc=较新的版本将替换已安装的版本
-zh.UpdateReadyMemo=已安装 {#MyAppName} %1，将更新到 %2。%n%n您的设置、互联网链接和已配对的主机将保持不变，无需任何配置。
-zh.UpdateReadyMemoFresh={#MyAppName} 将更新到 %1。%n%n您的设置、互联网链接和已配对的主机将保持不变，无需任何配置。
-zh.UninstConfigTitle=卸载 {#MyAppName}
-zh.UninstConfigBody=默认保留您的配置：如果您再次安装 {#MyAppName}，它将完全按照您离开时的状态启动。
+zh.UpdateReadyMemo=已安装 {#MyAppDisplayName} %1，将更新到 %2。%n%n您的设置、互联网链接和已配对的主机将保持不变，无需任何配置。
+zh.UpdateReadyMemoFresh={#MyAppDisplayName} 将更新到 %1。%n%n您的设置、互联网链接和已配对的主机将保持不变，无需任何配置。
+zh.UninstConfigTitle=卸载 {#MyAppDisplayName}
+zh.UninstConfigBody=默认保留您的配置：如果您再次安装 {#MyAppDisplayName}，它将完全按照您离开时的状态启动。
 zh.UninstConfigOption=同时删除我的配置
 zh.UninstConfigDetail=设置、账户、证书和主机配对将被永久删除。
 
@@ -245,9 +261,9 @@ Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdi
 ; already running, surfaces the admin page via its single-instance logic — so one
 ; click always lands on the admin page, launching the app first if needed. The
 ; uninstaller entry lives in the group too.
-Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExe}"; WorkingDir: "{app}"
-Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExe}"; WorkingDir: "{app}"; Tasks: desktopicon
-Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
+Name: "{group}\{#MyAppDisplayName}"; Filename: "{app}\{#MyAppExe}"; WorkingDir: "{app}"
+Name: "{autodesktop}\{#MyAppDisplayName}"; Filename: "{app}\{#MyAppExe}"; WorkingDir: "{app}"; Tasks: desktopicon
+Name: "{group}\{cm:UninstallProgram,{#MyAppDisplayName}}"; Filename: "{uninstallexe}"
 
 [Run]
 ; The tray server is already launched during the provisioning checklist (see
@@ -296,6 +312,10 @@ const
   // SasOwnersKey, and the value goes when the last of them is uninstalled.
   SasPolicyKey = 'SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System';
   SasPolicyValue = 'SoftwareSASGeneration';
+  // S3XYCast edition: the SAME key as MoonlightWeb's installers, on purpose. It is
+  // a register of the editions that rely on the value: this one adds its name to
+  // it, so that uninstalling MoonlightWeb from a machine that has both leaves the
+  // value this edition needs (and the other way round).
   SasOwnersKey = 'SOFTWARE\MoonlightWeb\SoftwareSASGeneration';
 
 var
@@ -446,8 +466,8 @@ end;
 // True when a Desktop shortcut created by a previous install is still there.
 function DesktopIconExists(): Boolean;
 begin
-  Result := FileExists(ExpandConstant('{autodesktop}\{#MyAppName}.lnk'))
-         or FileExists(ExpandConstant('{userdesktop}\{#MyAppName}.lnk'));
+  Result := FileExists(ExpandConstant('{autodesktop}\{#MyAppDisplayName}.lnk'))
+         or FileExists(ExpandConstant('{userdesktop}\{#MyAppDisplayName}.lnk'));
 end;
 
 // "Passer": decline the Internet link and move on. Inno has no API to advance
@@ -478,7 +498,7 @@ var
 begin
   Result := False;
   if not LoadStringFromFile(
-       ExpandConstant('{userappdata}\MoonlightWeb\{#MyAppName}\settings.json'), raw) then
+       ExpandConstant('{userappdata}\{#MyAppOrg}\{#MyAppName}\settings.json'), raw) then
     Exit;
   content := raw;
   p := Pos('"' + key + '":', content);
@@ -499,7 +519,7 @@ var
 begin
   Result := False;
   if not LoadStringFromFile(
-       ExpandConstant('{userappdata}\MoonlightWeb\{#MyAppName}\settings.json'), raw) then
+       ExpandConstant('{userappdata}\{#MyAppOrg}\{#MyAppName}\settings.json'), raw) then
     Exit;
   content := raw;
   Result := Pos('"' + key + '":', content) > 0;
@@ -951,7 +971,7 @@ begin
   // pure-ASCII file always parses; TaskXmlEscape keeps it pure ASCII.
   xml :=
     '<Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">' + #13#10 +
-    '  <RegistrationInfo><Author>MoonlightWeb</Author></RegistrationInfo>' + #13#10 +
+    '  <RegistrationInfo><Author>{#MyAppDisplayName}</Author></RegistrationInfo>' + #13#10 +
     '  <Triggers><LogonTrigger><Enabled>true</Enabled><UserId>' + user + '</UserId></LogonTrigger></Triggers>' + #13#10 +
     '  <Principals><Principal id="Author">' +
     '<UserId>' + user + '</UserId><LogonType>InteractiveToken</LogonType><RunLevel>LeastPrivilege</RunLevel>' +
@@ -1022,7 +1042,7 @@ begin
   // No <?xml?> declaration and pure ASCII, for the same reason as the logon task.
   xml :=
     '<Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">' + #13#10 +
-    '  <RegistrationInfo><Author>MoonlightWeb</Author></RegistrationInfo>' + #13#10 +
+    '  <RegistrationInfo><Author>{#MyAppDisplayName}</Author></RegistrationInfo>' + #13#10 +
     '  <Principals><Principal id="Author">' +
     '<UserId>' + user + '</UserId><LogonType>InteractiveToken</LogonType>' +
     '<RunLevel>HighestAvailable</RunLevel>' +
@@ -1065,7 +1085,7 @@ begin
   // No <?xml?> declaration and pure ASCII, for the same reason as the logon task.
   xml :=
     '<Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">' + #13#10 +
-    '  <RegistrationInfo><Author>MoonlightWeb</Author></RegistrationInfo>' + #13#10 +
+    '  <RegistrationInfo><Author>{#MyAppDisplayName}</Author></RegistrationInfo>' + #13#10 +
     '  <Principals><Principal id="Author">' +
     '<UserId>' + user + '</UserId><LogonType>InteractiveToken</LogonType>' +
     '<RunLevel>HighestAvailable</RunLevel>' +
@@ -1107,7 +1127,7 @@ begin
   // No <?xml?> declaration and pure ASCII, for the same reason as the logon task.
   xml :=
     '<Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">' + #13#10 +
-    '  <RegistrationInfo><Author>MoonlightWeb</Author></RegistrationInfo>' + #13#10 +
+    '  <RegistrationInfo><Author>{#MyAppDisplayName}</Author></RegistrationInfo>' + #13#10 +
     '  <Principals><Principal id="Author">' +
     '<UserId>' + user + '</UserId><LogonType>InteractiveToken</LogonType>' +
     '<RunLevel>HighestAvailable</RunLevel>' +
@@ -1270,10 +1290,10 @@ var
 begin
   exePath := ExpandConstant('{app}\{#MyAppExe}');
   Exec(ExpandConstant('{sys}\netsh.exe'),
-       'advfirewall firewall delete rule name="{#MyAppName}"',
+       'advfirewall firewall delete rule name="{#MyAppDisplayName}"',
        '', SW_HIDE, ewWaitUntilTerminated, rc);
   Exec(ExpandConstant('{sys}\netsh.exe'),
-       'advfirewall firewall add rule name="{#MyAppName}" dir=in action=allow'
+       'advfirewall firewall add rule name="{#MyAppDisplayName}" dir=in action=allow'
        + ' program="' + exePath + '" enable=yes profile=any',
        '', SW_HIDE, ewWaitUntilTerminated, rc);
 end;
@@ -1436,8 +1456,8 @@ begin
   // Either way the server just restarted with the settings it already had.
   if WizardSilent or UpdateMode then Exit;
 
-  // Qt AppDataLocation on Windows: %AppData%\<Org>\<App> = MoonlightWeb\<MyAppName>.
-  statusPath := ExpandConstant('{userappdata}\MoonlightWeb\{#MyAppName}\provisioning.status.json');
+  // Qt AppDataLocation on Windows: %AppData%\<Org>\<App> = <MyAppOrg>\<MyAppName>.
+  statusPath := ExpandConstant('{userappdata}\{#MyAppOrg}\{#MyAppName}\provisioning.status.json');
 
   ProgressPage.SetText(ExpandConstant('{cm:ProvisionWorking}'), '');
   ProgressPage.Show;
@@ -1630,13 +1650,10 @@ begin
     SaveStringsToUTF8FileWithoutBOM(ExpandConstant('{app}\provisioning.json'), lines, False);
   end;
 
-  // The Desktop / Start-Menu shortcuts are now .lnk files that launch the exe
-  // (created in [Icons]); clean up stale .url shortcuts left by pre-2026-07
-  // versions (the server used to self-heal a Desktop/Start-Menu .url pointing
-  // at the admin page, which did not start the app).
-  DeleteFile(ExpandConstant('{group}\MoonlightWeb Admin.url'));
-  DeleteFile(ExpandConstant('{autodesktop}\MoonlightWeb Admin.url'));
-  DeleteFile(ExpandConstant('{userdesktop}\MoonlightWeb Admin.url'));
+  // S3XYCast edition: upstream removes here the "MoonlightWeb Admin.url"
+  // shortcuts its versions of before 2026-07 left behind. This edition never
+  // wrote one, and a file under that name on a machine that has both belongs
+  // to MoonlightWeb: it is left alone.
 
   // Open the firewall for the server before it first binds a listener, so the
   // inbound HTTPS port (443 / parity / fallback) is reachable from the LAN and
@@ -1795,30 +1812,26 @@ begin
          ewWaitUntilTerminated, rc);
     // Remove the firewall rule added at install time.
     Exec(ExpandConstant('{sys}\netsh.exe'),
-         'advfirewall firewall delete rule name="{#MyAppName}"', '', SW_HIDE,
+         'advfirewall firewall delete rule name="{#MyAppDisplayName}"', '', SW_HIDE,
          ewWaitUntilTerminated, rc);
-    DeleteFile(ExpandConstant('{group}\MoonlightWeb Admin.url'));
-    // Both desktops: the installer wrote the provisional shortcut to the common
-    // desktop ({autodesktop} elevated); the server self-heals one on the USER
-    // desktop at every startup (see writeAdminShortcut in main.cpp).
-    DeleteFile(ExpandConstant('{autodesktop}\MoonlightWeb Admin.url'));
-    DeleteFile(ExpandConstant('{userdesktop}\MoonlightWeb Admin.url'));
+    // S3XYCast edition: no "MoonlightWeb Admin.url" to remove here either (see
+    // CurStepChanged): this edition never wrote one.
     DeleteFile(ExpandConstant('{app}\provisioning.json'));
     DeleteFile(ExpandConstant('{app}\provisioning.consumed.json'));
-    DeleteFile(ExpandConstant('{userappdata}\MoonlightWeb\{#MyAppName}\provisioning.status.json'));
+    DeleteFile(ExpandConstant('{userappdata}\{#MyAppOrg}\{#MyAppName}\provisioning.status.json'));
 
     // Opt-in wipe. Runs after the server has been killed above: its lock file,
     // logs and settings are only closed once the process is really gone.
     if removeConfig then begin
-      DelTree(ExpandConstant('{userappdata}\MoonlightWeb\{#MyAppName}'), True, True, True);
+      DelTree(ExpandConstant('{userappdata}\{#MyAppOrg}\{#MyAppName}'), True, True, True);
       // Leave the parent MoonlightWeb\ behind only if something else lives in it.
-      RemoveDir(ExpandConstant('{userappdata}\MoonlightWeb'));
+      RemoveDir(ExpandConstant('{userappdata}\{#MyAppOrg}'));
       // QSettings' hive: hosts\<n>\pairState, the client certificate/key, window
       // state. This edition's subkey only — the org key also holds the other
       // edition's and every --dev instance's pairings — then the org key
       // itself if nothing else is left in it.
-      RegDeleteKeyIncludingSubkeys(HKCU, 'Software\MoonlightWeb\{#MyAppName}');
-      RegDeleteKeyIfEmpty(HKCU, 'Software\MoonlightWeb');
+      RegDeleteKeyIncludingSubkeys(HKCU, 'Software\{#MyAppOrg}\{#MyAppName}');
+      RegDeleteKeyIfEmpty(HKCU, 'Software\{#MyAppOrg}');
     end;
   end;
 end;

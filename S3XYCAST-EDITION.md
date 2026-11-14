@@ -23,6 +23,7 @@ desktop, with sound, touch as a mouse, keyboard and controller. It ships no game
 | 2026-11-14 | **Consent text.** The Internet-access agreement says what this edition does: the S3XYCast entry server by name, and the public STUN servers that are actually asked. Wizard, admin page, installer and command line, in every language they speak. |
 | 2026-11-14 | **Log scrubbing.** A log shared for support hides the machine's link on this edition's entry server, as it hides one on upstream's (`LogScrubber.cpp`). |
 | 2026-11-14 | **Introduction server.** `mw-rendezvous` can read its owner secret from a file (`MW_RDV_OWNER_SECRET_FILE`), for a Windows service whose environment would otherwise sit in the registry. |
+| 2026-11-14 | **Windows installer.** `backend/installer/moonlightweb.iss` installs the edition under its own names: its own application id, `%AppData%\S3XYCast\S3XYCastPC`, tasks and keys named after the product, shortcuts and wizard texts that read S3XYCast PC, a virtual-display page in plain words. It installs beside MoonlightWeb and uninstalls without touching it: the two share only the register of the editions that rely on the Ctrl+Alt+Del policy and the signed HID driver, and this installer removes no file of MoonlightWeb's. `backend/installer/make-installer.bat` stages and compiles it the way upstream's release workflow does. |
 | 2026-11-14 | **Plain words.** The home page, the login page and the admin page say what they do in everyday words (a native host's screens are "Screen fitted to this device" and "PC screen 1"; the session name is folded under "More options"). |
 
 Upstream's stylesheets are not edited: the look is one additional file, so that taking a new
@@ -40,11 +41,14 @@ input drivers, and everything else not listed above are upstream's, unmodified.
   behind a TLS front) still has to be installed there. The entry page refuses, by design, an
   interface that is not one of the published releases: each release of this edition needs its list
   in `bootstrap/v1/interfaces/` (`scripts/interface-list.mjs`), and upstream's lists removed.
-- **Its Windows installer.** `backend/installer/moonlightweb.iss` and `deploy.bat` still carry
-  upstream's names: the application id, the folders under `%AppData%`, the registry keys and the
-  task authors have to become the edition's (the program already looks for them under its own
-  name), and the staged update keeps upstream's file name until then (`SelfUpdater`,
-  `UpdateApply`). The update channel points at this edition's releases, which do not exist yet.
+- **Code signing.** The program and its installer are not signed: Windows SmartScreen warns on
+  the download and the elevation prompt reads "Unknown publisher". A code-signing certificate
+  (and `SignTool` in the installer script, or a signing step around it as upstream does) is what
+  removes both.
+- **Updates.** The update channel points at this edition's releases, which do not exist yet (the
+  check logs a warning until they do). A staged update keeps upstream's file name
+  (`MoonlightWeb-update.exe`, inside the edition's own folders: `SelfUpdater`, `UpdateApply`).
+  `backend/installer/deploy.bat` is upstream's older staging script, unused here.
 - **Versions.** The edition has its own line of versions, tagged `s3x-vX.Y.Z` on its branch: the
   repository keeps upstream's history and its `v*` tags, and the two lines must not be read as
   one (the build and `scripts/interface-list.mjs` look for the edition's prefix only). A release
