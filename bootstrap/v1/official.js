@@ -80,7 +80,13 @@ export const PRODUCTION_ENFORCES = true;
  * @returns {{enforce: boolean, unreleasedAllowed: boolean}}
  */
 export function interfacePolicy(hostname) {
-    const staging = /^stream\.dev\./.test(hostname || '');
+    // S3XYCast edition: it has no staging server. An entry page served on
+    // loopback, a developer's own machine, stands in for one: it holds a
+    // release to its list and lets a build of anything in between through.
+    // That origin is shared with nobody else's machine.
+    const staging =
+        /^stream\.dev\./.test(hostname || '') ||
+        /^(localhost|127\.0\.0\.1|\[::1\])$/.test(hostname || '');
     return { enforce: staging || PRODUCTION_ENFORCES, unreleasedAllowed: staging };
 }
 

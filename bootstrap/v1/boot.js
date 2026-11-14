@@ -44,6 +44,8 @@ import {
     judgeFile,
     officialDigest,
 } from './official.js';
+// S3XYCast edition: what this page says, in the visitor's language (words.js).
+import { tr } from './words.js';
 
 const ui = {
     stage: document.getElementById('stage'),
@@ -56,11 +58,18 @@ const ui = {
     reload: document.getElementById('reload'),
 };
 
+// S3XYCast edition: the words the markup starts with, in the visitor's language.
+for (const el of [ui.stage, ui.status, ui.reload, ui.forget]) {
+    if (el) el.textContent = tr(el.textContent);
+}
+
 function say(stage, detail) {
     // The heading is the failure voice and is hidden while this works; the line
     // under the bar carries the same words in the meantime.
-    if (ui.stage) ui.stage.textContent = stage;
-    if (ui.detail) ui.detail.textContent = detail || stage || '';
+    // S3XYCast edition: translated on the way to the screen (words.js).
+    const stageWords = tr(stage);
+    if (ui.stage) ui.stage.textContent = stageWords;
+    if (ui.detail) ui.detail.textContent = tr(detail) || stageWords || '';
 }
 
 /* ── The meter ────────────────────────────────────────────────────────────
@@ -117,7 +126,7 @@ function progress(fraction) {
 function markSecured() {
     secured = true;
     document.body.dataset.state = 'secured';
-    if (ui.status) ui.status.textContent = 'Secured';
+    if (ui.status) ui.status.textContent = tr('Secured');
 }
 
 /** Compute and paint one frame. Idempotent, so anything may call it. */
@@ -173,7 +182,7 @@ function fail(message, hint, heading = 'Not connected') {
     clearInterval(heartbeat);
     document.body.dataset.state = 'failed';
     say(heading, message);
-    if (ui.note) ui.note.textContent = hint || '';
+    if (ui.note) ui.note.textContent = tr(hint || '');
     // Every path into here ends on a page the person is left looking at, and on
     // most of them the machine in the address is exactly the one that cannot
     // help them. This is the moment the caption becomes a way out.
@@ -480,7 +489,7 @@ if (ui.forget) {
         forgotten = true;
         dropOverdue();
         paintForget(false);
-        if (ui.note) ui.note.textContent = 'Removed from this browser’s list of machines.';
+        if (ui.note) ui.note.textContent = tr('Removed from this browser’s list of machines.');
         paintInstances(true);
     });
 }
@@ -1025,7 +1034,7 @@ async function waitForNextTry(ms, seen) {
  *  menu the person may have open. Left alone while the page wears its opening
  *  look for being put away. */
 function sayNote(text) {
-    if (ui.note && document.body.dataset.state === 'failed') ui.note.textContent = text;
+    if (ui.note && document.body.dataset.state === 'failed') ui.note.textContent = tr(text);
 }
 
 /** A try that reached the machine: the caption may no longer deny that it did. */

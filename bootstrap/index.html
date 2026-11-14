@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>MoonlightWeb</title>
+<title>S3XYCast PC</title>
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#05080b">
 <!-- No icon, said rather than left for the browser to look for. Without it the
@@ -458,6 +458,58 @@
     .shackle { animation: none; }
   }
 </style>
+<!-- S3XYCast edition: the entry page in the application's own look (frontend/css/s3xycast.css): a flat
+     near-black, the S3XYCast mark, Overpass. After upstream's sheet on purpose, which stays as it is. -->
+<style>
+  @font-face {
+    font-family: 'Overpass';
+    src: url('/assets/overpass-var-latin.woff2') format('woff2');
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
+  }
+  :root {
+    --surface-0: #0a0c10;
+    --surface-2: #12151b;
+    --text-1: #f4f4f2;
+    --text-2: #a6acb7;
+    --text-3: #727986;
+    --accent-1: #e3262d;
+    --neon-cyan: #d5d9e0;
+    --neon-magenta: #e3262d;
+    --border-1: rgba(244, 244, 242, 0.09);
+    --border-2: rgba(244, 244, 242, 0.2);
+    --font-ui: 'Overpass', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  }
+  body { font-size: 17px; }
+  /* The tech grid and its magenta wash. */
+  body::before { display: none; }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 1.375rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    text-transform: none;
+    text-shadow: none;
+  }
+  .brand::before {
+    content: '';
+    flex: none;
+    width: 44px;
+    height: 44px;
+    border-radius: 13px;
+    background: #000 url('/assets/s3xycast-logo.svg') center / cover no-repeat;
+  }
+  h1 { letter-spacing: normal; text-transform: none; font-weight: 800; }
+  #status { font-size: 1.05rem; letter-spacing: normal; color: var(--text-2); }
+  #detail { font-family: var(--font-ui); font-size: .9rem; }
+  #note { font-size: .95rem; line-height: 1.5; color: var(--text-2); }
+  #note a { color: var(--text-1); }
+  button { font-family: inherit; }
+  #reload, #forget { border-radius: 999px; }
+</style>
 </head>
 <body data-state="working">
 <!-- Under /v1/, like every script here except sw.js: the path names the shape
@@ -470,7 +522,7 @@
 <main>
   <div class="inner">
     <div class="brand-row">
-      <p class="brand">MoonlightWeb</p>
+      <p class="brand">S3XYCast PC</p>
       <!-- Which machine this address names, and — when this browser knows
            others — the way to one of them. Filled in by boot.js; hidden until
            it is, so nothing flashes a placeholder. -->

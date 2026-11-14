@@ -189,7 +189,7 @@ QString RendezvousClient::baseUrl()
         return url;
     }
     QString domain = QString::fromUtf8(qgetenv("MW_DOMAIN"));
-    if (domain.isEmpty()) domain = QStringLiteral("moonlightweb.top");
+    if (domain.isEmpty()) domain = QStringLiteral("pc.s3xycast.com");
     return QStringLiteral("https://stream.") + domain;
 }
 

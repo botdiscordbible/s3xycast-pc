@@ -66,14 +66,13 @@ QList<StunClient::StunServer> StunClient::defaultServers()
     // names the introduction server's operator, not Google's. The rest stay as a
     // fallback because a machine that cannot learn its own address cannot be
     // reached at all, and that is a worse answer than a widely-used third party.
-    QString domain = QString::fromUtf8(qgetenv("MW_DOMAIN"));
-    if (domain.isEmpty()) domain = QStringLiteral("moonlightweb.top");
-
+    //
+    // S3XYCast edition: its introduction server does not answer STUN (see
+    // mw::edition::kEditionStunUrl), so the list starts with the public ones.
     return {
-        {QStringLiteral("stream.") + domain, 3478},
+        {QStringLiteral("stun.cloudflare.com"), 3478},
         {QStringLiteral("stun.l.google.com"), 19302},
         {QStringLiteral("stun1.l.google.com"), 19302},
-        {QStringLiteral("stun.cloudflare.com"), 3478},
         {QStringLiteral("stun.nextcloud.com"), 443},
         {QStringLiteral("relay.metered.ca"), 80},
     };

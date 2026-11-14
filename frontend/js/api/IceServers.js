@@ -55,5 +55,8 @@ export function ourStunHost() {
     } catch (_e) {
         /* no location (worker, test harness) — fall through to the default */
     }
-    return 'stream.moonlightweb.top';
+    // S3XYCast edition: its introduction server (pc.s3xycast.com) does not
+    // answer STUN, and upstream's is not this edition's to use. No server of
+    // "ours", then: defaultIceServers() goes straight to the public ones.
+    return '';
 }

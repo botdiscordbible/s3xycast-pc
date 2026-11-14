@@ -288,6 +288,10 @@ static void applyEmbeddedEnvDefaults()
 #ifdef MW_PDNS_TOKEN
     setIfEmpty("MW_PDNS_TOKEN", MW_PDNS_TOKEN);
 #endif
+    // S3XYCast edition: its own introduction server, never upstream's. Last,
+    // so the environment, the .env and a domain baked in at build time all win.
+    setIfEmpty("MW_DOMAIN", mw::edition::kEditionDomain);
+    setIfEmpty("MW_RENDEZVOUS_URL", mw::edition::kEditionRendezvousUrl);
 }
 
 // Version string baked in by CMake (MW_VERSION cache var, overridden by the
@@ -2025,11 +2029,15 @@ int main(int argc, char* argv[])
     // dev build is pointed at production to check compatibility — while the
     // domain CI bakes into a release binary must not.
     // A LAN-only instance talks to no introduction server, staging included.
+    //
+    // S3XYCast edition: there is no staging introduction server, and upstream's
+    // is not this edition's to use. A `--dev` run that names none gets the
+    // edition's own, like any other (applyEmbeddedEnvDefaults); it says so.
     if (devMode && !mw::edition::lanOnly() && qEnvironmentVariableIsEmpty("MW_DOMAIN") &&
         qEnvironmentVariableIsEmpty("MW_RENDEZVOUS_URL")) {
-        qputenv("MW_DOMAIN", "dev.moonlightweb.top");
-        Logger::info("[--dev] MW_DOMAIN defaulted to dev.moonlightweb.top (staging); set "
-                     "MW_DOMAIN=moonlightweb.top to target production");
+        Logger::info(QStringLiteral("[--dev] no staging introduction server in this edition: "
+                                    "using %1; set MW_RENDEZVOUS_URL to point elsewhere")
+                         .arg(QLatin1String(mw::edition::kEditionRendezvousUrl)));
     }
     applyEmbeddedEnvDefaults();
     if (mw::edition::lanOnly())

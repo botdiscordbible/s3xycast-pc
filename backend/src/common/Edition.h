@@ -45,6 +45,24 @@
  */
 namespace mw::edition {
 
+// ── S3XYCast edition: where this edition's own services live ────────────────
+//
+// Upstream's introduction server refuses an interface that is not one of its
+// published releases, and it is the author's: this edition never reaches it.
+// Its own answers at the domain itself (the entry link is
+// https://pc.s3xycast.com/<identifier>). Nothing is deployed under "updates."
+// and "metrics." of that domain: no update relay, no census, and a build of
+// this edition carries no MW_PDNS_TOKEN, which is what those two wait for.
+// These are defaults: MW_DOMAIN / MW_RENDEZVOUS_URL in the environment or the
+// .env still win (main.cpp, applyEmbeddedEnvDefaults).
+inline constexpr char kEditionDomain[] = "pc.s3xycast.com";
+inline constexpr char kEditionRendezvousUrl[] = "https://pc.s3xycast.com";
+// What a browser is told to ask its public address. The edition's introduction
+// server does not answer STUN (it shares a Windows box with the S3XYCast relay),
+// so a widely used public server stands in; `stun_server` in settings.json
+// overrides it.
+inline constexpr char kEditionStunUrl[] = "stun:stun.cloudflare.com:3478";
+
 // Ports a DEV identity listens on by default, clear of the production 80/443
 // and of the GameStream ranges (47984-48010 stock, 48100+ for MultiSeat seats).
 // The signaling base also seeds the control channel (+2) and the per-slot

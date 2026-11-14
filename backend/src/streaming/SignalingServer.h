@@ -201,7 +201,7 @@ private:
     // starts; the literal is only what a construction that forgot would get,
     // and it names our own server for the same reason every other default
     // does. An instance under its own MW_DOMAIN is covered by the caller.
-    QString m_StunServerUrl = QStringLiteral("stun:stream.moonlightweb.top:3478");
+    QString m_StunServerUrl = QStringLiteral("stun:stun.cloudflare.com:3478");
 
     /// Force ICE-TCP candidates (true = UDP + TCP, false = UDP only).
     bool m_ForceIceTcp = false;

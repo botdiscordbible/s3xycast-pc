@@ -39,11 +39,11 @@ static constexpr int kPeriodicCheckMs = 5 * 60 * 1000;
 
 /// Parent domain of the retired DNS mechanism, kept only to recognise a name
 /// this instance would have carried under it (see buildDomain()).
-/// Read from MW_DOMAIN env var (fallback: "moonlightweb.top").
+/// Read from MW_DOMAIN env var (fallback: this edition's own, "pc.s3xycast.com").
 static QString baseDomain()
 {
     QString env = QString::fromUtf8(qgetenv("MW_DOMAIN"));
-    return env.isEmpty() ? QStringLiteral("moonlightweb.top") : env;
+    return env.isEmpty() ? QStringLiteral("pc.s3xycast.com") : env;
 }
 
 // ---------------------------------------------------------------------------

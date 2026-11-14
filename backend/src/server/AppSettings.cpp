@@ -1444,9 +1444,10 @@ QString AppSettings::stunServer() const
     // Google. StunClient::defaultServers() keeps the public servers behind it
     // for the backend's own detection; a browser gets one server and a direct
     // connection it can fall back to.
-    QString domain = QString::fromUtf8(qgetenv("MW_DOMAIN"));
-    if (domain.isEmpty()) domain = QStringLiteral("moonlightweb.top");
-    return QStringLiteral("stun:stream.") + domain + QStringLiteral(":3478");
+    //
+    // S3XYCast edition: its introduction server does not answer STUN, so the
+    // browser is given a public server instead (mw::edition::kEditionStunUrl).
+    return QString::fromLatin1(mw::edition::kEditionStunUrl);
 }
 
 void AppSettings::setStunServer(const QString& url)
@@ -1670,7 +1671,7 @@ QString AppSettings::domain() const
     // The name a pre-0.3 install would have registered under the retired DNS
     // mechanism. Computed only to be excluded below — nothing points at it.
     QString baseDomain = QString::fromUtf8(qgetenv("MW_DOMAIN"));
-    if (baseDomain.isEmpty()) baseDomain = QStringLiteral("moonlightweb.top");
+    if (baseDomain.isEmpty()) baseDomain = QStringLiteral("pc.s3xycast.com");
 
     const QString uid = uniqueId();
     const QString retired = uid.isEmpty() ? baseDomain : (uid + QLatin1Char('.') + baseDomain);
