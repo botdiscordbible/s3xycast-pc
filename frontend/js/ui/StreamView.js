@@ -163,6 +163,7 @@ import { VdGpuApartWatch, takeVdGpuApartNotice } from '../util/vdGpuApartNotice.
 
 /** @typedef {import('../types/transport.js').StreamTransport} StreamTransport */
 import { escapeHtml } from '../util/escapeHtml.js';
+import { BRAND_NAME } from '../brand.js';
 import { shortcutsGridHtml, shortcutsTitle } from '../util/shortcutsHelp.js';
 import { Icons } from './icons.js';
 import { ShareMenu } from './ShareMenu.js';
@@ -2359,7 +2360,7 @@ export class StreamView {
         el.innerHTML = `
             <div class="stream-header">
                 <div class="stream-brand" aria-hidden="true">
-                    <span class="stream-brand-title">MoonlightWeb</span>
+                    <span class="stream-brand-title">${BRAND_NAME}</span>
                     ${
                         // The shell's own classes, and its own nesting: the name
                         // sits inside .instance-menu because that is where its

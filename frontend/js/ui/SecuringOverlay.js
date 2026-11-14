@@ -39,6 +39,7 @@
  */
 
 import { t } from '../i18n/i18n.js';
+import { BRAND_NAME } from '../brand.js';
 
 const WORK_WEIGHT = 0.7;
 const TIME_WEIGHT = 0.3;
@@ -124,7 +125,7 @@ function build() {
     root.setAttribute('aria-live', 'polite');
     root.innerHTML = `
         <div class="securing-inner">
-            <p class="securing-brand">MoonlightWeb</p>
+            <p class="securing-brand">${BRAND_NAME}</p>
             <div class="securing-seal" aria-hidden="true">
                 <div class="securing-face">
                     <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2"

@@ -1,15 +1,15 @@
 {
-    "name": "MoonlightWeb",
-    "short_name": "MoonlightWeb",
-    "description": "Stream your gaming PC to any browser",
+    "name": "S3XYCast PC",
+    "short_name": "S3XYCast PC",
+    "description": "Your PC on your Tesla’s screen",
     "start_url": "/",
     "scope": "/",
     "display": "fullscreen",
     "display_override": ["fullscreen", "standalone"],
     "launch_handler": { "client_mode": ["navigate-existing", "auto"] },
     "orientation": "landscape",
-    "background_color": "#05080b",
-    "theme_color": "#05080b",
+    "background_color": "#0a0c10",
+    "theme_color": "#0a0c10",
     "icons": [
         {
             "src": "assets/icon-192.png",

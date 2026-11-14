@@ -621,7 +621,8 @@ QString NativeHostBackend::hostDisplayName()
     if (host.isEmpty()) host = QStringLiteral("This PC");
     // The suffix is what makes the card unmistakable in a list that may also
     // hold Sunshine and Wolf hosts.
-    return QStringLiteral("%1 — MoonlightWeb Host").arg(host);
+    // S3XYCast edition: the edition's name, where upstream writes its own.
+    return QStringLiteral("%1 — S3XYCast PC").arg(host);
 }
 
 BackendCapabilities NativeHostBackend::capabilities() const

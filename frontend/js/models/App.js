@@ -68,6 +68,12 @@ export class App {
         // The server names it in English; the browser, in its own language.
         if (this.isRemoteDesktopReturn) return t('apps.remoteDesktopReturn');
         if (this.isSignInScreen) return t('apps.signInScreen');
+        // S3XYCast edition: a native host's screens in plain words. Its virtual
+        // display is the one made at this device's size; the others are the
+        // PC's own, which it numbers "Display 1", "Display 2".
+        if (this.device?.key === 'moonlightweb-virtual-display') return t('apps.fittedScreen');
+        const screen = this.device ? /^Display (\d+)$/.exec(this.name || '') : null;
+        if (screen) return t('apps.screenN', { n: screen[1] });
         return this.name;
     }
 

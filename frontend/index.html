@@ -6,7 +6,7 @@
             name="viewport"
             content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
         />
-        <title>MoonlightWeb</title>
+        <title>S3XYCast PC</title>
         <!-- Somebody's own machine, never a page to be found: whether it is
              reached on its LAN address or on a public name, nothing here is for a
              search engine or a crawler. Only the marketing site is indexed. -->
@@ -15,9 +15,9 @@
          browser chrome on iOS, which blocks the Fullscreen API on canvas). -->
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="MoonlightWeb" />
+        <meta name="apple-mobile-web-app-title" content="S3XYCast PC" />
         <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="theme-color" content="#05080b" />
+        <meta name="theme-color" content="#0a0c10" />
         <!-- The first file the page asks for, and owing nothing to the module
              graph: if a file of it never arrives, it reloads once, then says so
              (js/bootWatch.js). First, because a browser opens at most six
@@ -54,12 +54,16 @@
         <link rel="stylesheet" href="/css/views/gamepad.css?v=__MW_VERSION__" />
         <link rel="stylesheet" href="/css/stream.css?v=__MW_VERSION__" />
         <link rel="stylesheet" href="/css/securing.css?v=__MW_VERSION__" />
+        <!-- S3XYCast edition: its look, over the design system above. Last on
+             purpose: it restates the tokens and takes back the cyberpunk
+             signature (css/s3xycast.css). -->
+        <link rel="stylesheet" href="/css/s3xycast.css?v=__MW_VERSION__" />
         <link rel="icon" href="/assets/favicon.ico" type="image/x-icon" />
     </head>
     <body>
         <div id="app">
             <header class="app-header">
-                <h1>MoonlightWeb</h1>
+                <h1>S3XYCast PC</h1>
                 <!-- The machine this page is talking to. Empty and hidden until
                      the instance answers with its name (InstanceMenu), so the
                      header never flashes a placeholder or a stale one. It turns
@@ -148,7 +152,17 @@
             </main>
 
             <footer class="app-footer">
-                <span data-i18n="footer.tagline">MoonlightWeb &mdash; Game Streaming Client</span>
+                <span data-i18n="footer.tagline">S3XYCast PC</span>
+                <!-- S3XYCast edition: the project this is made from, and its
+                     licence, where anyone can read them (GPL-3.0). -->
+                <a
+                    class="app-footer-credits"
+                    href="https://github.com/linckosz/moonlight-web"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-i18n="footer.credits"
+                    >Free software (GPL-3.0), based on MoonlightWeb by Bruno Martin</a
+                >
             </footer>
         </div>
 

@@ -35,6 +35,7 @@ import { escapeHtml } from '../util/escapeHtml.js';
 import { InstanceMenu } from './InstanceMenu.js';
 import { currentInstanceRef, listInstances } from '../util/instances.js';
 import { tunnelHostId } from '../net/tunnelBridge.js';
+import { BRAND_NAME } from '../brand.js';
 
 /** The session name last signed in under (see rememberedMachineName). */
 const MACHINE_NAME_KEY = 'mw-session-name';
@@ -82,6 +83,7 @@ export class LoginView {
         this._accessCodeAvailable = false; // the owner chose a code on the host
         this._codeMode = false; // the personal-code form is the one on screen
         this._codeVisible = false; // "Show the code" ticked
+        this._optionsOpen = false; // "More options" unfolded (_renderOptions)
         this._selectedFileName = '';
         this._localUrl = ''; // https://localhost[:port] — the host machine's way back in
         // The other machines this browser has already been to (see _renderServerField).
@@ -251,7 +253,7 @@ export class LoginView {
                     <div class="login-logo">
                         <span class="login-logo-img" role="img" aria-label="Moonlight"></span>
                     </div>
-                    <h1 class="login-title">MoonlightWeb</h1>
+                    <h1 class="login-title">${BRAND_NAME}</h1>
                     ${this._renderHostName()}
 
                     <div id="login-form-area">
@@ -342,16 +344,6 @@ export class LoginView {
                 ${this._sessionKeyRefused ? `<p class="login-subtitle" id="login-session-key-refused">${t('login.sessionOtherBrowser')}</p>` : ''}
                 <p class="login-subtitle">${t('login.pinSubtitle')}</p>
 
-                <!-- Machine name -->
-                <div class="login-field">
-                    <label class="login-label" for="login-machine-input">${t('login.nameSession')}</label>
-                    <input type="text" id="login-machine-input" class="login-input"
-                           placeholder="${this.esc(t('login.namePlaceholder'))}"
-                           value="${this.esc(this._machineName)}"
-                           maxlength="24"
-                           autocomplete="off" />
-                </div>
-
                 <!-- PIN input -->
                 <div class="login-field login-field--pin">
                     <label class="login-label" for="login-pin-input">${t('login.pinLabel')}</label>
@@ -382,7 +374,31 @@ export class LoginView {
                         ${this._lockoutRemaining > 0 || this._submitting ? 'disabled' : ''}>
                     ${this._submitting ? t('common.verifying') : t('login.unlock')}
                 </button>
+                ${this._renderOptions()}
             </div>
+        `;
+    }
+
+    /**
+     * S3XYCast edition: what most people never need to touch, folded away under
+     * the button — the name this device will carry in the owner's list, and
+     * what "stay signed in" means. Shared by the PIN form and the personal
+     * code's. Open or closed is kept in state: a wrong code redraws the form.
+     */
+    _renderOptions() {
+        return `
+                <details class="login-options" id="login-options"${this._optionsOpen ? ' open' : ''}>
+                    <summary>${t('login.moreOptions')}</summary>
+                    <div class="login-field">
+                        <label class="login-label" for="login-machine-input">${t('login.nameSession')}</label>
+                        <input type="text" id="login-machine-input" class="login-input"
+                               placeholder="${this.esc(t('login.namePlaceholder'))}"
+                               value="${this.esc(this._machineName)}"
+                               maxlength="24"
+                               autocomplete="off" />
+                    </div>
+                    <p class="login-options-note">${t('login.rememberMeHint')}</p>
+                </details>
         `;
     }
 
@@ -397,16 +413,6 @@ export class LoginView {
             <div class="login-form login-form--code">
                 ${this._sessionKeyRefused ? `<p class="login-subtitle" id="login-session-key-refused">${t('login.sessionOtherBrowser')}</p>` : ''}
                 <p class="login-subtitle">${t('login.codeSubtitle')}</p>
-
-                <!-- Machine name -->
-                <div class="login-field">
-                    <label class="login-label" for="login-machine-input">${t('login.nameSession')}</label>
-                    <input type="text" id="login-machine-input" class="login-input"
-                           placeholder="${this.esc(t('login.namePlaceholder'))}"
-                           value="${this.esc(this._machineName)}"
-                           maxlength="24"
-                           autocomplete="off" />
-                </div>
 
                 <!-- Personal code -->
                 <div class="login-field login-field--code">
@@ -440,6 +446,7 @@ export class LoginView {
                         ${this._lockoutRemaining > 0 || this._submitting ? 'disabled' : ''}>
                     ${this._submitting ? t('common.verifying') : t('login.unlock')}
                 </button>
+                ${this._renderOptions()}
             </div>
         `;
     }
@@ -622,6 +629,14 @@ export class LoginView {
         if (machineInput) {
             machineInput.addEventListener('input', () => {
                 this._machineName = machineInput.value;
+            });
+        }
+
+        // "More options" (S3XYCast edition): unfolded stays unfolded through a redraw.
+        const options = this.container.querySelector('#login-options');
+        if (options) {
+            options.addEventListener('toggle', () => {
+                this._optionsOpen = options.open;
             });
         }
 

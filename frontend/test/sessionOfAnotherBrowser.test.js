@@ -527,7 +527,7 @@ describe('the words', () => {
     });
 
     it.each(['en', 'fr', 'zh'])('%s sends the host machine to the icon, not to a PIN', (lang) => {
-        expect(locale(lang).transport.hostKeyMissingOnHost).toMatch(/MoonlightWeb/);
+        expect(locale(lang).transport.hostKeyMissingOnHost).toMatch(/S3XYCast PC/);
         expect(locale(lang).transport.hostKeyMissingOnHost).not.toMatch(/PIN/);
     });
 
@@ -537,7 +537,7 @@ describe('the words', () => {
         );
         expect(locale('fr').transport.enterPin).toBe('Saisir un PIN');
         expect(locale('fr').transport.hostKeyMissingOnHost).toBe(
-            "Le stream n'a pas été lancé : cette page n'a pas pu vérifier l'hôte. Rouvrez MoonlightWeb depuis son icône sur ce PC, puis relancez le stream.",
+            "Le stream n'a pas été lancé : cette page n'a pas pu vérifier l'hôte. Rouvrez S3XYCast PC depuis son icône sur ce PC, puis relancez le stream.",
         );
         expect(locale('fr').transport.keyRefused).toBe(
             "Cet hôte a refusé ce navigateur, le stream n'a donc pas été lancé. Appairez-le à nouveau avec un PIN.",

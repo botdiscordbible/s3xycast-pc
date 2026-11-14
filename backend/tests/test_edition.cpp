@@ -26,10 +26,11 @@ void run_edition_tests()
     CHECK_EQ(dataNameFor(true, true), QStringLiteral("MoonlightWebDev-dev"));
 
     // What a person reads: production, or DEV — whichever way it became DEV.
-    CHECK_EQ(displayNameFor(false, false), QStringLiteral("MoonlightWeb"));
-    CHECK_EQ(displayNameFor(true, false), QStringLiteral("MoonlightWebDev"));
-    CHECK_EQ(displayNameFor(false, true), QStringLiteral("MoonlightWebDev"));
-    CHECK_EQ(displayNameFor(true, true), QStringLiteral("MoonlightWebDev"));
+    // S3XYCast edition: the edition's own name.
+    CHECK_EQ(displayNameFor(false, false), QStringLiteral("S3XYCast PC"));
+    CHECK_EQ(displayNameFor(true, false), QStringLiteral("S3XYCast PC Dev"));
+    CHECK_EQ(displayNameFor(false, true), QStringLiteral("S3XYCast PC Dev"));
+    CHECK_EQ(displayNameFor(true, true), QStringLiteral("S3XYCast PC Dev"));
 
     // The launcher's name follows the build only: a --dev run of the production
     // binary must not look for a DEV install's service or tasks.

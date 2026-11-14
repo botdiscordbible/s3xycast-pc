@@ -59,7 +59,10 @@ QString productName()
 
 QString displayNameFor(bool devBuild, bool devFlag)
 {
-    return devBuild || devFlag ? QStringLiteral("MoonlightWebDev") : QStringLiteral("MoonlightWeb");
+    // S3XYCast edition: the name people read is the edition's. The launcher's
+    // name and the state's (productNameFor, dataNameFor) are still upstream's:
+    // the installer, the scheduled tasks and the drivers are keyed on them.
+    return devBuild || devFlag ? QStringLiteral("S3XYCast PC Dev") : QStringLiteral("S3XYCast PC");
 }
 
 QString versionFor(const QString& base, bool dev)
