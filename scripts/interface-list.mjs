@@ -55,6 +55,10 @@ import {
 } from '../bootstrap/v1/official.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+// S3XYCast edition: the tag of a release. Its own prefix, because the repository
+// keeps upstream's history and with it upstream's v* tags: the edition's 0.1.1
+// is not the commit MoonlightWeb tagged v0.1.1.
+const tagOf = (version) => `s3x-v${version}`;
 const LISTS = path.join(ROOT, 'bootstrap', 'v1', 'interfaces');
 
 // install(DIRECTORY frontend …) in backend/CMakeLists.txt: the directories at the
@@ -177,7 +181,7 @@ function main(argv) {
 
     if (command === 'build') {
         const version = rest[0];
-        const ref = option('--ref') || `v${version}`;
+        const ref = option('--ref') || tagOf(version);
         fs.mkdirSync(LISTS, { recursive: true });
         fs.writeFileSync(listPath(version), buildList(version, ref));
         console.log(`wrote bootstrap/v1/interfaces/${version}.json from ${ref}`);
@@ -205,7 +209,7 @@ function main(argv) {
             // A list whose tag is not there yet is the release being prepared:
             // it was built on the commit that will be tagged, so until then it
             // describes HEAD.
-            const ref = version === release || !isCommit(`v${version}`) ? 'HEAD' : `v${version}`;
+            const ref = version === release || !isCommit(tagOf(version)) ? 'HEAD' : tagOf(version);
             let fresh;
             try {
                 fresh = buildList(version, ref);

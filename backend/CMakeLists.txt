@@ -31,7 +31,10 @@ if(NOT MW_VERSION)
     find_package(Git QUIET)
     if(Git_FOUND)
         execute_process(
-            COMMAND "${GIT_EXECUTABLE}" describe --tags --match "v[0-9]*"
+            # S3XYCast edition: its releases are tagged s3x-vX.Y.Z. The repository keeps
+            # upstream's history, hence its v* tags, and the edition's own numbers
+            # must not be read as upstream's (its 0.1.1 is not MoonlightWeb 0.1.1).
+            COMMAND "${GIT_EXECUTABLE}" describe --tags --match "s3x-v[0-9]*"
             WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
             RESULT_VARIABLE _mw_git_rc
             OUTPUT_VARIABLE _mw_git_describe
@@ -42,7 +45,7 @@ if(NOT MW_VERSION)
         # v0.3.0-55-g41221df2 → 0.3.0.g412: the commit count is dropped and the
         # sha cut to three characters, as CI stamps it. Two commits sharing
         # those three characters then read the same; that is accepted.
-        string(REGEX REPLACE "^v" "" _mw_git_describe "${_mw_git_describe}")
+        string(REGEX REPLACE "^s3x-v" "" _mw_git_describe "${_mw_git_describe}")
         string(REGEX REPLACE "-[0-9]+-g([0-9a-f][0-9a-f][0-9a-f])[0-9a-f]*$" ".g\\1"
                _mw_git_describe "${_mw_git_describe}")
         string(REPLACE "-" "." _mw_git_describe "${_mw_git_describe}")

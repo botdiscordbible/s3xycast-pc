@@ -45,9 +45,13 @@ input drivers, and everything else not listed above are upstream's, unmodified.
   task authors have to become the edition's (the program already looks for them under its own
   name), and the staged update keeps upstream's file name until then (`SelfUpdater`,
   `UpdateApply`). The update channel points at this edition's releases, which do not exist yet.
-- **Versions.** The edition has its own line of versions, tagged `vX.Y.Z` on its branch (the build
-  reads the nearest tag). A release is: the list of its interface built and committed, the tag,
-  the build, and the list published on the entry server before any machine installs it.
+- **Versions.** The edition has its own line of versions, tagged `s3x-vX.Y.Z` on its branch: the
+  repository keeps upstream's history and its `v*` tags, and the two lines must not be read as
+  one (the build and `scripts/interface-list.mjs` look for the edition's prefix only). A release
+  is: the list of its interface built and committed, the tag, the build, and the list published
+  on the entry server before any machine installs it. `bootstrap/v1/interfaces/` holds the
+  edition's lists and none of upstream's. The update check still has to learn the prefix when the
+  edition's releases are published.
 - **Font licences next to the fonts**: Overpass (Red Hat, SIL Open Font License 1.1,
   <https://github.com/RedHatOfficial/Overpass>) and Geist Mono (Vercel, SIL Open Font License 1.1,
   <https://github.com/vercel/geist-font>), in `frontend/assets/fonts/`.

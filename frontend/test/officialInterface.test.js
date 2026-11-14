@@ -273,7 +273,10 @@ describe('the lists published beside the entry page', () => {
     const names = readdirSync(dir).filter((f) => f.endsWith('.json'));
 
     it('cover every release reached through the introduction server', () => {
-        expect(names).toEqual(expect.arrayContaining(['0.3.0.json', '0.3.1.json', '0.4.0.json']));
+        // S3XYCast edition: its own releases, and none of upstream's — a machine
+        // running MoonlightWeb is not opened by this edition's entry page.
+        expect(names).toEqual(expect.arrayContaining(['0.1.1.json']));
+        expect(names.filter((n) => /^0\.[34]\./.test(n))).toEqual([]);
     });
 
     it('each name a release, its main page and nothing but digests', () => {
