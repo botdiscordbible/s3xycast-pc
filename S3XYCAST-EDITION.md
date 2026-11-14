@@ -25,6 +25,9 @@ desktop, with sound, touch as a mouse, keyboard and controller. It ships no game
 | 2026-11-14 | **Introduction server.** `mw-rendezvous` can read its owner secret from a file (`MW_RDV_OWNER_SECRET_FILE`), for a Windows service whose environment would otherwise sit in the registry. |
 | 2026-11-14 | **Windows installer.** `backend/installer/moonlightweb.iss` installs the edition under its own names: its own application id, `%AppData%\S3XYCast\S3XYCastPC`, tasks and keys named after the product, shortcuts and wizard texts that read S3XYCast PC, a virtual-display page in plain words. It installs beside MoonlightWeb and uninstalls without touching it: the two share only the register of the editions that rely on the Ctrl+Alt+Del policy and the signed HID driver, and this installer removes no file of MoonlightWeb's. `backend/installer/make-installer.bat` stages and compiles it the way upstream's release workflow does. |
 | 2026-11-14 | **Plain words.** The home page, the login page and the admin page say what they do in everyday words (a native host's screens are "Screen fitted to this device" and "PC screen 1"; the session name is folded under "More options"). |
+| 2026-11-14 | **Updates from the edition's own releases.** The update check and the elevated helper read the edition's release tags (`s3x-vX.Y.Z`, `mw::edition::kReleaseTagPrefix`) through one function, `UpdateChecker::versionOfTag`: a bare "v" strip read `s3x-v1.0.0` as 0.0.0 and would never have offered it. A staged update is named after the product (`S3XYCastPC-update.exe`). The command-line hints name the command that exists (`S3XYCastPC --status`, `--new-pin`…). |
+| 2026-11-14 | **Fonts and source.** The licences of the two fonts the look adds sit next to them (`frontend/assets/fonts/OFL-Overpass.txt`, `OFL-GeistMono.txt`, and `bootstrap/assets/OFL-Overpass.txt` for the entry page). The About window links to this repository (`EDITION_SOURCE_URL` in `frontend/js/brand.js`). |
+| 2026-11-14 | **No scheduled workflow.** `.github/workflows/bootstrap-watch.yml` compares upstream's entry page with upstream's reference copy every six hours; in this repository it only runs by hand, until it is pointed at the edition's own. The other workflows fire on `v*` tags and pull requests, which this edition does not push. |
 
 Upstream's stylesheets are not edited: the look is one additional file, so that taking a new
 upstream release stays a merge of their files and a look at ours.
@@ -34,34 +37,39 @@ upstream release stays a merge of their files and a look at ours.
 The streaming engine, the transports, the one-time PIN and the sessions, the virtual display and
 input drivers, and everything else not listed above are upstream's, unmodified.
 
+## How a release is made
+
+The edition has its own line of versions, tagged `s3x-vX.Y.Z` on its branch: the repository keeps
+upstream's history and its `v*` tags, and the two lines must not be read as one (the build,
+`scripts/interface-list.mjs` and the update check look for the edition's prefix only).
+`bootstrap/v1/interfaces/` holds the edition's lists and none of upstream's.
+
+1. The list of the release's interface, built and committed
+   (`node scripts/interface-list.mjs build X.Y.Z --ref HEAD`), then the tag `s3x-vX.Y.Z`.
+2. The build and the installer (`backend/installer/make-installer.bat X.Y.Z`), named
+   `S3XYCastPC-installer-X.Y.Z-win-x64.exe`: the update helper accepts no other name.
+3. **The list on the entry server first** (`pc.s3xycast.com/v1/interfaces/X.Y.Z.json`). The entry
+   page refuses, by design, an interface that is not one of the published releases: a machine that
+   updates before its list is there is locked out of the internet link until it is.
+4. The GitHub release of this repository, tag `s3x-vX.Y.Z`, not a draft and not a pre-release,
+   with that one installer attached. Installed copies find it by themselves (`releases/latest`),
+   check its size and its SHA-256 against what GitHub publishes, and install it.
+
+The introduction server is in service at `pc.s3xycast.com` since 2026-11-14
+(`deploy/powerdns/mw-rendezvous` and the entry page behind Caddy, on a Windows machine).
+
 ## Before the first public release (not done yet)
 
-- **Its introduction server in service and its own interface lists.** The program already points
-  at `pc.s3xycast.com`; the server itself (`deploy/powerdns/mw-rendezvous` and the entry page
-  behind a TLS front) still has to be installed there. The entry page refuses, by design, an
-  interface that is not one of the published releases: each release of this edition needs its list
-  in `bootstrap/v1/interfaces/` (`scripts/interface-list.mjs`), and upstream's lists removed.
+- **This repository made public.** The About window and the update check both name
+  `github.com/botdiscordbible/s3xycast-pc`. It has to exist and be public before the program is
+  handed to anyone: it is the source offer the licence asks for (GPL-3.0 §6), and until a release
+  is published there the update check logs a warning and offers nothing.
 - **Code signing.** The program and its installer are not signed: Windows SmartScreen warns on
   the download and the elevation prompt reads "Unknown publisher". A code-signing certificate
   (and `SignTool` in the installer script, or a signing step around it as upstream does) is what
-  removes both.
-- **Updates.** The update channel points at this edition's releases, which do not exist yet (the
-  check logs a warning until they do). A staged update keeps upstream's file name
-  (`MoonlightWeb-update.exe`, inside the edition's own folders: `SelfUpdater`, `UpdateApply`).
-  `backend/installer/deploy.bat` is upstream's older staging script, unused here.
-- **Versions.** The edition has its own line of versions, tagged `s3x-vX.Y.Z` on its branch: the
-  repository keeps upstream's history and its `v*` tags, and the two lines must not be read as
-  one (the build and `scripts/interface-list.mjs` look for the edition's prefix only). A release
-  is: the list of its interface built and committed, the tag, the build, and the list published
-  on the entry server before any machine installs it. `bootstrap/v1/interfaces/` holds the
-  edition's lists and none of upstream's. The update check still has to learn the prefix when the
-  edition's releases are published.
-- **Font licences next to the fonts**: Overpass (Red Hat, SIL Open Font License 1.1,
-  <https://github.com/RedHatOfficial/Overpass>) and Geist Mono (Vercel, SIL Open Font License 1.1,
-  <https://github.com/vercel/geist-font>), in `frontend/assets/fonts/`.
-- **The source offer**: this edition's public repository, set in `EDITION_SOURCE_URL`
-  (`frontend/js/brand.js`). The About window shows the link as soon as it is set; it must be
-  before the program is handed to anyone (GPL-3.0 §6).
+  removes both. Once an install is signed, its updates must be signed by the same publisher
+  (`UpdateApply`).
+- `backend/installer/deploy.bat` is upstream's older staging script, unused here.
 
 ## Credits
 

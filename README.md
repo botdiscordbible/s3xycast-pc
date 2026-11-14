@@ -1,3 +1,10 @@
+> **This repository is S3XYCast PC, the S3XYCast edition of MoonlightWeb.**
+> It is a modified version of [MoonlightWeb](https://github.com/linckosz/moonlight-web) by Bruno Martin,
+> under the same licence (GNU GPL version 3). What this edition changes, and how it is built and
+> released, is in [S3XYCAST-EDITION.md](S3XYCAST-EDITION.md). S3XYCast PC is installed from
+> [this repository's releases](https://github.com/botdiscordbible/s3xycast-pc/releases), not from the
+> links below: everything under this note is the original project's README, kept as it is.
+
 <div align="center">
 
 <img src="frontend/assets/logo.png" alt="Moonlight‑Web logo" width="128" />

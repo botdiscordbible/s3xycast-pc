@@ -39,8 +39,10 @@ export const UPSTREAM_URL = 'https://github.com/linckosz/moonlight-web';
 export const LICENCE_URL = 'https://www.gnu.org/licenses/gpl-3.0.html';
 
 /**
- * Where this edition's own source is published. Empty until it is: the About
- * window then leaves the link out rather than send the reader to a dead page.
- * It has to be set before the program is handed to anyone (GPL-3.0, §6).
+ * Where this edition's own source is published: the repository whose releases
+ * the program also updates from (backend/src/network/UpdateChecker.cpp names
+ * the same one). Left empty, the About window leaves the link out rather than
+ * send the reader to a dead page. The repository has to be public before the
+ * program is handed to anyone (GPL-3.0, §6).
  */
-export const EDITION_SOURCE_URL = '';
+export const EDITION_SOURCE_URL = 'https://github.com/botdiscordbible/s3xycast-pc';

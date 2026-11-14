@@ -608,15 +608,31 @@ static bool answersOnThisMachine(quint16 persistedPort)
     return false;
 }
 
+// How this program is typed in a terminal: the launcher's own name, as the
+// installer registered it (S3XYCastPC, S3XYCastPCDev). What the hints below
+// tell an operator to run has to be a command that exists.
+static QString cliName()
+{
+    return mw::edition::productName();
+}
+
 // What a command says when the running server could not be asked.
 static QString notRunningText(quint16 persistedPort)
 {
+#if defined(Q_OS_WIN)
+    if (answersOnThisMachine(persistedPort))
+        return QStringLiteral(
+            "S3XYCast PC is running under another account: run this command as that account.\n");
+    return QStringLiteral("S3XYCast PC is not running — start it first "
+                          "(Start menu, S3XYCast PC).\n");
+#else
     if (answersOnThisMachine(persistedPort))
         return QStringLiteral(
             "S3XYCast PC is running under another account: run this command as that account\n"
             "(for the system service: with sudo).\n");
     return QStringLiteral("S3XYCast PC is not running — start it first "
                           "(sudo systemctl start moonlightweb).\n");
+#endif
 }
 
 // The agreement the operator must accept before the machine is opened to the
@@ -654,10 +670,18 @@ static int runStatusCommand(quint16 persistedHttpsPort)
         if (answersOnThisMachine(persistedHttpsPort))
             out << notRunningText(persistedHttpsPort);
         else
+#if defined(Q_OS_WIN)
+            out << "S3XYCast PC is not running (nothing answers on this machine).\n"
+                << "\n"
+                << "  start:    Start menu, S3XYCast PC\n"
+                << "  logs:     %AppData%\\" << mw::edition::kOrganizationName << "\\"
+                << mw::edition::dataName() << "\\logs\\moonlightweb.log\n";
+#else
             out << "S3XYCast PC is not running (nothing answers on this machine).\n"
                 << "\n"
                 << "  systemd:  sudo systemctl status moonlightweb\n"
                 << "  logs:     ~/.local/share/MoonlightWeb/MoonlightWeb/logs/moonlightweb.log\n";
+#endif
         out.flush();
         return 1;
     }
@@ -711,7 +735,7 @@ static int runStatusCommand(quint16 persistedHttpsPort)
     } else if (internetWanted) {
         out << "  From internet  starting up — no address claimed yet, retry in a moment\n";
     } else {
-        out << "  From internet  off — enable it with:  moonlightweb --enable-internet\n";
+        out << "  From internet  off — enable it with:  " << cliName() << " --enable-internet\n";
         // Only worth probing (and only actionable) while the link is off: it
         // tells the operator up front whether enabling it will configure the
         // router by itself or need a port forward typed in by hand. Nothing on
@@ -735,9 +759,10 @@ static int runStatusCommand(quint16 persistedHttpsPort)
         out << "  Booth mode     on (--noadmin) — no admin page, no new device; restart\n"
             << "                 without the flag to change anything\n";
     else if (pin.isEmpty() || pin == QLatin1String("------"))
-        out << "  Access PIN     none set — create one with:  moonlightweb --new-pin\n";
+        out << "  Access PIN     none set — create one with:  " << cliName() << " --new-pin\n";
     else if (auth.value("pin_consumed").toBool(false))
-        out << "  Access PIN     already used — issue a new one with:  moonlightweb --new-pin\n";
+        out << "  Access PIN     already used — issue a new one with:  " << cliName()
+            << " --new-pin\n";
     else
         out << "  Access PIN     " << pin << "   (asked once per browser)\n";
 
@@ -746,14 +771,16 @@ static int runStatusCommand(quint16 persistedHttpsPort)
     // set the door is shut, and the operator has no other way to find that out.
     if (auth.value("remote_admin_enabled").toBool(false)) {
         if (auth.value("admin_password_set").toBool(false)) {
-            out << "  Admin password set   (change it with:  moonlightweb "
-                   "--set-admin-password,\n"
-                << "                 remove it with:  moonlightweb --clear-admin-password)\n";
+            out << "  Admin password set   (change it with:  " << cliName()
+                << " --set-admin-password,\n"
+                << "                 remove it with:  " << cliName()
+                << " --clear-admin-password)\n";
             if (auth.value("remote_admin_internet").toBool(false))
                 out << "                 also accepted from the internet, through the link\n";
         } else
             out << "  Admin password none set — no computer on your network can open the admin\n"
-                << "                 page. Set one with:  moonlightweb --set-admin-password\n";
+                << "                 page. Set one with:  " << cliName()
+                << " --set-admin-password\n";
     }
 
     const QJsonObject sun = setup.value("sunshine").toObject();
@@ -2044,7 +2071,8 @@ int main(int argc, char* argv[])
 
     // Parse command line
     QCommandLineParser parser;
-    parser.setApplicationDescription(mw::edition::displayName() + QStringLiteral(" streaming server"));
+    parser.setApplicationDescription(mw::edition::displayName() +
+                                     QStringLiteral(" streaming server"));
     parser.addHelpOption();
     parser.addVersionOption();
 

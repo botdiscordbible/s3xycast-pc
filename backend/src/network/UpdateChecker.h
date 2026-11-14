@@ -113,6 +113,11 @@ public:
     // helper, which refuses anything that is not newer than itself.
     static bool isNewer(const QString& latest, const QString& current);
 
+    // The version a release tag names: "s3x-v0.1.2" → "0.1.2" (this edition's
+    // tags, mw::edition::kReleaseTagPrefix), "v0.4.1" → "0.4.1", anything else
+    // as it is. One reading for the check, the page and the elevated helper.
+    static QString versionOfTag(const QString& tag);
+
     // The one release this build ever updates to: the project's latest GitHub
     // release. Compiled in, so the elevated helper takes it from the binary
     // under the install directory and from nothing the user can write.

@@ -224,7 +224,8 @@ QString SelfUpdater::stagingDir()
     // actually matters.
     return QCoreApplication::applicationDirPath() + QStringLiteral("/update");
 #else
-    return QDir::tempPath() + QStringLiteral("/MoonlightWeb-update");
+    return QDir::tempPath() + QLatin1Char('/') + mw::edition::productName() +
+           QStringLiteral("-update");
 #endif
 }
 
@@ -232,12 +233,13 @@ QString SelfUpdater::stagedFileName(const QString& assetName)
 {
 #ifdef Q_OS_WIN
     Q_UNUSED(assetName);
-    // Fixed name — the scheduled task's action points at this exact path.
-    return QStringLiteral("MoonlightWeb-update.exe");
+    // Fixed name — the elevated helper reads this exact path (UpdateApply).
+    // The edition's own: it is what Task Manager shows while an update runs.
+    return mw::edition::productName() + QStringLiteral("-update.exe");
 #else
     // Keep the extension: it selects the install command (.deb/.rpm/.AppImage/.pkg).
     const QString name = QFileInfo(assetName).fileName();
-    return name.isEmpty() ? QStringLiteral("MoonlightWeb-update") : name;
+    return name.isEmpty() ? mw::edition::productName() + QStringLiteral("-update") : name;
 #endif
 }
 

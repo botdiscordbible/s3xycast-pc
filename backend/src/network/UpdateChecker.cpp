@@ -38,7 +38,8 @@ namespace {
 
 // The public MoonlightWeb repository whose Releases carry the installers built
 // by .github/workflows/release.yml. Kept as a single source of truth here.
-const char* kReleasesApi = "https://api.github.com/repos/botdiscordbible/s3xycast-pc/releases/latest";
+const char* kReleasesApi =
+    "https://api.github.com/repos/botdiscordbible/s3xycast-pc/releases/latest";
 
 // arm64 vs x64 — CI names installers with these tokens. QSysInfo reports e.g.
 // "arm64" / "x86_64" for the running process.
@@ -289,9 +290,7 @@ void UpdateChecker::fetchFrom(const QString& url, bool viaRelay)
 
 bool UpdateChecker::applyResult(const QJsonObject& release, bool viaRelay)
 {
-    const QString tag = release.value("tag_name").toString();
-    QString latest = tag;
-    if (latest.startsWith('v') || latest.startsWith('V')) latest = latest.mid(1);
+    const QString latest = versionOfTag(release.value("tag_name").toString());
 
     const bool available = isNewer(latest, m_current);
 
@@ -339,11 +338,22 @@ bool UpdateChecker::applyResult(const QJsonObject& release, bool viaRelay)
     return true;
 }
 
+QString UpdateChecker::versionOfTag(const QString& tag)
+{
+    QString version = tag.trimmed();
+    const QLatin1String edition(mw::edition::kReleaseTagPrefix);
+    // The edition's prefix first: it ends in the "v" the other branch strips.
+    if (version.startsWith(edition, Qt::CaseInsensitive))
+        version = version.mid(edition.size());
+    else if (version.startsWith(QLatin1Char('v'), Qt::CaseInsensitive))
+        version = version.mid(1);
+    return version;
+}
+
 bool UpdateChecker::isNewer(const QString& latest, const QString& current)
 {
-    auto parse = [](QString s) {
-        s = s.trimmed();
-        if (!s.isEmpty() && (s[0] == 'v' || s[0] == 'V')) s = s.mid(1);
+    auto parse = [](const QString& tagOrVersion) {
+        const QString s = versionOfTag(tagOrVersion);
         QList<int> out;
         const QStringList parts = s.split('.');
         for (const QString& p : parts) {

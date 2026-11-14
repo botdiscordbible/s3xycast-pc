@@ -39,6 +39,43 @@ void run_update_checker_tests()
         CHECK(UpdateChecker::freshDue(now.addSecs(120), now));
     }
 
+    SECTION("UpdateChecker: the version a release tag names, this edition's prefix included");
+    {
+        // This edition tags its releases "s3x-vX.Y.Z" (upstream's own "vX.Y.Z"
+        // tags live in the same repository).
+        CHECK_EQ(UpdateChecker::versionOfTag(QStringLiteral("s3x-v0.1.2")),
+                 QStringLiteral("0.1.2"));
+        CHECK_EQ(UpdateChecker::versionOfTag(QStringLiteral("  S3X-V1.0.0 ")),
+                 QStringLiteral("1.0.0"));
+        CHECK_EQ(UpdateChecker::versionOfTag(QStringLiteral("v0.4.1")), QStringLiteral("0.4.1"));
+        CHECK_EQ(UpdateChecker::versionOfTag(QStringLiteral("V2.0")), QStringLiteral("2.0"));
+        CHECK_EQ(UpdateChecker::versionOfTag(QStringLiteral("0.1.1")), QStringLiteral("0.1.1"));
+        CHECK_EQ(UpdateChecker::versionOfTag(QString()), QString());
+        // Only the prefix goes: what follows is left for isNewer to judge.
+        CHECK_EQ(UpdateChecker::versionOfTag(QStringLiteral("s3x-v")), QString());
+        CHECK_EQ(UpdateChecker::versionOfTag(QStringLiteral("s3x-0.1.2")),
+                 QStringLiteral("s3x-0.1.2"));
+    }
+
+    SECTION("UpdateChecker: newer means newer, whatever the tag is dressed in");
+    {
+        CHECK(UpdateChecker::isNewer(QStringLiteral("0.1.2"), QStringLiteral("0.1.1")));
+        CHECK(UpdateChecker::isNewer(QStringLiteral("1.2.10"), QStringLiteral("1.2.9")));
+        CHECK(!UpdateChecker::isNewer(QStringLiteral("0.1.1"), QStringLiteral("0.1.1")));
+        CHECK(!UpdateChecker::isNewer(QStringLiteral("0.1.0"), QStringLiteral("0.1.1")));
+        // The edition's tags, given whole. The major is what a bare "v" strip
+        // used to lose: "s3x-v1" read as 0, and 1.0.0 was never offered.
+        CHECK(UpdateChecker::isNewer(QStringLiteral("s3x-v0.1.2"), QStringLiteral("0.1.1")));
+        CHECK(UpdateChecker::isNewer(QStringLiteral("s3x-v1.0.0"), QStringLiteral("0.9.9")));
+        CHECK(UpdateChecker::isNewer(QStringLiteral("s3x-v2.0.0"), QStringLiteral("s3x-v1.9.0")));
+        CHECK(!UpdateChecker::isNewer(QStringLiteral("s3x-v1.0.0"), QStringLiteral("1.0.0")));
+        CHECK(!UpdateChecker::isNewer(QStringLiteral("s3x-v0.9.0"), QStringLiteral("1.0.0")));
+        // A tag that names no version never nags, and a source build (0.0.0-dev)
+        // is never out of date.
+        CHECK(!UpdateChecker::isNewer(QString(), QStringLiteral("0.1.1")));
+        CHECK(!UpdateChecker::isNewer(QStringLiteral("s3x-v1.0.0"), QStringLiteral("0.0.0-dev")));
+    }
+
     SECTION("UpdateChecker: nothing to wait for where nothing may be asked");
     {
         // Opted out: no request leaves, so a fresh ask has no check to wait on

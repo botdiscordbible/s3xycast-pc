@@ -62,6 +62,12 @@ inline constexpr char kEditionRendezvousUrl[] = "https://pc.s3xycast.com";
 // so a widely used public server stands in; `stun_server` in settings.json
 // overrides it.
 inline constexpr char kEditionStunUrl[] = "stun:stun.cloudflare.com:3478";
+// What this edition's release tags start with: "s3x-v0.1.2". The repository
+// keeps upstream's own "v0.1.0"… "v0.4.3" tags, so a bare "v" would collide
+// (backend/CMakeLists.txt and scripts/interface-list.mjs read the same prefix).
+// The update check takes the version out of a release's tag: it has to know
+// the prefix, or "s3x-v1.0.0" reads as 0.0.0 and no install is ever offered it.
+inline constexpr char kReleaseTagPrefix[] = "s3x-v";
 
 /// The organisation the state is filed under (QCoreApplication's, so the
 /// folder above the application's in AppData and the QSettings key): the

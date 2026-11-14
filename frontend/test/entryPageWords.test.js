@@ -113,7 +113,7 @@ describe('the entry page speaks French to a French browser', () => {
     it('leaves another language, and anything that is not a sentence, alone', () => {
         expect(tr('Not connected', 'en')).toBe('Not connected');
         expect(tr('Not connected', 'de')).toBe('Not connected');
-        expect(tr('DESKTOP-E5QKT5I', 'fr')).toBe('DESKTOP-E5QKT5I');
+        expect(tr('DESKTOP-AB12CD3', 'fr')).toBe('DESKTOP-AB12CD3');
         expect(tr('', 'fr')).toBe('');
         expect(tr(undefined, 'fr')).toBeUndefined();
     });

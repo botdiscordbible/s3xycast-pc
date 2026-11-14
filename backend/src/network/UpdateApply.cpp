@@ -464,7 +464,7 @@ int run()
     //    touch, is read, judged and run.
     const QString source =
         SelfUpdater::stagingDir() + QLatin1Char('/') + SelfUpdater::stagedFileName(QString());
-    const QString copy = dir + QStringLiteral("/MoonlightWeb-update.exe");
+    const QString copy = dir + QLatin1Char('/') + SelfUpdater::stagedFileName(QString());
     if (const QString bad = copyInto(source, copy); !bad.isEmpty()) return refuse(bad);
 
     // 2. What it has to be, from GitHub. Same architecture rule as the

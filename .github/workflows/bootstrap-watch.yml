@@ -34,17 +34,12 @@
 name: bootstrap-watch
 
 on:
-  schedule:
-    # Every 6 hours. GitHub runs scheduled jobs on a best-effort basis and
-    # skews them under load, so treat the interval as "about 6 hours", not
-    # as a guarantee — the window an unnoticed swap could live in is the honest
-    # number to quote, and it is larger than the cron line suggests. This only
-    # bounds the untargeted case (see the header comment); tightening it below
-    # 30 minutes bought nothing precision-wise, and the repo is public so the
-    # old interval cost nothing either — 6 hours was chosen purely to cut how
-    # often a stale-tag false alarm (or a real one) pages a human, not because
-    # a wider window was judged safe on its own merits.
-    - cron: "0 */6 * * *"
+  # S3XYCast edition: no schedule. Upstream runs this every 6 hours against ITS
+  # entry page (stream.moonlightweb.top) and ITS reference copy; in this
+  # edition's repository that would compare two sites that are not ours, four
+  # times a day, and mail its owner about them. The edition's entry page is
+  # pc.s3xycast.com and has no published reference copy yet: until LIVE and
+  # REFERENCE below name the edition's own, this stays a manual run.
   workflow_dispatch:
 
 permissions:

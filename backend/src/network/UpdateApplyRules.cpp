@@ -37,9 +37,9 @@ QString expectedInstaller(const QJsonObject& release, const QString& productName
     if (release.value("draft").toBool() || release.value("prerelease").toBool())
         return QStringLiteral("the latest release is a draft or a pre-release");
 
-    QString version = release.value("tag_name").toString().trimmed();
-    if (version.startsWith(QLatin1Char('v')) || version.startsWith(QLatin1Char('V')))
-        version = version.mid(1);
+    // "s3x-v0.1.2" → "0.1.2": the same reading as the server's own check, so
+    // the two can never disagree on which release is newer.
+    const QString version = UpdateChecker::versionOfTag(release.value("tag_name").toString());
     if (version.isEmpty()) return QStringLiteral("the latest release has no tag");
     // Strictly newer: a genuine but older installer is still a way to put back
     // a version with a hole that the current one closed.

@@ -92,6 +92,44 @@ void run_update_apply_tests()
                             QStringLiteral("0.3.0.g7bb-stg"), kX64, &staging)
               .isEmpty());
 
+    SECTION("UpdateApply — this edition's releases: its tag prefix, its installer's name");
+    {
+        const QString product = QStringLiteral("S3XYCastPC");
+        const QJsonArray ours{asset(QStringLiteral("S3XYCastPC-installer-0.1.2-win-x64.exe"))};
+        Installer edition;
+        CHECK(expectedInstaller(release(QStringLiteral("s3x-v0.1.2"), ours), product,
+                                QStringLiteral("0.1.1"), kX64, &edition)
+                  .isEmpty());
+        // The version, not the tag: it is what the log and the page show.
+        CHECK_EQ(edition.version, QStringLiteral("0.1.2"));
+        CHECK_EQ(edition.name, QStringLiteral("S3XYCastPC-installer-0.1.2-win-x64.exe"));
+        // A first major release is newer than every 0.x install.
+        const QJsonArray one{asset(QStringLiteral("S3XYCastPC-installer-1.0.0-win-x64.exe"))};
+        Installer major;
+        CHECK(expectedInstaller(release(QStringLiteral("s3x-v1.0.0"), one), product,
+                                QStringLiteral("0.9.9"), kX64, &major)
+                  .isEmpty());
+        CHECK_EQ(major.version, QStringLiteral("1.0.0"));
+        // Same version, or older: refused as for any other tag.
+        Installer no;
+        CHECK(!expectedInstaller(release(QStringLiteral("s3x-v0.1.2"), ours), product,
+                                 QStringLiteral("0.1.2"), kX64, &no)
+                   .isEmpty());
+        CHECK(!expectedInstaller(release(QStringLiteral("s3x-v0.1.2"), ours), product,
+                                 QStringLiteral("0.2.0"), kX64, &no)
+                   .isEmpty());
+        // The original project's installer never stands in for this edition's.
+        const QJsonArray theirs{asset(QStringLiteral("MoonlightWeb-installer-0.1.2-win-x64.exe"))};
+        CHECK(!expectedInstaller(release(QStringLiteral("s3x-v0.1.2"), theirs), product,
+                                 QStringLiteral("0.1.1"), kX64, &no)
+                   .isEmpty());
+        // A tag that is only the prefix names no version.
+        CHECK(!expectedInstaller(release(QStringLiteral("s3x-v"), ours), product,
+                                 QStringLiteral("0.1.1"), kX64, &no)
+                   .isEmpty());
+        CHECK(no.sha256.isEmpty());
+    }
+
     SECTION("UpdateApply — never the same version, never an older one");
     Installer none;
     CHECK(!expectedInstaller(release(QStringLiteral("v0.4.1"), usual()), kProduct,
