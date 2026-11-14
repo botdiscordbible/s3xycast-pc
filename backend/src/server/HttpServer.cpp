@@ -351,17 +351,22 @@ HttpServer::HttpServer(quint16 httpPort, quint16 httpsPort, QObject* parent)
     , m_HttpPort(httpPort)
     , m_HttpsPort(httpsPort)
 {
-    // Try compile-time frontend path first (development), fall back to
-    // executable-relative path (deployment / MSI install), then to the macOS
-    // app-bundle Resources dir. On macOS the frontend cannot live next to the
-    // executable (Contents/MacOS): codesign treats everything there as code and
-    // rejects the non-code assets, so the bundle ships it under
+    // The interface this copy was installed with comes first: the one next to
+    // the executable (deployment / installer), or in the macOS app bundle's
+    // Resources dir. On macOS the frontend cannot live next to the executable
+    // (Contents/MacOS): codesign treats everything there as code and rejects
+    // the non-code assets, so the bundle ships it under
     // Contents/Resources/frontend (applicationDirPath is Contents/MacOS).
-    QString frontendDir = QString(FRONTEND_DIR);
-    if (!QDir(frontendDir).exists())
-        frontendDir = QCoreApplication::applicationDirPath() + "/frontend/";
+    // The compile-time path (development: the build tree has no frontend of
+    // its own) is the last resort, not the first. S3XYCast edition: upstream
+    // tried it first, so on the machine a release was built on, the INSTALLED
+    // program served the source tree — whatever state it was in. The entry
+    // page then refused it as "a modified interface" the moment a file there
+    // was edited (2026-11-15, the first install of 0.1.1).
+    QString frontendDir = QCoreApplication::applicationDirPath() + "/frontend/";
     if (!QDir(frontendDir).exists())
         frontendDir = QCoreApplication::applicationDirPath() + "/../Resources/frontend/";
+    if (!QDir(frontendDir).exists()) frontendDir = QString(FRONTEND_DIR);
     m_StaticFiles =
         new StaticFileHandler(frontendDir, QCoreApplication::applicationVersion(), this);
 

@@ -52,17 +52,19 @@ TrayManager::TrayManager(HttpServer* server, QObject* parent)
 
 QIcon TrayManager::loadAppIcon()
 {
-    // Try the compile-time frontend path (development), then the
-    // executable-relative bundle paths (installed artifact / macOS bundle).
+    // Try the executable-relative bundle paths (installed artifact / macOS
+    // bundle), then the compile-time frontend path (development) — the same
+    // order as the interface itself (HttpServer): an installed copy never
+    // reads the source tree it was built from.
     // PNG before .ico: QtGui decodes PNG natively, while .ico needs the
     // imageformats plugin which is not always deployed on Linux.
     // A DEV identity wears the blue variant, so a DEV install or a --dev
     // instance cannot be taken for the production one in the tray; the
     // production icon stays as a last resort rather than no icon at all.
     const QStringList roots = {
-        QStringLiteral(FRONTEND_DIR),
         QCoreApplication::applicationDirPath() + QStringLiteral("/frontend/"),
         QCoreApplication::applicationDirPath() + QStringLiteral("/../Resources/frontend/"),
+        QStringLiteral(FRONTEND_DIR),
     };
     const QStringList names = {mw::edition::iconAsset(QStringLiteral("icon-512.png")),
                                mw::edition::iconAsset(QStringLiteral("favicon.ico")),
