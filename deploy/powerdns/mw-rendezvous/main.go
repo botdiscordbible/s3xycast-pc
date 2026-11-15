@@ -75,6 +75,8 @@ type config struct {
 	pingEvery   time.Duration // MW_RDV_PING_SECONDS       (default 45s)
 	minProto    int           // MW_RDV_MIN_PROTO          (default 1; see protoCurrent)
 	closeDelay  time.Duration // MW_RDV_CLOSE_DELAY_MS     (default 3s; see closeLater)
+	// S3XYCast edition: the relay, or nil for none (MW_RDV_RELAY_*, relaycred.go).
+	relay *relayConfig
 }
 
 func mustEnv(name string) string {
@@ -167,6 +169,7 @@ func loadConfig() config {
 		// network. Decide it on the version census, never on a hunch.
 		minProto:   envInt("MW_RDV_MIN_PROTO", 1, 1, protoCurrent),
 		closeDelay: time.Duration(envInt("MW_RDV_CLOSE_DELAY_MS", 3000, 0, 30000)) * time.Millisecond,
+		relay:      loadRelayConfig(),
 	}
 }
 
@@ -405,7 +408,7 @@ func (s *server) handleHost(w http.ResponseWriter, r *http.Request) {
 
 	// A line held: the id is in use, and never let go of as unused.
 	s.store.touch(id)
-	line := &hostLine{id: id, conn: conn, proto: proto, sessions: map[string]*session{}}
+	line := &hostLine{id: id, conn: conn, proto: proto, sessions: map[string]*session{}, addr: clientIP(r)}
 	if displaced := s.hub.register(line); displaced != nil {
 		go hangUpLine(displaced, "replaced by a newer connection from the same owner")
 	}
@@ -413,6 +416,7 @@ func (s *server) handleHost(w http.ResponseWriter, r *http.Request) {
 
 	done := make(chan struct{})
 	go pinger(conn, s.cfg.pingEvery, done)
+	go s.keepHostInIce(line, done)
 
 	defer func() {
 		close(done)
@@ -460,6 +464,45 @@ func (s *server) handleHost(w http.ResponseWriter, r *http.Request) {
 				line.dropSession(f.S)
 				_ = sess.conn.WriteClose(closeNormal, "")
 				_ = sess.conn.Close()
+			}
+		}
+	}
+}
+
+// keepHostInIce tells a host where the relay is and gives it credentials for
+// it, when its line comes up and again well before they lapse, for as long as
+// the line is held. The host passes them on to the browsers it streams to;
+// one that predates the frame ignores it (it carries no session). Nothing is
+// sent when there is no relay, or when the line's address is not one the relay
+// could reach.
+func (s *server) keepHostInIce(line *hostLine, done <-chan struct{}) {
+	rc := s.cfg.relay
+	if rc == nil {
+		return
+	}
+	send := func() bool {
+		grant := rc.grant(line.addr, time.Now())
+		if grant == nil {
+			return false
+		}
+		body, err := json.Marshal(grant)
+		if err != nil {
+			return false
+		}
+		return sendHost(line.conn, hostFrame{T: msgIce, D: body}) == nil
+	}
+	if !send() {
+		return
+	}
+	tick := time.NewTicker(rc.refreshEvery())
+	defer tick.Stop()
+	for {
+		select {
+		case <-done:
+			return
+		case <-tick.C:
+			if !send() {
+				return
 			}
 		}
 	}
@@ -524,7 +567,7 @@ func (s *server) handlePeer(w http.ResponseWriter, r *http.Request) {
 		refuse(conn, codeOffline)
 		return
 	}
-	if err := sendPeer(conn, peerFrame{T: msgReady, V: line.proto}); err != nil {
+	if err := sendPeer(conn, peerFrame{T: msgReady, V: line.proto, Ice: s.cfg.relay.grant(line.addr, time.Now())}); err != nil {
 		line.dropSession(sess.id)
 		_ = sendHost(line.conn, hostFrame{T: msgClose, S: sess.id})
 		_ = conn.Close()

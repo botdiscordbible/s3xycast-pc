@@ -39,6 +39,9 @@ const (
 	msgClose = "close" // both ways: this session is finished
 	msgReady = "ready" // server → browser: the host is on the line
 	msgError = "error" // server → browser: why this is not going to work
+	// S3XYCast edition, server → host, with no session: where the relay is and
+	// credentials for it (relaycred.go). A host that predates it drops the frame.
+	msgIce = "ice"
 )
 
 // Refusal codes handed to a browser.
@@ -114,6 +117,9 @@ type peerFrame struct {
 	D    json.RawMessage `json:"d,omitempty"`
 	Code string          `json:"code,omitempty"`
 	V    int             `json:"v,omitempty"`
+	// S3XYCast edition, on the ready frame only: the relay and credentials for
+	// it (relaycred.go). Absent when no relay is configured.
+	Ice *iceGrant `json:"ice,omitempty"`
 }
 
 // ── Sessions ────────────────────────────────────────────────────────────────
@@ -129,6 +135,10 @@ type hostLine struct {
 	id    string
 	conn  *wsConn
 	proto int // the host's protocol revision, handed to each browser on ready
+	// S3XYCast edition: the address the line comes from, which is the one the
+	// relay is allowed to reach for this host (relaycred.go). Held in memory
+	// for as long as the line, like the socket it was read from.
+	addr string
 
 	mu       sync.Mutex
 	sessions map[string]*session
