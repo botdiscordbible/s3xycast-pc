@@ -370,6 +370,7 @@ add_executable(mw-server
     src/common/LinuxCapabilities.cpp
     src/common/RendezvousId.cpp
     src/common/InheritedEnvironment.cpp
+    src/network/RelayGrant.cpp
     src/network/RendezvousClient.cpp
     src/network/AddressRace.cpp
     src/network/UPNPClient.cpp

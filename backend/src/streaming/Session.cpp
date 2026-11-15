@@ -914,6 +914,7 @@ void StreamSession::onLaunchResult(bool ok, const BackendError& err, const Media
         signaling->setHttpsPort(m_HttpsPort);
         signaling->setWsPath(m_WsPath);
         signaling->setStunServer(m_StunServer);
+        signaling->setRelayIce(m_RelayIce);
         signaling->setEnableIceTcp(m_EnableIceTcp);
         signaling->setIceTcpPassive(m_IceTcpPassive);
         signaling->setDebugIceDropUdp(m_DebugIceDropUdp);
@@ -1025,6 +1026,7 @@ void StreamSession::onLaunchResult(bool ok, const BackendError& err, const Media
         signaling->setHttpsPort(m_HttpsPort);
         signaling->setWsPath(m_WsPath);
         signaling->setStunServer(m_StunServer);
+        signaling->setRelayIce(m_RelayIce);
         signaling->setEnableIceTcp(m_EnableIceTcp);
         signaling->setIceTcpPassive(m_IceTcpPassive);
         signaling->setDebugIceDropUdp(m_DebugIceDropUdp);

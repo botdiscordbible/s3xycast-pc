@@ -147,6 +147,7 @@ add_executable(run_tests
     test_feed_ipc.cpp
     test_cert_manager.cpp
     test_update_checker.cpp
+    test_relay_grant.cpp
     test_mic_uplink.cpp
     test_phone_pairing.cpp
     test_pair_request_routes.cpp
@@ -256,6 +257,7 @@ add_executable(run_tests
     ${_src}/src/common/RendezvousId.cpp
     # The host's line to the introduction server, against a local stand-in:
     # how fast it comes back when the line fails under it.
+    ${_src}/src/network/RelayGrant.cpp
     ${_src}/src/network/RendezvousClient.cpp
     # Which of the server's addresses the line opens on: the race behind it,
     # with legs the test answers by hand.

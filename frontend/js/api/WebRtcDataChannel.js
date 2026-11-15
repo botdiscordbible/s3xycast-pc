@@ -31,7 +31,7 @@ import {
     mayTakeUncheckedOffer,
     isBindRefusedClose,
 } from '../util/pairingCrypto.js';
-import { defaultIceServers } from './IceServers.js';
+import { defaultIceServers, iceServersForLog, relayAllowed, routeIsRelayed } from './IceServers.js';
 import { ICE_LOST_BEFORE_CHANNELS } from '../util/UdpMemory.js';
 import {
     CHUNK_FLAG_KEYFRAME,
@@ -158,6 +158,11 @@ export class WebRtcDataChannel {
         // The fallback below only applies when no such message ever arrives.
         this._dynamicIceServers = null;
         this._defaultIceServers = defaultIceServers();
+        // S3XYCast edition: whether the host named a relay it allows (its
+        // ice-config), and whether the connection went through it — true,
+        // false, or null until the browser has said.
+        this._relayAllowed = false;
+        this.relayed = null;
 
         // Callbacks — set by the caller
         this.onOpen = null; // All DataChannels open
@@ -888,7 +893,7 @@ export class WebRtcDataChannel {
         };
         // The bench's other road for the RTP video (U1.4 ter, RtpVideo.js).
         if (rtpLegacyApi()) config.encodedInsertableStreams = true;
-        console.log('[WebRTC] ICE servers:', JSON.stringify(iceServers));
+        console.log('[WebRTC] ICE servers:', iceServersForLog(iceServers));
 
         this.pc = new RTCPeerConnection(config);
 
@@ -976,8 +981,10 @@ export class WebRtcDataChannel {
                 return;
             }
 
-            // Drop TURN relay candidates — direct connection only
-            if (evt.candidate.candidate.indexOf(' typ relay ') !== -1) {
+            // Drop TURN relay candidates — direct connection only — unless the
+            // host named a relay of its own (S3XYCast edition: relayAllowed).
+            // Then it is the last path left to a browser nothing else reaches.
+            if (!this._relayAllowed && evt.candidate.candidate.indexOf(' typ relay ') !== -1) {
                 console.log('[WebRTC] Dropping TURN relay candidate');
                 return;
             }
@@ -995,6 +1002,17 @@ export class WebRtcDataChannel {
             console.log('[WebRTC] ICE state:', state);
             if (state === 'connected' || state === 'completed') {
                 this._iceConnected = true;
+                // S3XYCast edition: which way the stream went. A relayed one
+                // works and is slower; the interface says so (onRoute).
+                {
+                    const pc = this.pc;
+                    routeIsRelayed(pc).then((relayed) => {
+                        if (pc !== this.pc) return; // a later attempt took over
+                        this.relayed = relayed;
+                        if (relayed) console.log('[WebRTC] Stream goes through the relay');
+                        if (this.onRoute) this.onRoute(relayed);
+                    });
+                }
                 // Cancel ICE timeout — connection established
                 this._clearIceTimer();
                 // Clear fallback request timer — ICE came up
@@ -1211,8 +1229,9 @@ export class WebRtcDataChannel {
             // including when the host sends an empty list, which is what a LAN
             // session does rather than pointing the browser at a STUN server
             // this side has already decided not to use.
-            console.log('[WebRTC] Received ice-config:', JSON.stringify(msg.iceServers));
+            console.log('[WebRTC] Received ice-config:', iceServersForLog(msg.iceServers));
             this._dynamicIceServers = msg.iceServers;
+            this._relayAllowed = relayAllowed(msg);
             // Adopt the host's ICE deadline: it classified where this client
             // actually is, which this side cannot do. Bounded so a malformed or
             // hostile value can neither disable the watchdog nor hang the UI on

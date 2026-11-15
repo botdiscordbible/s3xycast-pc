@@ -175,6 +175,79 @@ export function candidateKind(candidate) {
     return `${type}/${protocol}/${family}`;
 }
 
+/** What a relay's address may look like: a turn: or turns: URL, and nothing odd in it. */
+const RELAY_URL = /^turns?:[A-Za-z0-9.\-[\]:]{1,120}(\?transport=(udp|tcp))?$/;
+
+/**
+ * S3XYCast edition — the relay named in the introduction server's `ready`
+ * frame, as one RTCIceServer, or null.
+ *
+ * MoonlightWeb has no relay: where no direct path opens, this page says so and
+ * stops. This edition's server names one, with credentials that are good for
+ * the machine being called and for a day (deploy/s3xycast-relais). It is the
+ * last thing a connection falls back on — a relayed candidate has the lowest
+ * priority ICE knows — for a home whose router opens nothing, or a browser
+ * that sends no UDP at all.
+ *
+ * The frame comes from the server this page was loaded from, but it is read
+ * as carefully as anything else off the wire: only what a relay's address and
+ * credentials look like gets through, and anything else means "no relay".
+ */
+export function relayOf(frame) {
+    const ice = frame && frame.ice;
+    if (!ice || typeof ice !== 'object') return null;
+    const urls = Array.isArray(ice.urls)
+        ? ice.urls.filter((u) => typeof u === 'string' && RELAY_URL.test(u)).slice(0, 6)
+        : [];
+    const text = (v) => typeof v === 'string' && v.length > 0 && v.length <= 256;
+    if (!urls.length || !text(ice.username) || !text(ice.credential)) return null;
+    return { urls, username: ice.username, credential: ice.credential };
+}
+
+/**
+ * The servers the peer connection is given: the introduction server's own STUN
+ * answer, then the relay when there is one.
+ */
+export function iceServersFor(hostname, relay) {
+    const servers = [{ urls: `stun:${hostname}:3478` }];
+    if (relay) servers.push(relay);
+    return servers;
+}
+
+/**
+ * Whether the connection that came up goes through the relay: the local side
+ * of the pair in use is a relayed candidate. Null when the browser does not
+ * say (no selected pair in its statistics) or does not answer in time.
+ */
+export async function routeIsRelayed(pc) {
+    let timer;
+    const stats = await Promise.race([
+        Promise.resolve()
+            .then(() => pc.getStats())
+            .catch(() => null),
+        new Promise((resolve) => {
+            timer = setTimeout(() => resolve(null), DIAG_STATS_WAIT_MS);
+        }),
+    ]);
+    clearTimeout(timer);
+    if (!stats) return null;
+    const byId = new Map();
+    let pairId = null;
+    let fallback = null;
+    stats.forEach((report) => {
+        byId.set(report.id, report);
+        if (report.type === 'transport' && report.selectedCandidatePairId)
+            pairId = report.selectedCandidatePairId;
+        // Firefox has no transport report: the pair says it of itself.
+        if (report.type === 'candidate-pair' && (report.selected || report.nominated))
+            if (report.state === 'succeeded') fallback = report.id;
+    });
+    const pair = byId.get(pairId || fallback);
+    const local = pair && byId.get(pair.localCandidateId);
+    if (!local || typeof local.candidateType !== 'string') return null;
+    return local.candidateType === 'relay';
+}
+
 /**
  * The browser's ICE counters, added up over every candidate pair: checks it
  * sent, answers it had to them, checks it received. Only these numbers are
@@ -541,6 +614,11 @@ export class Tunnel {
         // nothing is sent.
         this._sentKinds = new Map();
         this._remoteCount = 0;
+        // S3XYCast edition: the relay the introduction server named, if any
+        // (relayOf), and — once the channel is open — whether the connection
+        // goes through it: true, false, or null when the browser does not say.
+        this._relay = null;
+        this.relayed = null;
         this._answeredAt = null;
         this._diagSent = false;
 
@@ -756,6 +834,8 @@ export class Tunnel {
         }
         if (frame.t === 'ready') {
             this.hostProto = Number.isInteger(frame.v) && frame.v > 0 ? frame.v : 1;
+            // S3XYCast edition: the relay of last resort, when the server has one.
+            this._relay = relayOf(frame);
             this._status('binding');
             this._sendSignal(helloMessage(this.identity));
             return;
@@ -789,8 +869,13 @@ export class Tunnel {
         //
         // No fallback list, deliberately. If this server is unreachable the
         // WebSocket above is down too and there is no session to rescue.
+        //
+        // S3XYCast edition: the same server also relays, as a last resort, when
+        // it said so in its `ready` frame (relayOf). The direct paths are still
+        // gathered and tried first; the relay only carries the connection when
+        // none of them opens.
         this._pc = new RTCPeerConnection({
-            iceServers: [{ urls: `stun:${location.hostname}:3478` }],
+            iceServers: iceServersFor(location.hostname, this._relay),
         });
         this._pc.onicecandidate = (ev) => {
             if (ev.candidate) {
@@ -926,6 +1011,18 @@ export class Tunnel {
             // still a connect() waiting on a verdict, and a tunnel that dies an
             // hour from now must not be reported as one that never came up.
             this._onChannelOpen = null;
+            // S3XYCast edition: which way the connection went. A relayed one
+            // works, and is slower than a direct one; the interface says so,
+            // and how to get the direct one (onroute).
+            const pc = this._pc;
+            if (pc) {
+                routeIsRelayed(pc).then((relayed) => {
+                    if (pc !== this._pc) return; // a later connection took over
+                    this.relayed = relayed;
+                    if (relayed) console.info('[MW] Connected through the relay');
+                    this.onroute?.(relayed);
+                });
+            }
         };
         if (this._dc.readyState === 'open') this._dc.onopen();
     }

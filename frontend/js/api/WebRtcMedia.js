@@ -32,7 +32,7 @@ import {
     mayTakeUncheckedOffer,
     isBindRefusedClose,
 } from '../util/pairingCrypto.js';
-import { defaultIceServers } from './IceServers.js';
+import { defaultIceServers, iceServersForLog, relayAllowed, routeIsRelayed } from './IceServers.js';
 import { isViewMessage } from './hostMessages.js';
 import { setAudioJitterBufferTarget } from '../util/AudioJitter.js';
 import {
@@ -124,6 +124,11 @@ export class WebRtcMedia {
         // The fallback below only applies when no such message ever arrives.
         this._dynamicIceServers = null;
         this._defaultIceServers = defaultIceServers();
+        // S3XYCast edition: whether the host named a relay it allows (its
+        // ice-config), and whether the connection went through it — true,
+        // false, or null until the browser has said.
+        this._relayAllowed = false;
+        this.relayed = null;
 
         // Video element for native decoding of RTP media track
         this.videoElement = options.videoElement || null;
@@ -468,7 +473,7 @@ export class WebRtcMedia {
         // `||` because an empty array is truthy.
         const iceServers = this._dynamicIceServers || this._defaultIceServers;
         const config = this._rtcConfiguration(iceServers);
-        console.log('[WebRtcMedia] ICE servers:', JSON.stringify(iceServers));
+        console.log('[WebRtcMedia] ICE servers:', iceServersForLog(iceServers));
 
         this.pc = new RTCPeerConnection(config);
 
@@ -482,8 +487,9 @@ export class WebRtcMedia {
                 return;
             }
 
-            // Drop TURN relay candidates — direct connection only (no TURN server)
-            if (evt.candidate.candidate.indexOf(' typ relay ') !== -1) {
+            // Drop TURN relay candidates — direct connection only — unless the
+            // host named a relay of its own (S3XYCast edition: relayAllowed).
+            if (!this._relayAllowed && evt.candidate.candidate.indexOf(' typ relay ') !== -1) {
                 console.log('[WebRtcMedia] Dropping TURN relay candidate');
                 return;
             }
@@ -501,6 +507,17 @@ export class WebRtcMedia {
             console.log('[WebRtcMedia] ICE state:', state);
             if (state === 'connected' || state === 'completed') {
                 this._iceConnected = true;
+                // S3XYCast edition: which way the stream went. A relayed one
+                // works and is slower; the interface says so (onRoute).
+                {
+                    const pc = this.pc;
+                    routeIsRelayed(pc).then((relayed) => {
+                        if (pc !== this.pc) return; // a later attempt took over
+                        this.relayed = relayed;
+                        if (relayed) console.log('[WebRtcMedia] Stream goes through the relay');
+                        if (this.onRoute) this.onRoute(relayed);
+                    });
+                }
             } else if (state === 'disconnected' || state === 'failed') {
                 if (!this._stopping) {
                     this._clearWsCloseTimer();
@@ -695,8 +712,9 @@ export class WebRtcMedia {
             this._handleIceCandidate(msg.candidate, msg.mid);
         } else if (msg.type === 'ice-config') {
             // Dynamic ICE server configuration from backend.
-            console.log('[WebRtcMedia] Received ice-config:', JSON.stringify(msg.iceServers));
+            console.log('[WebRtcMedia] Received ice-config:', iceServersForLog(msg.iceServers));
             this._dynamicIceServers = msg.iceServers;
+            this._relayAllowed = relayAllowed(msg);
             if (this.pc) {
                 try {
                     this.pc.setConfiguration(this._rtcConfiguration(this._dynamicIceServers));

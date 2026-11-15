@@ -19,6 +19,7 @@
 
 #include "server/NetClassify.h"
 
+#include <QJsonObject>
 #include <QObject>
 #include <QWebSocketServer>
 #include <QWebSocket>
@@ -83,6 +84,10 @@ public:
     /// Set the STUN server URL to use for ICE configuration.
     /// Default: "stun:stream.{MW_DOMAIN}:3478" (AppSettings::stunServer).
     void setStunServer(const QString& url) { m_StunServerUrl = url; }
+    /// S3XYCast edition: the relay of last resort, as one entry of a browser's
+    /// iceServers (mw::relay::asIceServer), or empty for none. Sent with the
+    /// ice-config of a browser that is not on this network.
+    void setRelayIce(const QJsonObject& server) { m_RelayIce = server; }
 
     /// WebRTC media UDP port for this stream slot. Each concurrent slot binds
     /// a distinct port (base + slot) so simultaneous streams never collide on
@@ -202,6 +207,7 @@ private:
     // and it names our own server for the same reason every other default
     // does. An instance under its own MW_DOMAIN is covered by the caller.
     QString m_StunServerUrl = QStringLiteral("stun:stun.cloudflare.com:3478");
+    QJsonObject m_RelayIce; // empty: no relay (setRelayIce)
 
     /// Force ICE-TCP candidates (true = UDP + TCP, false = UDP only).
     bool m_ForceIceTcp = false;

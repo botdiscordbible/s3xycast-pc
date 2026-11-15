@@ -147,6 +147,7 @@
 #include "network/InternetAccessManager.h"
 #include "network/MdnsAdvertiser.h"
 #include "network/PortIdentity.h"
+#include "network/RelayGrant.h"
 #include "network/RendezvousClient.h"
 #include "network/RouterPortAllocator.h"
 #include "network/RouterPortPools.h"
@@ -5002,6 +5003,9 @@ int main(int argc, char* argv[])
             cfg["internalTransport"] = internalTransport;
             cfg["transportMode"] = chainMode;
             cfg["stunServer"] = stunServer;
+            // S3XYCast edition: the relay of last resort, when the introduction
+            // server named one (network/RelayGrant.h). An empty object: none.
+            cfg["relayIce"] = mw::relay::currentIceServer();
             cfg["height"] = reqHeight;
             cfg["width"] = reqWidth;
             cfg["fps"] = reqFps;
@@ -6971,6 +6975,7 @@ int main(int argc, char* argv[])
                                                             : QStringLiteral("wss");
         cfg["transportMode"] = mode;
         cfg["stunServer"] = stunServer;
+        cfg["relayIce"] = mw::relay::currentIceServer(); // S3XYCast edition, as above
         cfg["height"] = height;
         cfg["width"] = width;
         cfg["fps"] = 60;

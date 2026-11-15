@@ -287,10 +287,19 @@ void SignalingServer::sendIceConfig(bool needStun, int iceTimeoutMs)
         iceServer["urls"] = m_StunServerUrl;
         iceServers.append(iceServer);
     }
+    // S3XYCast edition: the relay of last resort, for a browser out on the
+    // internet only — the same condition as the STUN server, since a browser
+    // on this network reaches the host directly or the host is not reachable
+    // at all. It is the browser that connects to the relay; what this end gets
+    // is one more candidate to answer. `relay` tells the page it may keep the
+    // relayed candidates it used to drop (WebRtcDataChannel.js, WebRtcMedia.js).
+    const bool relay = needStun && !m_RelayIce.isEmpty();
+    if (relay) iceServers.append(m_RelayIce);
 
     QJsonObject msg;
     msg["type"] = "ice-config";
     msg["iceServers"] = iceServers;
+    if (relay) msg["relay"] = true;
     // The browser runs its own copy of this deadline. Ship ours so the two
     // agree: whichever end fires first ends the attempt, and a browser stuck on
     // the LAN value would keep cutting off internet handshakes the host is
@@ -301,7 +310,7 @@ void SignalingServer::sendIceConfig(bool needStun, int iceTimeoutMs)
     m_WsClient->sendTextMessage(QString::fromUtf8(doc.toJson(QJsonDocument::Compact)));
     qInfo() << "[SignalingServer] Sent ice-config: stun="
             << (needStun ? m_StunServerUrl : QStringLiteral("(none — LAN)"))
-            << "iceTimeoutMs=" << iceTimeoutMs;
+            << "relay=" << (relay ? "yes" : "no") << "iceTimeoutMs=" << iceTimeoutMs;
 }
 
 // --- New WS client connected ---

@@ -18,6 +18,7 @@
 #include "RendezvousClient.h"
 
 #include "AddressRace.h"
+#include "RelayGrant.h"
 #include "../common/Edition.h"
 #include "../common/RendezvousId.h"
 #include "../server/AppSettings.h"
@@ -40,6 +41,10 @@ const char* const kMsgOpen = "open";
 const char* const kMsgMsg = "msg";
 const char* const kMsgClose = "close";
 const char* const kMsgError = "error"; // server → us, before it hangs up
+// S3XYCast edition: server → us, with no session — the relay and credentials
+// for it (network/RelayGrant.h). Sent when the line comes up and again well
+// before they lapse.
+const char* const kMsgIce = "ice";
 
 // Error codes from the server's 409s. Must match main.go.
 const char* const kErrIdTaken = "id_taken";
@@ -818,6 +823,22 @@ void RendezvousClient::onTextMessage(const QString& text)
         } else {
             qWarning() << "[RDV] server refused the line:" << code;
         }
+        return;
+    }
+
+    // S3XYCast edition — the other frame without a session: where the relay of
+    // last resort is. Kept in memory for the streams that start from here on;
+    // a payload this build cannot read leaves no relay rather than half of one.
+    if (type == QLatin1String(kMsgIce)) {
+        const qint64 now = QDateTime::currentMSecsSinceEpoch();
+        const mw::relay::Grant grant = mw::relay::parse(frame.value("d").toObject(), now);
+        mw::relay::setCurrent(grant);
+        if (grant.isValid())
+            qInfo() << "[RDV] relay of last resort available —" << grant.urls.size()
+                    << "address(es), credentials good for" << (grant.expiresAtMs - now) / 60000
+                    << "min";
+        else
+            qWarning() << "[RDV] the server named a relay in a form this build does not read";
         return;
     }
 

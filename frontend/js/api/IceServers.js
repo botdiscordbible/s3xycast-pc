@@ -60,3 +60,77 @@ export function ourStunHost() {
     // "ours", then: defaultIceServers() goes straight to the public ones.
     return '';
 }
+
+/**
+ * S3XYCast edition — whether the host's list carries a relay it allows.
+ *
+ * MoonlightWeb drops every relayed candidate: it has no relay, so one could
+ * only come from a server somebody slipped into the list. This edition's host
+ * names its own (the `relay` flag of its ice-config, set when the introduction
+ * server gave it one), for the browsers no direct path reaches. Both have to
+ * hold — the flag, and a turn: address in the list — before a relayed
+ * candidate is let through.
+ *
+ * @param {object} msg the host's ice-config message
+ * @returns {boolean}
+ */
+export function relayAllowed(msg) {
+    if (!msg || msg.relay !== true || !Array.isArray(msg.iceServers)) return false;
+    return msg.iceServers.some((server) =>
+        [].concat(server?.urls ?? []).some((u) => typeof u === 'string' && /^turns?:/.test(u)),
+    );
+}
+
+/**
+ * The servers as a log may show them: their addresses, never their
+ * credentials. A relay's username names the host's public address and its
+ * password opens the relay for a day; a console is read by more people than
+ * should hold either.
+ *
+ * @param {object[]} servers
+ * @returns {string}
+ */
+export function iceServersForLog(servers) {
+    if (!Array.isArray(servers)) return String(servers);
+    return JSON.stringify(
+        servers.map((server) => ({
+            urls: server?.urls,
+            ...(server?.username || server?.credential ? { credentials: '(not shown)' } : {}),
+        })),
+    );
+}
+
+/**
+ * Whether the connection in use goes through the relay: the local side of the
+ * selected pair is a relayed candidate. Null when the browser does not say.
+ *
+ * @param {RTCPeerConnection} pc
+ * @returns {Promise<boolean|null>}
+ */
+export async function routeIsRelayed(pc) {
+    let stats;
+    try {
+        stats = await pc.getStats();
+    } catch (_e) {
+        return null;
+    }
+    const byId = new Map();
+    let pairId = null;
+    let fallback = null;
+    stats.forEach((report) => {
+        byId.set(report.id, report);
+        if (report.type === 'transport' && report.selectedCandidatePairId)
+            pairId = report.selectedCandidatePairId;
+        // Firefox has no transport report: the pair says it of itself.
+        if (
+            report.type === 'candidate-pair' &&
+            (report.selected || report.nominated) &&
+            report.state === 'succeeded'
+        )
+            fallback = report.id;
+    });
+    const pair = byId.get(pairId || fallback);
+    const local = pair && byId.get(pair.localCandidateId);
+    if (!local || typeof local.candidateType !== 'string') return null;
+    return local.candidateType === 'relay';
+}

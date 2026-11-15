@@ -115,6 +115,7 @@ void run_control_channel_tests();
 void run_feed_ipc_tests();
 void run_cert_manager_tests();
 void run_update_checker_tests();
+void run_relay_grant_tests();
 void run_mic_uplink_tests();
 void run_phone_pairing_tests();
 void run_pair_request_routes_tests();
@@ -258,6 +259,7 @@ int main(int argc, char** argv)
     run_feed_ipc_tests();
     run_cert_manager_tests();
     run_update_checker_tests();
+    run_relay_grant_tests();
     run_mic_uplink_tests();
     run_phone_pairing_tests();
     run_pair_request_routes_tests();

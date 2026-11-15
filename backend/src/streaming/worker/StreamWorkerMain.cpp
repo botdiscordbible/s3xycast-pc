@@ -691,6 +691,8 @@ int runStreamWorker(QCoreApplication& app)
         cfg["width"].toInt(), cfg["fps"].toInt(), cfg["bitrateKbps"].toInt(),
         cfg["yuv444"].toBool(), cfg["hdr"].toBool());
     session->setHttpsPort(static_cast<quint16>(cfg["serverHttpsPort"].toInt(443)));
+    // S3XYCast edition: the relay of last resort the parent holds, if any.
+    session->setRelayIce(cfg["relayIce"].toObject());
     session->setStreamRelayPort(static_cast<quint16>(cfg["streamRelayPort"].toInt(48002)));
     session->setMediaPort(static_cast<quint16>(cfg["mediaPort"].toInt(48550)));
     // The router hole the parent claimed for this slot, if any. Absent (no

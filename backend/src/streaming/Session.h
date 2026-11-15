@@ -18,6 +18,7 @@
 #pragma once
 
 #include <QElapsedTimer>
+#include <QJsonObject>
 #include <QObject>
 #include <QNetworkReply>
 #include <QUrl>
@@ -334,6 +335,9 @@ public:
     /// due to port fallback). Used to construct the correct wsUrl() for
     /// the browser when sharing the unified port.
     void setHttpsPort(quint16 port) { m_HttpsPort = port; }
+    /// S3XYCast edition: the relay of last resort, handed to the signalling
+    /// server with the STUN address (mw::relay::asIceServer). Empty: none.
+    void setRelayIce(const QJsonObject& server) { m_RelayIce = server; }
 
     /// This browser reached us through the rendezvous tunnel, so it has no HTTP
     /// route here at all. The signalling URL then has to be a PATH: the host's
@@ -513,6 +517,7 @@ private:
     /// The original codec selected by the user, before override.
     VideoCodec m_OriginalCodec = VideoCodec::Auto;
     QString m_StunServer = "stun:stun.cloudflare.com:3478";
+    QJsonObject m_RelayIce; // S3XYCast edition: the relay, or empty (setRelayIce)
     /// Per-browser uniqueid for Sunshine launch/cancel; empty → shared id.
     QString m_ClientUniqueId;
     /// Resume directly instead of launching (see setPreferResume).
