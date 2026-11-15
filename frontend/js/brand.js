@@ -35,6 +35,13 @@ export const UPSTREAM_AUTHOR = 'Bruno Martin';
 export const UPSTREAM_YEAR = '2026';
 export const UPSTREAM_URL = 'https://github.com/linckosz/moonlight-web';
 
+/**
+ * Where a person is told how to make their router open its ports (UPnP), on
+ * the S3XYCast site: the settings page links there when the router does not
+ * answer and connections from outside go through the relay.
+ */
+export const BOX_HELP_URL = 'https://s3xycast.com/pc-installation#box';
+
 /** The licence the program is under, to read in full. */
 export const LICENCE_URL = 'https://www.gnu.org/licenses/gpl-3.0.html';
 

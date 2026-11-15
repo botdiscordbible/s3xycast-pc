@@ -824,3 +824,11 @@ textarea {
         padding: 12px 0 6px;
     }
 }
+
+/* S3XYCast edition: the "how to set up my router" link of the Internet section. */
+.internet-box-help {
+    color: var(--s3x-accent, #e31937);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}

@@ -34,6 +34,7 @@ import { t, getLanguage } from '../i18n/i18n.js';
 import { escapeHtml } from '../util/escapeHtml.js';
 import { refreshClientLog } from '../util/ClientLog.js';
 import { GamepadDriverNotice } from './GamepadDriverNotice.js';
+import { BOX_HELP_URL } from '../brand.js';
 
 export class AdminView {
     // Backend statusJson "phase" values that mean activation is still running.
@@ -1094,6 +1095,11 @@ export class AdminView {
                                   ? t('admin.upnpAvailableNote')
                                   : t('admin.upnpUnavailableNote')
                         }</p>
+                        ${
+                            this._upnpEnabled && !this._upnpAvailable
+                                ? `<p><a class="internet-box-help" href="${BOX_HELP_URL}" target="_blank" rel="noopener noreferrer">${t('admin.boxHelpLink')}</a></p>`
+                                : ''
+                        }
                         ${this._publicIp ? `<p>${t('admin.publicIp')} <code>${this.esc(this._publicIp)}</code></p>` : ''}
                         <p>${t('admin.upnpLabel')} ${
                             !this._upnpEnabled
