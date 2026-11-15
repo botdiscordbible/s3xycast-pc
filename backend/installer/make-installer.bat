@@ -70,6 +70,10 @@ echo [4/4] Inno Setup
 if not exist "%OUT%" mkdir "%OUT%"
 "%ISCC%" "/DSourceDir=%DIST%" /DMyArch=x64 "/DMyAppVersion=%VERSION%" "/O%OUT%" "%ROOT%\backend\installer\moonlightweb.iss" >"%OUT%\iscc.log" 2>&1
 if !errorlevel! neq 0 ( echo [ERROR] Inno Setup failed, see %OUT%\iscc.log & exit /b 1 )
+REM A log that could not be opened (the file held by whoever captures this
+REM script's own output there) skips Inno Setup and leaves no error code: the
+REM installer itself is what says the step ran.
+if not exist "%OUT%\S3XYCastPC-installer-%VERSION%-win-x64.exe" ( echo [ERROR] Inno Setup wrote no installer, see %OUT%\iscc.log & exit /b 1 )
 echo [OK] %OUT%\S3XYCastPC-installer-%VERSION%-win-x64.exe
 endlocal
 exit /b 0
