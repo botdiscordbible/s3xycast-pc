@@ -972,6 +972,13 @@ textarea {
 .pad-kbm-body.is-idle {
     opacity: 0.55;
 }
+/* Whose settings these are: the second mode's. */
+.pad-kbm-subtitle {
+    margin: 0 0 10px;
+    color: var(--text-1);
+    font-size: var(--fs-sm);
+    font-weight: 700;
+}
 .pad-kbm-sens {
     display: grid;
     grid-template-columns: auto 1fr auto;
@@ -1003,8 +1010,12 @@ textarea {
     gap: 4px;
     min-width: 0;
 }
-/* A stick's choice is a sentence: twice the room, where there is room. */
-@media (min-width: 420px) {
+/* A stick's choice is a sentence: a row of its own on a phone, half of one
+   where there are four columns. */
+.pad-kbm-field.is-stick {
+    grid-column: 1 / -1;
+}
+@media (min-width: 700px) {
     .pad-kbm-field.is-stick {
         grid-column: span 2;
     }

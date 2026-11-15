@@ -569,6 +569,34 @@ describe('PadKeyMouse', () => {
     });
 });
 
+describe('what the two modes are called', () => {
+    // The first owner to try it, 15/11/2026: choosing "keyboard and mouse" to
+    // make a controller work is not what a player expects to do. The modes are
+    // named for what the player wants; the keyboard is the means, and is said
+    // in the sentence under the choice.
+    const MEANS = {
+        en: /keyboard|mouse/i,
+        fr: /clavier|souris/i,
+        tr: /klavye|fare/i,
+        zh: /键盘|鼠标|键鼠/,
+    };
+
+    it.each(Object.keys(MEANS))(
+        'names them for the player, and says the means below (%s)',
+        async (lang) => {
+            const pad = (await import(`../locales/${lang}.json`)).default.padKbm;
+            for (const name of ['title', 'modePad', 'modeKbm', 'pillPad', 'pillKbm', 'button']) {
+                expect(pad[name], name).toBeTruthy();
+                expect(MEANS[lang].test(pad[name]), `${name} = ${pad[name]}`).toBe(false);
+            }
+            expect(MEANS[lang].test(pad.descKbm)).toBe(true);
+            // The two must not read the same on the pill.
+            expect(pad.pillPad).not.toBe(pad.pillKbm);
+            expect(pad.modePad).not.toBe(pad.modeKbm);
+        },
+    );
+});
+
 describe('the catalogue of the four languages', () => {
     it.each(['en', 'fr', 'tr', 'zh'])(
         'has a name, long and short, for every key offered (%s)',

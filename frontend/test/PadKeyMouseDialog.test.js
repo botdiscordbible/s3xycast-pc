@@ -64,6 +64,11 @@ describe('PadKeyMouseDialog', () => {
         expect(el('.pad-kbm-percent').textContent).toBe('padKbm.sensValue:{"percent":100}');
     });
 
+    it('says whose settings the keys are: the second mode’s', () => {
+        open();
+        expect(el('.pad-kbm-body .pad-kbm-subtitle').textContent).toBe('padKbm.keysTitle');
+    });
+
     it('has one choice for each stick and each button, set to the viewer’s key', () => {
         open(padKbmSettings({ pad_kbm_map: { ...PAD_KBM_DEFAULT_MAP, y: 'c:h', ls: 'arrows' } }));
         const controls = [...host.querySelectorAll('.pad-kbm-select')].map(

@@ -5,9 +5,14 @@
  *
  * One dialog for the two places it is asked from: the settings page, and the
  * on-screen controller in a stream, where a viewer finds out that a game does
- * not answer to a pad. Two big choices at the top — a game controller, or a
- * keyboard and a mouse — then what only the second one needs: how fast the
- * mouse stick is, and the key under each control.
+ * not answer to a pad. Two big choices at the top, then what only the second
+ * one needs: how fast the mouse stick is, and the key under each control.
+ *
+ * The two are named for what the player wants, not for how it is done:
+ * "Normal", and "Works in every game". The first owner to try it found
+ * "keyboard and mouse" an odd thing to pick to make a controller work
+ * (15/11/2026), and he was right: the keyboard is the means, said in the
+ * line under the choice.
  *
  * Every change is told at once (`onChange`): in a stream it takes effect while
  * the dialog is still up, so a key can be tried without closing it.
@@ -123,6 +128,7 @@ export class PadKeyMouseDialog {
                     </div>
                     <p class="pad-kbm-desc"></p>
                     <div class="pad-kbm-body">
+                        <h4 class="pad-kbm-subtitle">${escapeHtml(t('padKbm.keysTitle'))}</h4>
                         <label class="pad-kbm-sens">
                             <span class="pad-kbm-name">${escapeHtml(t('padKbm.sens'))}</span>
                             <input type="range" class="pad-kbm-range"
