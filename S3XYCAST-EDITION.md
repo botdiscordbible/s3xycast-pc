@@ -31,6 +31,7 @@ desktop, with sound, touch as a mouse, keyboard and controller. It ships no game
 | 2026-11-15 | **An installed copy serves its own interface.** Upstream tries the compile-time path of the source tree first and the folder next to the executable second; on the machine a release is built on, the installed program served the work copy, and the entry page refused it as "a modified interface" the moment a file there was edited. The installed folder now comes first (`HttpServer.cpp`, `TrayManager.cpp`). After an install on the build machine, open the page through the entry link: that is the check that catches it. |
 | 2026-11-15 | **A relay of last resort.** MoonlightWeb runs no relay: a home whose router opens nothing, or a browser that sends no UDP (a car's), ends on "no direct connection could be opened". This edition's server has one, `deploy/s3xycast-relais` (TURN over UDP and TCP, `github.com/pion/turn`, MIT; a separate program, so that `mw-rendezvous` still imports nothing). The introduction server hands out credentials that last a day and name the one machine they are for (`relaycred.go`; `MW_RDV_RELAY_URLS`); the entry page takes them from its `ready` frame (`relayOf` in `bootstrap/v1/tunnel.js`); the host takes them from an "ice" frame of its line (`network/RelayGrant`) and passes them on in the `ice-config` of a stream; the two WebRTC transports keep relayed candidates when the host says so (`relayAllowed` in `frontend/js/api/IceServers.js`). Direct paths are still gathered and preferred. The settings page says which way a router leaves, and links to how to turn UPnP on. The entry page's `stun:<host>:3478` is answered by the relay too. |
 | 2026-11-15 | **The agreement names the relay.** Upstream's Internet-access agreement says "Streaming is direct", which the relay of last resort makes untrue for a home whose router opens nothing. The wizard, the settings page and the installer now say, in every language they speak, that the encrypted stream then passes through the S3XYCast relay, which forwards it and records nothing (`setup.internetBody`, `admin.internetInfo1`, `InternetPageBody`; `frontend/test/InternetConsentRelay.test.js` holds it, next to upstream's own pin that keeps the surfaces one text). **Not in 0.1.2**, which still shows upstream's sentence. |
+| 2026-11-15 | **A tiebreaker of zero is still a role.** A browser's TURN-over-TCP port sends its connectivity checks with a tiebreaker of zero (Chrome 157: eight zero bytes in `ICE-CONTROLLED`, where its TURN-over-UDP port sends a random number). libjuice took the tiebreaker's value for the attribute's presence, read such a check as naming no role, and answered 400, on which the browser gives the pair up. The host meanwhile reported itself connected. A browser that reaches the relay over TCP only, which is a car's, never got in: seen on the real relay the day it went into service, with a browser held to the relay's TCP address, and **0.1.2 has exactly that**. `third_party/patches/libjuice-zero-tiebreaker.patch` reads presence as presence (`has_ice_controlling`, `has_ice_controlled` in `stun_message_t`); `test_zero_tiebreaker_is_a_role` in `backend/tests/test_ice_tcp_passive.c` holds it, and fails with the 400 when the old line is put back. |
 
 Upstream's stylesheets are not edited: the look is one additional file, so that taking a new
 upstream release stays a merge of their files and a look at ours.
@@ -69,7 +70,9 @@ The introduction server is in service at `pc.s3xycast.com` since 2026-11-14
   program (`backend\build_msvc.bat`); the update helper's rules are tested there.
 - **One of upstream's cases fails on some Windows machines, some of the time**: "A burst the
   socket cannot take at once arrives whole and in order" (`backend/tests/test_ice_tcp_passive.c`;
-  this edition modifies neither the test nor libjuice). Its reader has a 4 KB receive buffer and
+  this edition changes neither that case nor the code it runs: its own patch on libjuice is about
+  the role attributes of a check, and its own case in that file is the last one). Its reader has a
+  4 KB receive buffer and
   gives each frame 300 ms. On the machine this edition is built on, the body of a frame
   sometimes takes longer after 13 to 29 frames (measured on 2026-11-14: the read comes back after
   312 ms), the reader loses the framing and the case fails. The same binary passes at other
@@ -84,10 +87,10 @@ The introduction server is in service at `pc.s3xycast.com` since 2026-11-14
   `github.com/botdiscordbible/s3xycast-pc`. It has to exist and be public before the program is
   handed to anyone: it is the source offer the licence asks for (GPL-3.0 §6), and until a release
   is published there the update check logs a warning and offers nothing.
-- **A release after 0.1.2.** 0.1.2 has the relay, and an Internet-access agreement that still reads
-  "Streaming is direct". What a subscriber agrees to has to be what the program does: the first
-  version handed to anyone but the owner must carry the sentence about the relay (on the branch
-  since 2026-11-15), with its interface list on the entry server first.
+- **Never 0.1.2.** It has the relay, an Internet-access agreement that still reads "Streaming is
+  direct", and a host that refuses a browser coming through the relay over TCP (the two rows of
+  2026-11-15 above). It was built and never given to anyone. 0.1.3 carries both corrections; its
+  interface list goes on the entry server first, like any release's.
 - **Code signing.** The program and its installer are not signed: Windows SmartScreen warns on
   the download and the elevation prompt reads "Unknown publisher". A code-signing certificate
   (and `SignTool` in the installer script, or a signing step around it as upstream does) is what

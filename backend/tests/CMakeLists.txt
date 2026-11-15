@@ -376,8 +376,10 @@ endif()
 find_package(Git REQUIRED)
 set(_juice ${_src}/third_party/libdatachannel/deps/libjuice)
 set(_juice_patches ${_src}/third_party/patches)
+# The last one is the S3XYCast edition's (a tiebreaker of zero is still a role),
+# made on top of the others, and what test_zero_tiebreaker_is_a_role checks.
 foreach(_juice_patch libjuice-ice-tcp-passive.patch libjuice-udp-long-datagram.patch
-                     libjuice-ice-mux.patch)
+                     libjuice-ice-mux.patch libjuice-zero-tiebreaker.patch)
     set(_juice_proofs ${_juice_patch})
     if(_juice_patch STREQUAL "libjuice-ice-tcp-passive.patch")
         list(APPEND _juice_proofs libjuice-ice-mux.patch)

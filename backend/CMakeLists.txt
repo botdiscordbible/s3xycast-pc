@@ -267,6 +267,14 @@ mw_apply_patch("${MW_LIBJUICE_DIR}" libjuice-ice-mux.patch)
 # gives a PeerConnection's agent such sockets, with ICE credentials of its own.
 mw_apply_patch("${CMAKE_CURRENT_SOURCE_DIR}/third_party/libdatachannel"
                libdatachannel-ice-mux.patch)
+# S3XYCast edition. A browser's TURN-over-TCP port puts a tiebreaker of ZERO in the
+# checks it sends (Chrome 157, captured 2026-11-15; over TURN/UDP the same browser
+# sends a random one). libjuice took the tiebreaker's value for the attribute's
+# presence, read such a check as carrying no role at all, and answered 400 — on
+# which the browser gives the pair up. A browser that can only reach the relay over
+# TCP, a car's, never connected. Presence is now read as presence. Applied last: it
+# is made on top of the patches above.
+mw_apply_patch("${MW_LIBJUICE_DIR}" libjuice-zero-tiebreaker.patch)
 
 # libdatachannel (WebRTC DataChannel + media). Match the previous .bat flags.
 set(NO_WEBSOCKET ON  CACHE BOOL "" FORCE)

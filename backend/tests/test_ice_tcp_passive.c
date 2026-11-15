@@ -775,6 +775,109 @@ static void test_long_datagram_is_dropped(void) {
 	closesocket(tx);
 }
 
+// ── S3XYCast edition: third_party/patches/libjuice-zero-tiebreaker.patch ──────────────────────
+//
+// A browser's TURN-over-TCP port sends its checks with a tiebreaker of zero (Chrome 157: eight
+// zero bytes in ICE-CONTROLLED, where its TURN-over-UDP port sends a random number). libjuice took
+// the tiebreaker's value for the attribute's presence, read such a check as carrying no role, and
+// answered 400 — on which the browser gives the pair up. A browser that reaches the relay over
+// TCP only, a car's, never connected.
+static void test_zero_tiebreaker_is_a_role(void) {
+	printf("A check whose tiebreaker is zero still names its role\n");
+	char buf[2048];
+	stun_message_t out, in;
+
+	// Read as written: present with the value zero, and absent, are two different things.
+	memset(&out, 0, sizeof(out));
+	out.msg_class = STUN_CLASS_REQUEST;
+	out.msg_method = STUN_METHOD_BINDING;
+	out.has_ice_controlled = true;
+	int len = stun_write(buf, sizeof(buf), &out, NULL);
+	CHECK(len > 0 && stun_read(buf, (size_t)len, &in) >= 0);
+	CHECK(in.has_ice_controlled && !in.has_ice_controlling && in.ice_controlled == 0);
+
+	memset(&out, 0, sizeof(out));
+	out.msg_class = STUN_CLASS_REQUEST;
+	out.msg_method = STUN_METHOD_BINDING;
+	out.has_ice_controlling = true;
+	len = stun_write(buf, sizeof(buf), &out, NULL);
+	CHECK(len > 0 && stun_read(buf, (size_t)len, &in) >= 0);
+	CHECK(in.has_ice_controlling && !in.has_ice_controlled && in.ice_controlling == 0);
+
+	memset(&out, 0, sizeof(out));
+	out.msg_class = STUN_CLASS_REQUEST;
+	out.msg_method = STUN_METHOD_BINDING;
+	len = stun_write(buf, sizeof(buf), &out, NULL);
+	CHECK(len > 0 && stun_read(buf, (size_t)len, &in) >= 0);
+	CHECK(!in.has_ice_controlling && !in.has_ice_controlled);
+
+	// And an agent answers such a check. A raw peer nominates with a tiebreaker of zero: the
+	// answer is a success, not a 400, and the host connects on the pair.
+	const char *peer_pwd = "pw01234567890123456789";
+	side_t h = {0};
+	listening_host(&h, peer_pwd);
+	CHECK(h.passive_port > 0);
+	socket_t peer = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	struct sockaddr_in sin;
+	memset(&sin, 0, sizeof(sin));
+	sin.sin_family = AF_INET;
+	sin.sin_port = htons((uint16_t)h.passive_port);
+	sin.sin_addr.s_addr = htonl(0x7F000001);
+	CHECK(connect(peer, (struct sockaddr *)&sin, sizeof(sin)) == 0);
+
+	char ufrag[64], pwd[64];
+	host_credentials(&h, ufrag, pwd);
+	memset(&out, 0, sizeof(out));
+	out.msg_class = STUN_CLASS_REQUEST;
+	out.msg_method = STUN_METHOD_BINDING;
+	for (int i = 0; i < STUN_TRANSACTION_ID_SIZE; ++i)
+		out.transaction_id[i] = (uint8_t)rand();
+	snprintf(out.credentials.username, STUN_MAX_USERNAME_LEN, "%s:peer", ufrag);
+	out.priority = 1845501695;
+	out.has_ice_controlling = true; // the attribute, with eight zero bytes
+	out.use_candidate = true;
+	len = stun_write(buf, sizeof(buf), &out, pwd);
+	CHECK(len > 0);
+	send_frame(peer, buf, (uint16_t)len, (size_t)len);
+
+	bool answered = false;
+	stun_class_t answer = STUN_CLASS_REQUEST;
+	unsigned int error_code = 0;
+	for (int t = 0; t < 5000; t += 50) {
+		juice_state_t state = juice_get_state(h.agent);
+		if (answered && (state == JUICE_STATE_CONNECTED || state == JUICE_STATE_COMPLETED))
+			break;
+		len = read_frame(peer, buf, sizeof(buf), 50);
+		memset(&in, 0, sizeof(in));
+		if (len <= 0 || stun_read(buf, (size_t)len, &in) < 0 || in.msg_method != STUN_METHOD_BINDING)
+			continue;
+		if (in.msg_class == STUN_CLASS_REQUEST) {
+			// The host's own check: answered, as a browser would.
+			stun_message_t resp;
+			memset(&resp, 0, sizeof(resp));
+			resp.msg_class = STUN_CLASS_RESP_SUCCESS;
+			resp.msg_method = STUN_METHOD_BINDING;
+			memcpy(resp.transaction_id, in.transaction_id, STUN_TRANSACTION_ID_SIZE);
+			resp.mapped.len = sizeof(resp.mapped.addr);
+			getpeername(peer, (struct sockaddr *)&resp.mapped.addr, &resp.mapped.len);
+			len = stun_write(buf, sizeof(buf), &resp, peer_pwd);
+			send_frame(peer, buf, (uint16_t)len, (size_t)len);
+		} else if (memcmp(in.transaction_id, out.transaction_id, STUN_TRANSACTION_ID_SIZE) == 0) {
+			answered = true;
+			answer = in.msg_class;
+			error_code = in.error_code;
+		}
+	}
+	CHECK(answered);
+	CHECK(answer == STUN_CLASS_RESP_SUCCESS);
+	CHECK(error_code == 0);
+	juice_state_t state = juice_get_state(h.agent);
+	CHECK(state == JUICE_STATE_CONNECTED || state == JUICE_STATE_COMPLETED);
+
+	closesocket(peer);
+	juice_destroy(h.agent);
+}
+
 int main(void) {
 #ifdef _WIN32
 	WSADATA wsa;
@@ -790,6 +893,7 @@ int main(void) {
 	test_taken_tcp_port_means_no_candidate();
 	test_active_only_does_not_listen();
 	test_long_datagram_is_dropped();
+	test_zero_tiebreaker_is_a_role();
 	failures += ice_mux_tests();
 	printf(failures ? "\n%d FAILURE(S)\n" : "\nall passed\n", failures);
 	return failures ? 1 : 0;
