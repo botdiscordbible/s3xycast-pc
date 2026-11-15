@@ -1243,8 +1243,11 @@ static int runOwnerLinkCommand(quint16 persistedHttpsPort, bool print)
     const bool booth = localRequest(QStringLiteral("/api/auth/status"), QByteArray(), 5000)
                            .json.value("admin_locked")
                            .toBool(false);
+    // S3XYCast edition: the page a launch shows (mw::edition::kOwnerPage), where
+    // upstream names the administration page. No page named is the front door.
+    const QString page = booth ? QString() : mw::edition::ownerPage();
     const QString target = QStringLiteral("/api/server/remote-link") +
-                           (booth ? QString() : QStringLiteral("?p=/admin"));
+                           (page.isEmpty() ? QString() : QStringLiteral("?p=") + page);
 
     // The internet link takes a moment to come up after a start: while it is
     // only "not yet", ask again rather than settle for this machine's address.
@@ -2532,11 +2535,13 @@ int main(int argc, char* argv[])
             const QString base = p == 443 ? QStringLiteral("https://localhost")
                                           : QStringLiteral("https://localhost:%1").arg(p);
             // Prefer redirecting an already-open tab (no duplicate). Only when the
-            // running instance can't be reached do we open the admin page here.
-            Logger::info("Asking the running instance to surface the admin page: " + base);
+            // running instance can't be reached do we open its page here.
+            // S3XYCast edition: the page a launch shows (mw::edition::kOwnerPage),
+            // where upstream opens the administration page.
+            Logger::info("Asking the running instance to surface its page: " + base);
             if (!requestFocusAdmin()) {
-                Logger::info("Running instance unreachable — opening the admin page directly");
-                openInBrowser(base + QStringLiteral("/admin"));
+                Logger::info("Running instance unreachable — opening its page directly");
+                openInBrowser(base + mw::edition::ownerPage());
             }
         }
         // The server we just found may be a service with no desktop to draw on
@@ -6617,7 +6622,7 @@ int main(int argc, char* argv[])
     // handover for the same reason, and hands it to the application there.
     //
     // Not gated on the line being up at this instant, deliberately, and this is
-    // where it differs from remoteAdminLink() further down. That link is spent
+    // where it differs from remoteLink() further down. That link is spent
     // the moment it is used, so handing out one that cannot work loses it. An
     // invitation is opened later — tonight, tomorrow — and refusing to mint one
     // over a thirty-second blip would be absurd. The board says when the machine
@@ -7621,9 +7626,9 @@ int main(int argc, char* argv[])
         return entry + QStringLiteral("#k=") + QString::fromLatin1(QUrl::toPercentEncoding(key)) +
                (path.isEmpty() ? QString() : QStringLiteral("&p=") + path);
     };
-    auto remoteAdminLink = [remoteLink]() -> QString {
-        return remoteLink(QStringLiteral("/admin"));
-    };
+    // S3XYCast edition: upstream's remoteAdminLink(), the same link fixed on
+    // "/admin", is gone with its one caller: a launch now asks for the page the
+    // edition shows (mw::edition::kOwnerPage) by its path, like everyone else.
 
     // The same page under this machine's own address, with a key of its own:
     // what an entry point opens when the internet link would not work. The key
@@ -7809,8 +7814,9 @@ int main(int argc, char* argv[])
                 obj["delivered"] = true;
             } else {
                 // With a key: the page that opens is this
-                // machine's owner's.
-                openInBrowser(ownerLink(adminLocked ? QString() : QStringLiteral("/admin")));
+                // machine's owner's. S3XYCast edition: the page a launch
+                // shows (mw::edition::kOwnerPage), not always /admin.
+                openInBrowser(ownerLink(adminLocked ? QString() : mw::edition::ownerPage()));
                 obj["delivered"] = false;
             }
             return HttpResponse::json(obj, 200);
@@ -8017,11 +8023,13 @@ int main(int argc, char* argv[])
     // the app page afterwards. Automatic launches (--autostart from the login
     // item / logon task / installer) and headless sessions stay silent.
     if (hasGuiSession() && !parser.isSet(autostartOption)) {
+        // S3XYCast edition: the page a launch shows (mw::edition::kOwnerPage),
+        // where upstream opens the administration page.
 #ifdef Q_OS_WIN
-        const QString path = adminLocked ? QString() : QStringLiteral("/admin");
+        const QString path = adminLocked ? QString() : mw::edition::ownerPage();
 #else
         const QString path = adminLocked                    ? QString()
-                             : appSettings.setupCompleted() ? QStringLiteral("/admin")
+                             : appSettings.setupCompleted() ? mw::edition::ownerPage()
                                                             : QStringLiteral("/setup");
 #endif
         // The internet link when the option is on and it answers, HTTPS loopback
@@ -8029,21 +8037,24 @@ int main(int argc, char* argv[])
         // the same reason: reached that way the page arrives under a certificate
         // the browser already trusts, instead of an interstitial to accept.
         //
-        // Only /admin has an internet form worth preferring. /setup is the
+        // The owner's page has an internet form worth preferring (upstream: only
+        // /admin; S3XYCast edition: whichever page a launch shows). /setup is the
         // first-run wizard: it runs before any of this exists, and it configures
-        // the local desktop anyway.
+        // the local desktop anyway. A booth's front door stays on this machine's
+        // own address, as it always has.
         //
         // Waiting, and why it is bounded: the line takes a moment to come up and
         // the entry page a moment more to be asked. About six seconds covers
         // both on an ordinary connection, and a machine with no internet does
         // not sit staring at nothing — it opens loopback, which is exactly what
         // it did before.
-        const bool wantRemote = path == QStringLiteral("/admin") && rendezvousShouldRun();
+        const bool wantRemote =
+            !adminLocked && path != QStringLiteral("/setup") && rendezvousShouldRun();
         auto attemptsLeft = std::make_shared<int>(wantRemote ? 14 : 1);
         QTimer* opener = new QTimer(&app);
         opener->setInterval(400);
         QObject::connect(opener, &QTimer::timeout, &app, [=]() {
-            const QString link = wantRemote ? remoteAdminLink() : QString();
+            const QString link = wantRemote ? remoteLink(path) : QString();
             if (link.isEmpty() && --(*attemptsLeft) > 0) return;
             opener->stop();
             opener->deleteLater();

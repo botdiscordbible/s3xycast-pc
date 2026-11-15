@@ -67,6 +67,11 @@ QString displayNameFor(bool devBuild, bool devFlag)
     return devBuild || devFlag ? QStringLiteral("S3XYCast PC Dev") : QStringLiteral("S3XYCast PC");
 }
 
+QString ownerPage()
+{
+    return QString::fromLatin1(kOwnerPage);
+}
+
 QString versionFor(const QString& base, bool dev)
 {
     // CI stamps the suffix itself (0.3.0.gb7c-dev), dotted in the Linux build

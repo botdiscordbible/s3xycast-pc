@@ -74,6 +74,24 @@ inline constexpr char kReleaseTagPrefix[] = "s3x-v";
 /// edition's own, so that nothing of it lands in upstream's.
 inline constexpr char kOrganizationName[] = "S3XYCast";
 
+// ── S3XYCast edition: the page a launch shows ────────────────────────────────
+//
+// What an owner's own entry point opens: the program started by hand, started
+// again while it runs, and --open-link (the installer's last page). Upstream
+// opens the administration page there. This edition opens the front door,
+// which on the PC itself is the simple page (the state, the one button that
+// allows or stops the streaming, the link, "Settings") with a new version
+// announced above it: whoever starts the program is told of an update before
+// anything else. The tray's "Server Settings" still goes to the administration
+// page.
+//
+// Empty is the front door. Anything else is one plain path segment ("/admin"),
+// the only shape the owner's link carries (GET /api/server/remote-link).
+inline constexpr char kOwnerPage[] = "";
+
+/// kOwnerPage, as the string an address is finished with.
+QString ownerPage();
+
 // Ports a DEV identity listens on by default, clear of the production 80/443
 // and of the GameStream ranges (47984-48010 stock, 48100+ for MultiSeat seats).
 // The signaling base also seeds the control channel (+2) and the per-slot

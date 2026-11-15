@@ -37,6 +37,11 @@ void run_edition_tests()
     CHECK_EQ(productNameFor(false), QStringLiteral("S3XYCastPC"));
     CHECK_EQ(productNameFor(true), QStringLiteral("S3XYCastPCDev"));
 
+    // S3XYCast edition: a launch opens the front door, which on the PC itself
+    // is the simple page with a new version announced first, where upstream
+    // opens the administration page. Empty is the front door.
+    CHECK(ownerPage().isEmpty());
+
     // The version carries the suffix once, and only in DEV.
     CHECK_EQ(versionFor(QStringLiteral("0.3.0"), false), QStringLiteral("0.3.0"));
     CHECK_EQ(versionFor(QStringLiteral("0.3.0.gb7c"), true), QStringLiteral("0.3.0.gb7c-dev"));

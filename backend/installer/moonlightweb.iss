@@ -167,11 +167,11 @@ en.VDisplayPageDesc=Install the virtual display?
 en.VDisplayPageBody=S3XYCast PC can give this PC one more screen, made to be streamed: a virtual display that takes the size of the device watching (your car, your phone). It shows on the home page as "Screen fitted to this device".%n%nIt is off by default. Opening its card turns it on, makes it the primary display and streams it; when the last stream ends it is turned off again and your previous primary display gets its role back. A PC with no monitor attached streams through it.%n%nThe driver is the open-source Virtual Display Driver (MIT, signed), installed silently and in addition to any virtual display you already have. Only uninstalling S3XYCast PC removes it.
 en.VDisplayPageOption=Install the virtual display (recommended)
 en.RunApp=Launch {#MyAppDisplayName}
-en.RunAdmin=Open the admin page
+en.RunAdmin=Open {#MyAppDisplayName}
 en.ProvisionPageCaption=Setting up {#MyAppDisplayName}
 en.ProvisionPageDesc=Finalizing the installation
 en.ProvisionWorking=Please wait while {#MyAppDisplayName} finishes setting up...
-en.ResolveLinkWait=Preparing the link to the admin page...
+en.ResolveLinkWait=Getting {#MyAppDisplayName} ready to open...
 en.TaskArecord=Enable the Internet link
 en.ButtonUpdate=&Update
 en.UpdatePageCaption=Update {#MyAppDisplayName}
@@ -195,11 +195,11 @@ fr.VDisplayPageDesc=Installer l'écran virtuel ?
 fr.VDisplayPageBody=S3XYCast PC peut donner à ce PC un écran en plus, fait pour être diffusé : un écran virtuel, qui prend la taille de l'appareil qui regarde (votre voiture, votre téléphone). Il apparaît sur l'accueil sous le nom « Écran adapté à cet appareil ».%n%nIl est éteint par défaut. Ouvrir sa carte l'allume, en fait l'écran principal et le diffuse ; à la fin de la diffusion il s'éteint et votre écran principal retrouve son rôle. Un PC sans écran branché diffuse grâce à lui.%n%nLe pilote est le Virtual Display Driver open source (licence MIT, signé), installé silencieusement et en plus de tout écran virtuel déjà présent. Seule la désinstallation de S3XYCast PC le retire.
 fr.VDisplayPageOption=Installer l'écran virtuel (recommandé)
 fr.RunApp=Lancer {#MyAppDisplayName}
-fr.RunAdmin=Ouvrir la page admin
+fr.RunAdmin=Ouvrir {#MyAppDisplayName}
 fr.ProvisionPageCaption=Configuration de {#MyAppDisplayName}
 fr.ProvisionPageDesc=Finalisation de l'installation
 fr.ProvisionWorking=Veuillez patienter pendant la fin de la configuration de {#MyAppDisplayName}...
-fr.ResolveLinkWait=Préparation du lien vers la page admin...
+fr.ResolveLinkWait=Préparation de l'ouverture de {#MyAppDisplayName}...
 fr.TaskArecord=Activer le lien Internet
 fr.ButtonUpdate=&Mettre à jour
 fr.UpdatePageCaption=Mise à jour de {#MyAppDisplayName}
@@ -223,11 +223,11 @@ zh.VDisplayPageDesc=是否安装虚拟显示器？
 zh.VDisplayPageBody=S3XYCast PC 可以为这台电脑增加一块专门用于串流的屏幕：一个虚拟显示器，它会采用观看设备（您的汽车、手机）的尺寸。它在主页上显示为“适配此设备的屏幕”。%n%n它默认处于关闭状态。打开其卡片即可开启它、将其设为主显示器并进行串流；最后一个串流结束后它会再次关闭，您之前的主显示器恢复原来的角色。没有连接显示器的电脑就靠它来串流。%n%n驱动程序是开源的 Virtual Display Driver（MIT 许可，已签名），静默安装，且与您已有的任何虚拟显示器并存。只有卸载 S3XYCast PC 才会将其移除。
 zh.VDisplayPageOption=安装虚拟显示器（推荐）
 zh.RunApp=启动 {#MyAppDisplayName}
-zh.RunAdmin=打开管理页面
+zh.RunAdmin=打开 {#MyAppDisplayName}
 zh.ProvisionPageCaption=正在设置 {#MyAppDisplayName}
 zh.ProvisionPageDesc=正在完成安装
 zh.ProvisionWorking=请稍候，{#MyAppDisplayName} 正在完成设置...
-zh.ResolveLinkWait=正在准备通往管理页面的链接...
+zh.ResolveLinkWait=正在准备打开 {#MyAppDisplayName}...
 zh.TaskArecord=启用互联网链接
 zh.ButtonUpdate=更新(&U)
 zh.UpdatePageCaption=更新 {#MyAppDisplayName}
@@ -267,7 +267,9 @@ Name: "{group}\{cm:UninstallProgram,{#MyAppDisplayName}}"; Filename: "{uninstall
 
 [Run]
 ; The tray server is already launched during the provisioning checklist (see
-; RunProvisionChecklist in [Code]); only offer to open the admin page here.
+; RunProvisionChecklist in [Code]); only offer to open its page here. S3XYCast
+; edition: the page a launch shows (the front door, which on the PC itself is
+; the simple page), where upstream opens the administration page.
 ; The program itself opens it, as the tray icon does: at the click it asks the
 ; running server for its owner's link (the rendezvous address when the internet
 ; link is on and answering, this machine's own otherwise) and hands it to the

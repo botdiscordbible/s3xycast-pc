@@ -557,13 +557,27 @@ export const MoonlightApp = {
         });
     },
 
-    /** Surface the admin overlay in response to a local relaunch. */
+    /**
+     * Surface the app in response to a local relaunch.
+     *
+     * S3XYCast edition: on the PC itself a launch shows the simple page (the
+     * state, the big button, a new version announced first), where upstream
+     * opens the administration page. A booth keeps upstream's behaviour.
+     */
     _onFocusAdminRequest() {
         console.log('[MW] focus-admin requested by a new launch');
         try {
             window.focus();
         } catch {
             /* focus is best-effort; browsers may block cross-tab focus */
+        }
+        if (this._isHostMachine() && !BackendClient.adminLocked) {
+            // A stream running in this tab is left alone, and with nothing open
+            // over it the simple page is already what is on screen. A page open
+            // over it is put away: popping its history entry is what brings the
+            // simple page back (the popstate handler in _initRouter).
+            if (this._nav.overlay && this._nav.overlay !== 'streaming') history.back();
+            return;
         }
         // Already on admin, or a stream is running (overlay open is blocked and
         // must not be disrupted) — nothing to navigate.
