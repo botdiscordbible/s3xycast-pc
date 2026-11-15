@@ -2,6 +2,10 @@ import { StreamViewKeyboard } from '../ui/StreamViewKeyboard.js';
 import { StreamViewTouch } from '../ui/StreamViewTouch.js';
 import { StreamViewTouchPad } from '../ui/StreamViewTouchPad.js';
 import { StreamViewFullscreen } from '../ui/StreamViewFullscreen.js';
+// S3XYCast PC: the controllers played as a keyboard and a mouse.
+import { StreamViewPadKbm } from '../ui/StreamViewPadKbm.js';
+import { PadKeyMouse } from '../stream/PadKeyMouse.js';
+import { PadKeyMouseDialog } from '../ui/PadKeyMouseDialog.js';
 
 /**
  * `StreamView` is assembled at runtime: the bottom of StreamView.js copies the
@@ -16,7 +20,12 @@ import { StreamViewFullscreen } from '../ui/StreamViewFullscreen.js';
  */
 declare module '../ui/StreamView.js' {
     interface StreamView
-        extends StreamViewKeyboard, StreamViewTouch, StreamViewTouchPad, StreamViewFullscreen {
+        extends
+            StreamViewKeyboard,
+            StreamViewTouch,
+            StreamViewTouchPad,
+            StreamViewPadKbm,
+            StreamViewFullscreen {
         /**
          * Latched toolbar modifiers on the mobile soft keyboard. The index
          * signature is load-bearing: `_setMod`/`_resetMods` address entries
@@ -48,6 +57,11 @@ declare module '../ui/StreamView.js' {
         _touchPadCarry: { plugged: boolean; shown: boolean; yields: boolean } | null;
         _touchPadKbdTimer: ReturnType<typeof setTimeout> | null;
         _stopTouchWatch: (() => void) | null;
+        /** S3XYCast PC — the controllers as a keyboard and a mouse (StreamViewPadKbm). */
+        _padKbm: PadKeyMouse | null;
+        _padKbmPrefs: { mode: string; sens: number; map: Record<string, string> } | null;
+        _padKbmBtn: HTMLButtonElement | null;
+        _padKbmDialog: PadKeyMouseDialog | null;
         /** Suppress the one-shot gesture-hint slide on the next activation. */
         _suppressShortcutsSlide: boolean;
     }

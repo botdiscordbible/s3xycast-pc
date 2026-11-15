@@ -117,6 +117,8 @@ export class StreamViewTouchPad {
         }
         if (!this._touchPadBtn && !this._playerMode) this._mountTouchPadButton();
         if (!this._touchPadHandle) this._mountTouchPadHandle();
+        // S3XYCast PC: what the controllers are for the host, beside the handle.
+        if (this._mountPadKbmButton) this._mountPadKbmButton();
         this._syncTouchPad();
         if (this._gamepadManager && !this._touchPadStartQueued) {
             this._touchPadStartQueued = true;
@@ -220,6 +222,8 @@ export class StreamViewTouchPad {
             opacity: this._touchPadPref('opacity'),
             // The names on the buttons; the host is still told of an Xbox pad.
             style: this._touchPadPref('style'),
+            // Played as a keyboard and a mouse, each button says its key.
+            labels: this._padKbmLabels ? this._padKbmLabels() : null,
             ignoreOutside: this._touchPadPref('outside') === 'ignore',
             // The viewer's own arrangement, which orientation picks from.
             layout: this._touchPadLayout(),
@@ -377,6 +381,7 @@ export class StreamViewTouchPad {
      * @this {StreamViewInstance}
      */
     _placeTouchPadHandle() {
+        if (this._placePadKbmButton) this._placePadKbmButton();
         const handle = this._touchPadHandle;
         if (!handle) return;
         const view = this._touchPadView;

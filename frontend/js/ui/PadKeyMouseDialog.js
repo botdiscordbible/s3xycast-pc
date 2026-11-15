@@ -1,0 +1,256 @@
+/*
+ * S3XYCast PC — an edition of MoonlightWeb. GPLv3, like the rest of the tree.
+ *
+ * PadKeyMouseDialog — what the controllers are for the host, and their keys.
+ *
+ * One dialog for the two places it is asked from: the settings page, and the
+ * on-screen controller in a stream, where a viewer finds out that a game does
+ * not answer to a pad. Two big choices at the top — a game controller, or a
+ * keyboard and a mouse — then what only the second one needs: how fast the
+ * mouse stick is, and the key under each control.
+ *
+ * Every change is told at once (`onChange`): in a stream it takes effect while
+ * the dialog is still up, so a key can be tried without closing it.
+ */
+import { t } from '../i18n/i18n.js';
+import { escapeHtml } from '../util/escapeHtml.js';
+import {
+    PAD_KBM_ACTIONS,
+    PAD_KBM_BUTTONS,
+    PAD_KBM_DEFAULT_MAP,
+    PAD_KBM_ROLES,
+    PAD_KBM_SENS_MAX,
+    PAD_KBM_SENS_MIN,
+    PAD_KBM_STICKS,
+    padKbmLabel,
+    padKbmMap,
+} from '../stream/PadKeyMouse.js';
+
+/** The order the groups of a button's choices come in. */
+const GROUPS = ['mouse', 'keys', 'digits', 'letters', 'functions'];
+
+/** The cross's arms, as the on-screen controller draws them. */
+const ARROWS = { up: '▲', right: '▶', down: '▼', left: '◀' };
+
+/** A control's name beside its choice. */
+function controlName(id) {
+    if (id === 'ls') return t('settings.touchPadControlStickLeft');
+    if (id === 'rs') return t('settings.touchPadControlStickRight');
+    if (id === 'view') return t('settings.touchPadControlView');
+    if (id === 'menu') return t('settings.touchPadControlMenu');
+    if (ARROWS[id]) return t('padKbm.dpad') + ' ' + ARROWS[id];
+    return id.toUpperCase();
+}
+
+function option(value, label, current) {
+    return `<option value="${escapeHtml(value)}"${value === current ? ' selected' : ''}>${escapeHtml(label)}</option>`;
+}
+
+function stickChoices(current) {
+    return PAD_KBM_ROLES.map((role) => option(role, t('padKbm.role.' + role), current)).join('');
+}
+
+function buttonChoices(current) {
+    const groups = GROUPS.map(
+        (group) =>
+            `<optgroup label="${escapeHtml(t('padKbm.group.' + group))}">${PAD_KBM_ACTIONS[group]
+                .map((token) => option(token, padKbmLabel(token, t), current))
+                .join('')}</optgroup>`,
+    ).join('');
+    return option('', padKbmLabel('', t), current) + groups;
+}
+
+export class PadKeyMouseDialog {
+    /**
+     * @param {{ container?: HTMLElement,
+     *           settings: { mode: string, sens: number, map: Record<string, string> },
+     *           onChange?: (settings: { mode: string, sens: number, map: Record<string, string> }) => void,
+     *           onOpen?: () => void, onClose?: () => void }} options
+     */
+    constructor({ container, settings, onChange, onOpen, onClose }) {
+        this._container = container || document.body;
+        this._settings = { mode: settings.mode, sens: settings.sens, map: padKbmMap(settings.map) };
+        this._onChange = onChange || null;
+        this._onOpen = onOpen || null;
+        this._onClose = onClose || null;
+        this._overlay = null;
+        // What had the keyboard when the dialog opened.
+        this._returnFocus = null;
+        this._onKey = (e) => {
+            if (e.key !== 'Escape') return;
+            e.preventDefault();
+            e.stopPropagation();
+            this.close();
+        };
+    }
+
+    get isOpen() {
+        return !!this._overlay;
+    }
+
+    /** What the dialog holds now. */
+    get settings() {
+        return {
+            mode: this._settings.mode,
+            sens: this._settings.sens,
+            map: { ...this._settings.map },
+        };
+    }
+
+    open() {
+        if (this._overlay) return;
+        if (document.pointerLockElement) document.exitPointerLock();
+        const overlay = document.createElement('div');
+        overlay.className = 'pad-kbm-overlay';
+        const field = (id, choices) => `
+            <label class="pad-kbm-field${PAD_KBM_STICKS.includes(id) ? ' is-stick' : ''}">
+                <span class="pad-kbm-name">${escapeHtml(controlName(id))}</span>
+                <select class="pad-kbm-select" data-control="${id}">${choices}</select>
+            </label>`;
+        const map = this._settings.map;
+        overlay.innerHTML = `
+            <div class="pad-kbm" role="dialog" aria-modal="true" aria-labelledby="pad-kbm-title">
+                <div class="pad-kbm-head">
+                    <h3 class="pad-kbm-title" id="pad-kbm-title">${escapeHtml(t('padKbm.title'))}</h3>
+                    <button type="button" class="pad-kbm-close" aria-label="${escapeHtml(t('padKbm.close'))}">✕</button>
+                </div>
+                <!-- Between the title and the way out, which stay in sight: on a
+                     phone held sideways the keys are taller than the screen. -->
+                <div class="pad-kbm-scroll">
+                    <div class="pad-kbm-modes" role="group" aria-labelledby="pad-kbm-title">
+                        <button type="button" class="pad-kbm-mode" data-mode="pad">${escapeHtml(t('padKbm.modePad'))}</button>
+                        <button type="button" class="pad-kbm-mode" data-mode="kbm">${escapeHtml(t('padKbm.modeKbm'))}</button>
+                    </div>
+                    <p class="pad-kbm-desc"></p>
+                    <div class="pad-kbm-body">
+                        <label class="pad-kbm-sens">
+                            <span class="pad-kbm-name">${escapeHtml(t('padKbm.sens'))}</span>
+                            <input type="range" class="pad-kbm-range"
+                                   min="${Math.round(PAD_KBM_SENS_MIN * 100)}"
+                                   max="${Math.round(PAD_KBM_SENS_MAX * 100)}" step="5" />
+                            <output class="pad-kbm-percent"></output>
+                        </label>
+                        <div class="pad-kbm-grid">
+                            ${PAD_KBM_STICKS.map((id) => field(id, stickChoices(map[id]))).join('')}
+                            ${PAD_KBM_BUTTONS.map((id) => field(id, buttonChoices(map[id]))).join('')}
+                        </div>
+                        <p class="pad-kbm-hint">${escapeHtml(t('padKbm.hintLetters'))}</p>
+                    </div>
+                </div>
+                <div class="pad-kbm-actions">
+                    <button type="button" class="btn btn-neutral pad-kbm-reset">${escapeHtml(t('padKbm.reset'))}</button>
+                    <span class="pad-kbm-spacer"></span>
+                    <button type="button" class="btn btn-save pad-kbm-done">${escapeHtml(t('padKbm.done'))}</button>
+                </div>
+            </div>`;
+        this._container.appendChild(overlay);
+        this._overlay = overlay;
+
+        // Over a stream the whole surface is the game's: nothing touched or
+        // clicked in here may go on to its trackpad.
+        for (const type of ['touchstart', 'touchmove', 'touchend', 'touchcancel']) {
+            overlay.addEventListener(type, (e) => e.stopPropagation(), { passive: true });
+        }
+        for (const type of [
+            'pointerdown',
+            'pointerup',
+            'pointermove',
+            'pointercancel',
+            'mousedown',
+            'mouseup',
+            'mousemove',
+            'wheel',
+            'contextmenu',
+        ]) {
+            overlay.addEventListener(type, (e) => e.stopPropagation());
+        }
+        overlay.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (e.target === overlay) this.close();
+        });
+        overlay.querySelector('.pad-kbm-close').addEventListener('click', () => this.close());
+        overlay.querySelector('.pad-kbm-done').addEventListener('click', () => this.close());
+        overlay.querySelector('.pad-kbm-reset').addEventListener('click', () => {
+            this._settings.map = padKbmMap(PAD_KBM_DEFAULT_MAP);
+            for (const select of overlay.querySelectorAll('.pad-kbm-select')) {
+                /** @type {HTMLSelectElement} */ (select).value =
+                    this._settings.map[/** @type {HTMLElement} */ (select).dataset.control];
+            }
+            this._changed();
+        });
+        for (const button of overlay.querySelectorAll('.pad-kbm-mode')) {
+            button.addEventListener('click', () => {
+                const mode = /** @type {HTMLElement} */ (button).dataset.mode;
+                if (mode === this._settings.mode) return;
+                this._settings.mode = mode;
+                this._sync();
+                this._changed();
+            });
+        }
+        const range = /** @type {HTMLInputElement} */ (overlay.querySelector('.pad-kbm-range'));
+        range.value = String(Math.round(this._settings.sens * 100));
+        range.addEventListener('input', () => {
+            this._settings.sens = Number(range.value) / 100;
+            this._sync();
+            this._changed();
+        });
+        for (const select of overlay.querySelectorAll('.pad-kbm-select')) {
+            select.addEventListener('change', () => {
+                const el = /** @type {HTMLSelectElement} */ (select);
+                this._settings.map = padKbmMap({
+                    ...this._settings.map,
+                    [el.dataset.control]: el.value,
+                });
+                this._changed();
+            });
+        }
+        document.addEventListener('keydown', this._onKey, true);
+        this._sync();
+        // The keyboard comes in here with the dialog: left on the stream, what
+        // is typed while it is up would go on to the game.
+        this._returnFocus = document.activeElement;
+        const chosen = /** @type {HTMLElement|null} */ (
+            overlay.querySelector('.pad-kbm-mode.is-on')
+        );
+        if (chosen) chosen.focus({ preventScroll: true });
+        if (this._onOpen) this._onOpen();
+    }
+
+    close() {
+        if (!this._overlay) return;
+        document.removeEventListener('keydown', this._onKey, true);
+        this._overlay.remove();
+        this._overlay = null;
+        // Back to what had the keyboard: the stream's own capture, usually.
+        const back = /** @type {HTMLElement|null} */ (this._returnFocus);
+        this._returnFocus = null;
+        if (back && typeof back.focus === 'function' && back.isConnected) {
+            back.focus({ preventScroll: true });
+        }
+        if (this._onClose) this._onClose();
+    }
+
+    /** Show which of the two is chosen, and what it means. */
+    _sync() {
+        const overlay = this._overlay;
+        if (!overlay) return;
+        const kbm = this._settings.mode === 'kbm';
+        for (const button of overlay.querySelectorAll('.pad-kbm-mode')) {
+            const on = /** @type {HTMLElement} */ (button).dataset.mode === this._settings.mode;
+            button.classList.toggle('is-on', on);
+            button.setAttribute('aria-pressed', on ? 'true' : 'false');
+        }
+        overlay.querySelector('.pad-kbm-desc').textContent = t(
+            kbm ? 'padKbm.descKbm' : 'padKbm.descPad',
+        );
+        // The keys are there to be read in either mode, and set before a game.
+        overlay.querySelector('.pad-kbm-body').classList.toggle('is-idle', !kbm);
+        overlay.querySelector('.pad-kbm-percent').textContent = t('padKbm.sensValue', {
+            percent: Math.round(this._settings.sens * 100),
+        });
+    }
+
+    _changed() {
+        if (this._onChange) this._onChange(this.settings);
+    }
+}

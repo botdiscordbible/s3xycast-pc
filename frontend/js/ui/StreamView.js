@@ -175,6 +175,8 @@ import { placeGamepadButton, placeKeyboardButton } from './streamBarButtons.js';
 import { StreamViewKeyboard } from './StreamViewKeyboard.js';
 import { StreamViewTouch } from './StreamViewTouch.js';
 import { StreamViewTouchPad } from './StreamViewTouchPad.js';
+// S3XYCast PC: the controllers played as a keyboard and a mouse.
+import { StreamViewPadKbm } from './StreamViewPadKbm.js';
 import { StreamViewFullscreen } from './StreamViewFullscreen.js';
 import { flushClientLog, refreshClientLog, serverDiag } from '../util/ClientLog.js';
 import { scheduleErrorTrail } from '../util/ErrorTrail.js';
@@ -1189,6 +1191,9 @@ export class StreamView {
         this._padKey = opts.padKey || null;
         // The on-screen controller's settings (StreamViewTouchPad._touchPadPref).
         this._touchPadPrefs = opts.touchPad || null;
+        // What the controllers are for the host, a pad or a keyboard and a
+        // mouse, and their keys (StreamViewPadKbm._padKbmSettings).
+        this._padKbmPrefs = opts.padKbm || null;
         // A guest's choice between it and a real pad, kept for their next visit.
         this._touchPadRemember = opts.onTouchPadMode || null;
         // Click-to-photon probe (debug builds, Windows host): the launch reply
@@ -4895,6 +4900,7 @@ export class StreamView {
             kbdVisible: this._kbdVisible === true,
             statsClosed: this._statsClosed === true,
             touchPad: this._touchPadSnapshot(),
+            padKbm: this._padKbmSnapshot(),
         };
     }
 
@@ -4911,6 +4917,7 @@ export class StreamView {
         // independently of frames.
         this._adoptOverlayDismissals(state);
         this._adoptTouchPad(state.touchPad);
+        this._adoptPadKbm(state.padKbm);
         if (!this._firstFrameRendered) {
             this._pendingViewState = state;
             return;
@@ -5808,7 +5815,9 @@ export class StreamView {
             if (!this._gamepadManager && (navigator.getGamepads || this._touchPadEligible())) {
                 this._gamepadManager = new GamepadManager(
                     (msg) => {
-                        if (!this._quitting) this.webrtc.send(msg);
+                        // Through the keyboard-and-mouse translator, which
+                        // passes a pad's messages on while it is a pad.
+                        if (!this._quitting) this._padSend(msg);
                     },
                     {
                         profile: this._gamepadProfile,
@@ -10764,7 +10773,8 @@ export class StreamView {
         if (!el || typeof el.closest !== 'function') return false;
         return !!el.closest(
             'input, textarea, select, [contenteditable="true"], ' +
-                '.share-popin-overlay, .share-board-overlay, .gamepad-remap-overlay',
+                '.share-popin-overlay, .share-board-overlay, .gamepad-remap-overlay, ' +
+                '.pad-kbm-overlay',
         );
     }
 
@@ -11897,6 +11907,9 @@ export class StreamView {
             this._heldMouseButtons.clear();
             this._dragCursor = null; // the drag it was latched for is over
         }
+        // What a controller held as keys went with the rest: it presses them
+        // again at its next read if it still holds them.
+        if (this._padKbm) this._padKbm.forget();
     }
 
     // =========================================================================
@@ -12372,7 +12385,7 @@ export class StreamView {
 
     /** Send a mouse button event and keep _heldMouseButtons in sync (same
      *  reason as _sendKeyEvent). `button` is 1-based, as the host expects. */
-    _sendMouseButton(button, down, stamp = null) {
+    _sendMouseButton(button, down, stamp = null, hold = null) {
         // Latch the pointer as the drag opens, read while it lasts — see
         // _pictureCursor. Taken BEFORE the set changes, so it is the shape the
         // viewer was actually looking at when they pressed.
@@ -12385,8 +12398,9 @@ export class StreamView {
         const msg = {
             type: down ? 'mousedown' : 'mouseup',
             button,
-            // Aim/fire in gaming mode is a genuine hold, not a drag.
-            hold: down && !!this._gamingMode,
+            // Aim/fire in gaming mode is a genuine hold, not a drag — and so
+            // is a controller's trigger played as a mouse button (`hold`).
+            hold: down && (hold === null ? !!this._gamingMode : hold),
         };
         // A measured click (the latency probe): the host answers with when it
         // arrived. Nothing else sets it.
@@ -12462,7 +12476,7 @@ export class StreamView {
             buttons,
             // A held mouse button in gaming mode is aim/fire, not a drag: give
             // it the long grace period like the keys.
-            buttonsHold: !!this._gamingMode,
+            buttonsHold: !!this._gamingMode || !!(this._padKbm && this._padKbm.holdsButtons()),
             // When it was written. A stall holds the heartbeats back in the
             // channel's queue, ahead of a release made meanwhile; the host
             // tells them from a fresh one by this, and does not press again a
@@ -14208,6 +14222,7 @@ export class StreamView {
             this._padBtn = null;
         }
         this._destroyTouchPad();
+        this._destroyPadKbm();
         if (this._gamepadDialog) {
             this._gamepadDialog.close();
             this._gamepadDialog = null;
@@ -14615,6 +14630,7 @@ export class StreamView {
             this._padBtn = null;
         }
         this._destroyTouchPad();
+        this._destroyPadKbm();
         if (this._gamepadDialog) {
             this._gamepadDialog.close();
             this._gamepadDialog = null;
@@ -14686,6 +14702,7 @@ for (const Mixin of [
     StreamViewKeyboard,
     StreamViewTouch,
     StreamViewTouchPad,
+    StreamViewPadKbm,
     StreamViewFullscreen,
 ]) {
     for (const name of Object.getOwnPropertyNames(Mixin.prototype)) {

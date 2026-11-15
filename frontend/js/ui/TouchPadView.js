@@ -116,7 +116,7 @@ export class TouchPadView {
      * @param {import('../stream/TouchPadState.js').TouchPadState} state
      * @param {{ scale?: number, opacity?: number, ignoreOutside?: boolean,
      *           layout?: {preset: string, landscape: object, portrait: object}|null,
-     *           style?: string,
+     *           style?: string, labels?: Record<string, string>|null,
      *           onChanged?: () => void, onTouch?: () => void,
      *           onFourFingerTap?: () => void, onLaidOut?: () => void }} [options]
      *   `onChanged` is told when a touch event changed what is held, once that
@@ -128,6 +128,7 @@ export class TouchPadView {
      *   `layout`: this viewer's own arrangement (setLayout); the orientation the
      *   layer has when it is laid out picks which of the two saves applies.
      *   `style`: the pad whose names the buttons wear (TOUCH_PAD_STYLES).
+     *   `labels`: the viewer's own names for them, by control id (setLook).
      */
     constructor(parent, state, options = {}) {
         this._parent = parent;
@@ -135,6 +136,9 @@ export class TouchPadView {
         this._scale = options.scale || 1;
         this._opacity = options.opacity === undefined ? 1 : options.opacity;
         this._style = options.style || 'xbox';
+        // What the viewer made of each control, where it is no longer a pad's
+        // (S3XYCast PC, keyboard-and-mouse mode): control id → what to write.
+        this._labels = options.labels || null;
         this._ignoreOutside = options.ignoreOutside === true;
         this._layout = options.layout || null;
         this._onChanged = options.onChanged || null;
@@ -236,17 +240,18 @@ export class TouchPadView {
     /**
      * The size, the opacity and the pad style the viewer is trying, in the
      * layout editor: fractions as in the options, 1 = 100%. Any may be left out.
-     * @param {{ scale?: number, opacity?: number, style?: string }} look
+     * `labels`: what each control is called instead of its pad's name (control
+     * id → text), or null to give the pad its names back.
+     * @param {{ scale?: number, opacity?: number, style?: string,
+     *           labels?: Record<string, string>|null }} look
      */
-    setLook({ scale, opacity, style } = {}) {
-        if (style !== undefined && style !== this._style) {
-            this._style = style;
+    setLook({ scale, opacity, style, labels } = {}) {
+        const renamed = labels !== undefined;
+        if (renamed) this._labels = labels || null;
+        if ((style !== undefined && style !== this._style) || renamed) {
+            if (style !== undefined) this._style = style;
             // Only the names change: nothing moves, no finger is let go.
-            if (this._el) {
-                for (const el of this._el.querySelectorAll('.touch-pad-btn')) {
-                    el.textContent = touchPadLabel(style, el.dataset.control);
-                }
-            }
+            this._relabel();
         }
         if (opacity !== undefined) {
             this._opacity = opacity;
@@ -344,11 +349,38 @@ export class TouchPadView {
         }
     }
 
+    /**
+     * Write on a control what it is: the viewer's own word for it where there
+     * is one, the pad's name otherwise. A word is written smaller than a
+     * letter, to stay inside a round button.
+     */
+    _wear(el, id, name) {
+        const own = this._labels ? this._labels[id] : undefined;
+        const text = typeof own === 'string' ? own : name;
+        el.textContent = text;
+        const length = [...text].length;
+        el.classList.toggle('is-wordy', length > 3 && length <= 5);
+        el.classList.toggle('is-wordier', length > 5);
+    }
+
+    /** Every control's name again, in place. */
+    _relabel() {
+        if (!this._el) return;
+        for (const node of this._el.querySelectorAll('.touch-pad-btn')) {
+            const el = /** @type {HTMLElement} */ (node);
+            this._wear(el, el.dataset.control, touchPadLabel(this._style, el.dataset.control));
+        }
+        for (const node of this._el.querySelectorAll('.touch-pad-dpad-arm')) {
+            const el = /** @type {HTMLElement} */ (node);
+            this._wear(el, el.dataset.arm, el.dataset.arrow);
+        }
+    }
+
     _drawButton(c) {
         const el = document.createElement('div');
         el.className = 'touch-pad-btn' + (c.r ? ' is-round' : '') + (c.pill ? ' is-pill' : '');
         el.dataset.control = c.id;
-        el.textContent = touchPadLabel(this._style, c.id);
+        this._wear(el, c.id, touchPadLabel(this._style, c.id));
         place(el, c.x, c.y, c.w, c.h);
         this._el.appendChild(el);
         for (const b of c.buttons) this._buttonEls.set(b, el);
@@ -362,7 +394,9 @@ export class TouchPadView {
         for (const [button, name, arrow] of DPAD_ARMS) {
             const arm = document.createElement('div');
             arm.className = 'touch-pad-dpad-arm arm-' + name;
-            arm.textContent = arrow;
+            arm.dataset.arm = String(name);
+            arm.dataset.arrow = String(arrow);
+            this._wear(arm, String(name), String(arrow));
             el.appendChild(arm);
             this._buttonEls.set(button, arm);
         }

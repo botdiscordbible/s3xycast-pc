@@ -72,6 +72,9 @@ import {
 import { touchPadSettings } from '../stream/TouchPadState.js';
 import { wheelSourceSupport } from '../stream/WheelSource.js';
 import { TouchPadLayoutEditor } from './TouchPadLayoutEditor.js';
+// S3XYCast PC: the controllers played as a keyboard and a mouse.
+import { padKbmFields, padKbmIsDefault, padKbmSettings } from '../stream/PadKeyMouse.js';
+import { PadKeyMouseDialog } from './PadKeyMouseDialog.js';
 import * as RemoteNav from './RemoteNav.js';
 import {
     HID_KINDS,
@@ -227,6 +230,10 @@ export class SettingsView {
         // can tell the wheel from a trackpad: see stream/WheelSource.js.
         this._invertWheel = false;
         this._touchPad = touchPadSettings();
+        // What the controllers are for the host, and their keys (S3XYCast PC).
+        this._padKbm = padKbmSettings();
+        // Changed on this page since it was read: a stream may change it too.
+        this._padKbmTouched = false;
         // Mobile only: direct touch-screen input (absolute) instead of the
         // relative trackpad model. Off by default.
         this._touchScreen = false;
@@ -729,6 +736,8 @@ export class SettingsView {
         this._invertWheel = data.invert_wheel === true;
         this._touchScreen = data.touch_screen === true;
         this._touchPad = touchPadSettings(data);
+        this._padKbm = padKbmSettings(data);
+        this._padKbmTouched = false;
         // Allow tearing (default on): resolveTearing() owns the default, the
         // legacy keys and the "cannot tear anyway" gate — see BrowserDetect.
         this._tearing = resolveTearing(data);
@@ -1119,6 +1128,8 @@ export class SettingsView {
             touch_pad_layout: this._touchPad.layout,
             // The pad the buttons are named after (labels only).
             touch_pad_style: this._touchPad.style,
+            // Per device too: a pad for the host, or a keyboard and a mouse.
+            ...padKbmFields(this._padKbmForSave()),
             mic_enabled: this._micEnabled,
             mic_chosen: this._micChosen,
             mic_quality: this._micQuality,
@@ -1132,6 +1143,9 @@ export class SettingsView {
             gamepad_profile: this._gamepadProfile,
         };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+        // The store holds this page's keyboard-and-mouse choice now: from here
+        // a stream's later one is read again before the next save.
+        this._padKbmTouched = false;
 
         // Persist to server from the host's own page at localhost, so
         // settings.json is updated and all other clients get these defaults on
@@ -1774,6 +1788,8 @@ export class SettingsView {
         this._invertWheel = false;
         this._touchScreen = false;
         this._touchPad = touchPadSettings();
+        this._padKbm = padKbmSettings();
+        this._padKbmTouched = true;
         this._tearing = SUPPORTS_CANVAS_TEARING;
         this._videoWorker = 'auto';
         // Off: the plain Canvas2D path is the fastest first impression (see
@@ -2576,6 +2592,9 @@ export class SettingsView {
                     ${navigator.hid ? `<span class="setting-desc">${t('settings.hidDesc')}</span>` : ''}
                 </div>
 
+                <!-- ── Controllers as a keyboard and a mouse (S3XYCast PC) ─── -->
+                ${this._renderPadKbmSection()}
+
                 <!-- ── On-screen controller ────────────────────────────────── -->
                 ${this._renderTouchPadSection()}
 
@@ -2778,6 +2797,79 @@ export class SettingsView {
         for (const name of ['vibrate', 'outside']) {
             field(name).addEventListener('change', () => this._autoSave());
         }
+    }
+
+    /**
+     * S3XYCast PC — what a controller is for the host: a pad, or a keyboard and
+     * a mouse for the games that read nothing else. One row, and the dialog a
+     * stream opens too (PadKeyMouseDialog). Shown to every device: a real pad
+     * needs no touch screen.
+     */
+    _renderPadKbmSection() {
+        return `
+                <div class="settings-section settings-section-pad-kbm">
+                    <h3 class="settings-section-title">${t('padKbm.title')}</h3>
+                    <div class="settings-field settings-touch-pad-customize">
+                        <div class="settings-touch-pad-customize-row">
+                            <div class="settings-touch-pad-customize-text">
+                                <span class="settings-label">${t('padKbm.settingsLabel')}</span>
+                                <span id="settings-pad-kbm-summary" class="setting-desc">${this._padKbmSummary()}</span>
+                            </div>
+                            <button type="button" id="settings-pad-kbm-edit" class="btn btn-primary">
+                                ${t('padKbm.settingsButton')}
+                            </button>
+                        </div>
+                        <span class="setting-desc">${t('padKbm.settingsDesc')}</span>
+                    </div>
+                </div>`;
+    }
+
+    /** Which of the two it is, and whether the keys are still the ones shipped. */
+    _padKbmSummary() {
+        const parts = [t(this._padKbm.mode === 'kbm' ? 'padKbm.modeKbm' : 'padKbm.modePad')];
+        if (!padKbmIsDefault(this._padKbm.map)) parts.push(t('padKbm.summaryCustom'));
+        return parts.join(' · ');
+    }
+
+    /**
+     * What to save. Left alone on this page, it is read again first: a stream
+     * changes it from its own dialog, and this page must not put back what it
+     * read before.
+     */
+    _padKbmForSave() {
+        if (!this._padKbmTouched) {
+            try {
+                const stored = localStorage.getItem(STORAGE_KEY);
+                if (stored) this._padKbm = padKbmSettings(JSON.parse(stored));
+            } catch {
+                // Unreadable: what this page holds is all there is.
+            }
+        }
+        return this._padKbm;
+    }
+
+    _bindPadKbmSection() {
+        const edit = this.container.querySelector('#settings-pad-kbm-edit');
+        if (!edit) return;
+        edit.addEventListener('click', () => {
+            if (this._padKbmDialog) return;
+            // Whatever a stream chose since this page was drawn.
+            this._padKbmForSave();
+            this._padKbmDialog = new PadKeyMouseDialog({
+                settings: this._padKbm,
+                onChange: (settings) => {
+                    this._padKbm = settings;
+                    this._padKbmTouched = true;
+                    const summary = this.container.querySelector('#settings-pad-kbm-summary');
+                    if (summary) summary.textContent = this._padKbmSummary();
+                    this._autoSave();
+                },
+                onClose: () => {
+                    this._padKbmDialog = null;
+                },
+            });
+            this._padKbmDialog.open();
+        });
     }
 
     /**
@@ -3074,6 +3166,7 @@ export class SettingsView {
         const mouseSensSlider = this.container.querySelector('#settings-mouse-sensitivity');
         if (mouseSensSlider) mouseSensSlider.addEventListener('change', () => this._autoSave());
         this._bindTouchPadSection();
+        this._bindPadKbmSection();
 
         // Language selector — changing it persists the choice and reloads.
         const langSelect = this.container.querySelector('#settings-language');

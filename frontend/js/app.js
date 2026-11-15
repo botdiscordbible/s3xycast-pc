@@ -70,6 +70,7 @@ import { TvSignInView } from './ui/TvSignInView.js';
 import { qrDrawer } from './ui/qrSvg.js';
 import { lanHttpStatus } from './api/LanHttpApi.js';
 import { touchPadSettings } from './stream/TouchPadState.js';
+import { padKbmSettings } from './stream/PadKeyMouse.js';
 import { BackendClient } from './api/BackendClient.js';
 import { Toast } from './ui/Toast.js';
 import { DiscordLink } from './ui/DiscordLink.js';
@@ -4087,6 +4088,9 @@ export const MoonlightApp = {
             invertWheel: streamingSettings.invert_wheel === true,
             // A guest has no settings page: only what they chose in their dialog.
             touchPad: viewOpts.touchPad || touchPadSettings(streamingSettings),
+            // S3XYCast PC: whether the controllers are a pad for the host or a
+            // keyboard and a mouse, and their keys (a guest's stay a pad).
+            padKbm: padKbmSettings(streamingSettings),
             // Click-to-photon probe: the host says whether it raises its flag
             // on every click (debug builds on Windows, setting on). Only then
             // does the view install its measuring side.

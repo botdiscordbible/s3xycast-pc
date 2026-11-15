@@ -832,3 +832,236 @@ textarea {
     text-decoration: underline;
     text-underline-offset: 3px;
 }
+
+/* ── S3XYCast edition: the controllers played as a keyboard and a mouse ────
+   (stream/PadKeyMouse.js). A game written for the keyboard ignores a pad; the
+   viewer chooses, per device, whether the host sees a pad or keys. */
+
+/* The on-screen controller's buttons, once they are keys: a word where a pad
+   has a letter, written smaller so it stays inside its round button. */
+.touch-pad-btn.is-wordy,
+.touch-pad-dpad-arm.is-wordy {
+    font-size: 0.66em;
+}
+.touch-pad-btn.is-wordier,
+.touch-pad-dpad-arm.is-wordier {
+    font-size: 0.54em;
+}
+
+/* Which of the two it is, under the controller's handle; a touch opens the
+   dialog below. Red while it is keys: the unusual state is the one to see. */
+.touch-pad-mode {
+    position: absolute;
+    z-index: 201;
+    transform: translateX(-50%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 76px;
+    height: 28px;
+    padding: 0 12px;
+    background: rgba(0, 0, 0, 0.36);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: var(--radius-pill);
+    color: #fff;
+    font: 600 13px/1 var(--font-ui);
+    cursor: pointer;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+/* A finger's worth of target around a small label. */
+.touch-pad-mode::before {
+    content: '';
+    position: absolute;
+    inset: -8px -6px;
+}
+.touch-pad-mode.is-kbm {
+    background: var(--accent-1);
+    border-color: var(--accent-strong);
+}
+.touch-pad-mode[hidden],
+.stream-input-gate:not([hidden]) ~ .touch-pad-mode {
+    display: none !important;
+}
+
+.pad-kbm-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    background: rgba(2, 4, 6, 0.78);
+}
+/* The title and the way out stay in sight; what is between them scrolls. */
+.pad-kbm {
+    display: flex;
+    flex-direction: column;
+    width: min(720px, 100%);
+    max-height: calc(100vh - 24px);
+    max-height: calc(100dvh - 24px);
+    padding: 18px 20px;
+    background: var(--surface-1);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--edge-cyan), var(--shadow-3);
+    color: var(--text-1);
+}
+.pad-kbm-head {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+.pad-kbm-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    /* Room for the focus ring of what touches its edges. */
+    margin: 0 -4px;
+    padding: 0 4px 2px;
+}
+.pad-kbm-title {
+    flex: 1;
+    margin: 0;
+    font-size: var(--fs-md);
+    font-weight: 700;
+}
+.pad-kbm-close {
+    flex: none;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    background: var(--surface-2);
+    border: 1px solid var(--border-2);
+    border-radius: 50%;
+    color: var(--text-1);
+    font-size: 16px;
+    cursor: pointer;
+}
+.pad-kbm-modes {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+.pad-kbm-mode {
+    min-height: 52px;
+    padding: 8px 12px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-2);
+    border-radius: var(--radius-md);
+    color: var(--text-1);
+    font: 600 var(--fs-sm) / 1.2 var(--font-ui);
+    cursor: pointer;
+}
+.pad-kbm-mode.is-on {
+    background: var(--accent-1);
+    border-color: var(--accent-strong);
+    color: var(--on-accent);
+}
+.pad-kbm-desc {
+    margin: 10px 2px 14px;
+    color: var(--text-2);
+    font-size: var(--fs-xs);
+    line-height: 1.4;
+}
+/* A pad for the host: the keys below are not in use, and still there to set. */
+.pad-kbm-body.is-idle {
+    opacity: 0.55;
+}
+.pad-kbm-sens {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+.pad-kbm-range {
+    width: 100%;
+    min-width: 0;
+    height: 28px;
+    accent-color: var(--accent-1);
+}
+.pad-kbm-percent {
+    min-width: 5ch;
+    text-align: right;
+    color: var(--text-2);
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+}
+.pad-kbm-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px 12px;
+}
+.pad-kbm-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+/* A stick's choice is a sentence: twice the room, where there is room. */
+@media (min-width: 420px) {
+    .pad-kbm-field.is-stick {
+        grid-column: span 2;
+    }
+}
+.pad-kbm-name {
+    color: var(--text-2);
+    font-size: var(--fs-xs);
+    font-weight: 600;
+}
+.pad-kbm-select {
+    width: 100%;
+    min-width: 0;
+    min-height: 40px;
+    padding: 6px 10px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-2);
+    border-radius: var(--radius-sm);
+    color: var(--text-1);
+    font: inherit;
+    font-size: var(--fs-sm);
+}
+.pad-kbm-hint {
+    margin: 12px 2px 0;
+    color: var(--text-3);
+    font-size: var(--fs-xs);
+    line-height: 1.4;
+}
+.pad-kbm-actions {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 14px;
+}
+.pad-kbm-spacer {
+    flex: 1;
+}
+/* A phone held sideways: little height, everything a step tighter. */
+@media (max-height: 480px) {
+    .pad-kbm-overlay {
+        padding: 6px;
+    }
+    .pad-kbm {
+        max-height: calc(100vh - 12px);
+        max-height: calc(100dvh - 12px);
+        padding: 12px 14px;
+    }
+    .pad-kbm-head {
+        margin-bottom: 8px;
+    }
+    .pad-kbm-actions {
+        margin-top: 8px;
+    }
+    .pad-kbm-mode {
+        min-height: 44px;
+    }
+    .pad-kbm-desc {
+        margin: 8px 2px 10px;
+    }
+}
