@@ -1468,5 +1468,39 @@
             "pageUp": "PgUp",
             "pageDown": "PgDn"
         }
+    },
+    "pcDash": {
+        "state": {
+            "on": "Yayına izin veriliyor",
+            "offline": "Yayına izin veriliyor, ancak bu bilgisayara ulaşılamıyor",
+            "off": "Yayın kapalı",
+            "starting": "Hazırlanıyor…",
+            "unknown": "Bir saniye…"
+        },
+        "desc": {
+            "on": "Bilgisayarınız Tesla’nızdan veya telefonunuzdan açılabilir.",
+            "offline": "Bu bilgisayar S3XYCast’e ulaşamıyor. İnternet bağlantısını kontrol edin: kendiliğinden yeniden deniyor.",
+            "off": "Bu bilgisayarı dışarıdan kimse açamaz.",
+            "starting": "Bağlantınız birkaç saniye içinde hazır olacak.",
+            "unknown": "Bilgisayarın durumu okunuyor."
+        },
+        "turnOn": "Yayına izin ver",
+        "turnOff": "Yayını kapat",
+        "consentTitle": "Neye izin veriyorsunuz",
+        "linkTitle": "Bağlantınız (her zaman aynı)",
+        "linkHelp": "Bunu Tesla’nızın veya telefonunuzun tarayıcısında açın, ardından kişisel kodunuzu girin.",
+        "copy": "Bağlantıyı kopyala",
+        "copied": "Bağlantı kopyalandı.",
+        "copyFailed": "Bağlantıyı seçip elle kopyalayın.",
+        "codeSet": "Kişisel kod: ayarlı.",
+        "codeChange": "Değiştir",
+        "codeMissing": "Kişisel kodunuzu seçin: o olmadan kimse giremez.",
+        "codeChoose": "Kodumu seç",
+        "noDisplay": "Bu bilgisayarın şu anda ekranı yok: Windows oturumunu bilgisayarın başında açın.",
+        "settings": "Ayarlar",
+        "showHosts": "Bu bilgisayardan bir ekran aç",
+        "hideHosts": "Gizle",
+        "turnOnFailed": "Yayına izin verilemedi. Yeniden deneyin.",
+        "turnOffFailed": "Yayın kapatılamadı. Yeniden deneyin."
     }
 }

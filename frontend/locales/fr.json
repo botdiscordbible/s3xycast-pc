@@ -1468,5 +1468,39 @@
             "pageUp": "Pg↑",
             "pageDown": "Pg↓"
         }
+    },
+    "pcDash": {
+        "state": {
+            "on": "Le streaming est autorisé",
+            "offline": "Le streaming est autorisé, mais ce PC est injoignable",
+            "off": "Le streaming est désactivé",
+            "starting": "Mise en route…",
+            "unknown": "Un instant…"
+        },
+        "desc": {
+            "on": "Votre PC peut être ouvert depuis votre Tesla ou votre téléphone.",
+            "offline": "Ce PC n’arrive pas à joindre S3XYCast. Vérifiez sa connexion Internet : il réessaie tout seul.",
+            "off": "Personne ne peut ouvrir ce PC à distance.",
+            "starting": "Votre lien arrive dans quelques secondes.",
+            "unknown": "Lecture de l’état du PC."
+        },
+        "turnOn": "Autoriser le streaming",
+        "turnOff": "Désactiver le streaming",
+        "consentTitle": "Ce que vous autorisez",
+        "linkTitle": "Votre lien (toujours le même)",
+        "linkHelp": "Ouvrez-le dans le navigateur de votre Tesla ou de votre téléphone, puis entrez votre code personnel.",
+        "copy": "Copier le lien",
+        "copied": "Lien copié.",
+        "copyFailed": "Sélectionnez le lien et copiez-le à la main.",
+        "codeSet": "Code personnel : en place.",
+        "codeChange": "Changer",
+        "codeMissing": "Choisissez votre code personnel : sans lui, personne ne peut entrer.",
+        "codeChoose": "Choisir mon code",
+        "noDisplay": "Ce PC n’a pas d’écran en ce moment : ouvrez la session Windows sur le PC lui-même.",
+        "settings": "Réglages",
+        "showHosts": "Ouvrir un écran depuis ce PC",
+        "hideHosts": "Masquer",
+        "turnOnFailed": "Le streaming n’a pas pu être autorisé. Réessayez.",
+        "turnOffFailed": "Le streaming n’a pas pu être désactivé. Réessayez."
     }
 }

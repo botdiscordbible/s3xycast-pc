@@ -1076,3 +1076,180 @@ textarea {
         margin: 8px 2px 10px;
     }
 }
+
+/* ── S3XYCast edition: the page on the PC itself (ui/PcDashboard.js) ───────
+   One panel: a state in one line, the big button that allows or stops the
+   streaming, the link, the settings. What can be opened from here is put away
+   until asked for. */
+.hosts-view.pc-simple:not(.is-hosts-shown) > .hosts-header,
+.hosts-view.pc-simple:not(.is-hosts-shown) > .hosts-list {
+    display: none;
+}
+.pc-dash {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    max-width: 760px;
+    margin: 8px auto 28px;
+    padding: 28px;
+    background: var(--surface-1);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--edge-cyan);
+}
+.pc-dash-state {
+    display: flex;
+    align-items: flex-start;
+    gap: 18px;
+}
+.pc-dash-dot {
+    flex: none;
+    width: 18px;
+    height: 18px;
+    margin-top: 9px;
+    border-radius: 50%;
+    background: var(--text-3);
+}
+.pc-dash-state.is-on .pc-dash-dot {
+    background: var(--c-success);
+    box-shadow: 0 0 0 6px var(--c-success-soft);
+}
+.pc-dash-state.is-offline .pc-dash-dot,
+.pc-dash-dot.is-waiting {
+    background: var(--c-warning);
+    box-shadow: 0 0 0 6px var(--c-warning-soft);
+}
+.pc-dash-dot.is-waiting {
+    animation: pc-dash-wait 1.2s ease-in-out infinite;
+}
+@keyframes pc-dash-wait {
+    50% {
+        opacity: 0.35;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .pc-dash-dot.is-waiting {
+        animation: none;
+    }
+}
+.pc-dash-text {
+    min-width: 0;
+}
+.pc-dash-title {
+    margin: 0;
+    font-size: var(--fs-xl);
+    line-height: 1.2;
+}
+.pc-dash-desc {
+    margin: 6px 0 0;
+    color: var(--text-2);
+    font-size: var(--fs-md);
+}
+/* The one thing to press on this page. */
+.pc-dash-toggle {
+    align-self: stretch;
+    min-height: 76px;
+    border-radius: var(--radius-lg);
+    font-size: var(--fs-lg);
+    font-weight: 700;
+}
+.pc-dash-consent {
+    color: var(--text-2);
+    font-size: var(--fs-xs);
+    line-height: 1.5;
+}
+.pc-dash-consent summary {
+    color: var(--text-1);
+    font-size: var(--fs-sm);
+    cursor: pointer;
+}
+.pc-dash-consent p {
+    margin: 10px 0 0;
+}
+.pc-dash-link {
+    padding: 16px 18px;
+    background: var(--surface-2);
+    border-radius: var(--radius-md);
+}
+.pc-dash-label {
+    margin-bottom: 6px;
+    color: var(--text-2);
+    font-size: var(--fs-xs);
+    font-weight: 700;
+}
+.pc-dash-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+}
+.pc-dash-url {
+    flex: 1 1 260px;
+    min-width: 0;
+    color: var(--text-1);
+    font-family: var(--font-mono);
+    font-size: var(--fs-sm);
+    overflow-wrap: anywhere;
+}
+.pc-dash-help {
+    margin: 10px 0 0;
+    color: var(--text-2);
+    font-size: var(--fs-xs);
+}
+.pc-dash-notes {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.pc-dash-notes:empty {
+    display: none;
+}
+.pc-dash-note {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 14px;
+    margin: 0;
+    padding: 12px 16px;
+    border-radius: var(--radius-md);
+    font-size: var(--fs-sm);
+}
+.pc-dash-note span {
+    flex: 1 1 240px;
+}
+.pc-dash-note.is-ok {
+    background: var(--c-success-soft);
+}
+.pc-dash-note.is-bad {
+    background: var(--c-warning-soft);
+    color: var(--c-warning-text);
+}
+.pc-dash-inline {
+    padding: 4px 0;
+    background: none;
+    border: 0;
+    color: var(--text-1);
+    font: inherit;
+    font-size: var(--fs-sm);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+}
+.pc-dash-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+.pc-dash-settings {
+    min-height: 52px;
+    padding: 0 26px;
+}
+@media (max-width: 520px) {
+    .pc-dash {
+        padding: 20px 16px;
+    }
+    .pc-dash-title {
+        font-size: var(--fs-lg);
+    }
+}

@@ -71,6 +71,7 @@ import { qrDrawer } from './ui/qrSvg.js';
 import { lanHttpStatus } from './api/LanHttpApi.js';
 import { touchPadSettings } from './stream/TouchPadState.js';
 import { padKbmSettings } from './stream/PadKeyMouse.js';
+import { PcDashboard } from './ui/PcDashboard.js';
 import { BackendClient } from './api/BackendClient.js';
 import { Toast } from './ui/Toast.js';
 import { DiscordLink } from './ui/DiscordLink.js';
@@ -1181,6 +1182,26 @@ export const MoonlightApp = {
      * Best-effort throughout: a failed status read leaves the page bannerless.
      */
     async _mountHostsBanners() {
+        // S3XYCast edition: on the PC itself the page is one simple panel — may
+        // this PC be opened from outside, the big button that says so, its
+        // link, its settings (ui/PcDashboard.js). It says what the two banners
+        // below say, so they are for the other machines only; what can be
+        // opened is put away until asked for, a PC having little use for a
+        // picture of its own screen. Not in booth mode, where nobody here may
+        // change anything.
+        if (this._isHostMachine() && !BackendClient.adminLocked) {
+            const hosts = document.getElementById('view-hosts');
+            if (!hosts || hosts.querySelector('.pc-dash')) return;
+            if (this._pcDashboard) this._pcDashboard.destroy();
+            hosts.classList.add('pc-simple');
+            this._pcDashboard = new PcDashboard({
+                openSettings: () => this._openOverlay('admin'),
+                onToggleHosts: (shown) => hosts.classList.toggle('is-hosts-shown', shown),
+            });
+            this._pcDashboard.mount(hosts);
+            return;
+        }
+
         const info = await this._computeRemoteAccessUrls();
         if (!info) return;
 

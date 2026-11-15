@@ -1468,5 +1468,39 @@
             "pageUp": "PgUp",
             "pageDown": "PgDn"
         }
+    },
+    "pcDash": {
+        "state": {
+            "on": "Streaming is allowed",
+            "offline": "Streaming is allowed, but this PC cannot be reached",
+            "off": "Streaming is turned off",
+            "starting": "Getting ready…",
+            "unknown": "One moment…"
+        },
+        "desc": {
+            "on": "Your PC can be opened from your Tesla or your phone.",
+            "offline": "This PC cannot reach S3XYCast. Check its Internet connection: it keeps trying on its own.",
+            "off": "Nobody can open this PC from outside.",
+            "starting": "Your link will be there in a few seconds.",
+            "unknown": "Reading the state of this PC."
+        },
+        "turnOn": "Allow streaming",
+        "turnOff": "Turn streaming off",
+        "consentTitle": "What you are allowing",
+        "linkTitle": "Your link (always the same)",
+        "linkHelp": "Open it in the browser of your Tesla or your phone, then enter your personal code.",
+        "copy": "Copy the link",
+        "copied": "Link copied.",
+        "copyFailed": "Select the link and copy it by hand.",
+        "codeSet": "Personal code: in place.",
+        "codeChange": "Change",
+        "codeMissing": "Choose your personal code: without it, nobody can get in.",
+        "codeChoose": "Choose my code",
+        "noDisplay": "This PC has no screen right now: sign in to Windows on the PC itself.",
+        "settings": "Settings",
+        "showHosts": "Open a screen from this PC",
+        "hideHosts": "Hide",
+        "turnOnFailed": "Streaming could not be allowed. Try again.",
+        "turnOffFailed": "Streaming could not be turned off. Try again."
     }
 }

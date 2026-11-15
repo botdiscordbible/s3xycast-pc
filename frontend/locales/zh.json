@@ -1468,5 +1468,39 @@
             "pageUp": "PgUp",
             "pageDown": "PgDn"
         }
+    },
+    "pcDash": {
+        "state": {
+            "on": "已允许串流",
+            "offline": "已允许串流，但无法连接到这台电脑",
+            "off": "串流已关闭",
+            "starting": "正在准备…",
+            "unknown": "请稍候…"
+        },
+        "desc": {
+            "on": "可以从您的特斯拉或手机打开这台电脑。",
+            "offline": "这台电脑无法连接 S3XYCast。请检查它的网络连接：它会自动重试。",
+            "off": "任何人都无法从外部打开这台电脑。",
+            "starting": "您的链接将在几秒钟内就绪。",
+            "unknown": "正在读取这台电脑的状态。"
+        },
+        "turnOn": "允许串流",
+        "turnOff": "关闭串流",
+        "consentTitle": "您将允许的内容",
+        "linkTitle": "您的链接（始终不变）",
+        "linkHelp": "在特斯拉或手机的浏览器中打开它，然后输入您的个人密码。",
+        "copy": "复制链接",
+        "copied": "链接已复制。",
+        "copyFailed": "请选中链接并手动复制。",
+        "codeSet": "个人密码：已设置。",
+        "codeChange": "更改",
+        "codeMissing": "请设置您的个人密码：没有它，任何人都无法进入。",
+        "codeChoose": "设置我的密码",
+        "noDisplay": "这台电脑目前没有屏幕：请在电脑上直接登录 Windows。",
+        "settings": "设置",
+        "showHosts": "从这台电脑打开一个屏幕",
+        "hideHosts": "隐藏",
+        "turnOnFailed": "无法允许串流。请重试。",
+        "turnOffFailed": "无法关闭串流。请重试。"
     }
 }
