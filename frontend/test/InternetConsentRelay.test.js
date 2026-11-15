@@ -22,7 +22,12 @@ const ISS = readFileSync(join(REPO, 'backend', 'installer', 'moonlightweb.iss'),
 
 // How each language names the relay, the same word its settings page uses
 // (admin.upnpUnavailableNote).
-const RELAY = { en: 'S3XYCast relay', fr: 'relais de S3XYCast', tr: 'S3XYCast aktarıcısı', zh: 'S3XYCast 中继' };
+const RELAY = {
+    en: 'S3XYCast relay',
+    fr: 'relais de S3XYCast',
+    tr: 'S3XYCast aktarıcısı',
+    zh: 'S3XYCast 中继',
+};
 // A sentence that promised a stream that never leaves the direct path.
 const ONLY_DIRECT = [
     'Streaming is direct, from this PC',
@@ -48,7 +53,9 @@ describe('Internet consent text and the relay', () => {
             for (const old of ONLY_DIRECT) expect(text).not.toContain(old);
         }
         // The settings page says the same of a router that opens nothing.
-        expect(l.admin.upnpUnavailableNote).toContain(RELAY[lang].replace('relais de S3XYCast', 'relais S3XYCast'));
+        expect(l.admin.upnpUnavailableNote).toContain(
+            RELAY[lang].replace('relais de S3XYCast', 'relais S3XYCast'),
+        );
     });
 
     it('the installer names it in every language it speaks', () => {
