@@ -34,6 +34,7 @@ import * as streamVolume from '../audio/streamVolume.js';
 import { MicUplink, loadMicDevice, micSupported } from '../audio/MicUplink.js';
 import { JitterController } from '../stream/JitterController.js';
 import { TouchScreenPointer } from '../stream/TouchScreenPointer.js';
+import { FingerPointer, fingerStarts } from '../stream/FingerPointer.js';
 import { FramePacer, pacerTunables, pacingCapOf } from '../stream/FramePacer.js';
 import {
     currentRefreshMilliHz,
@@ -102,6 +103,7 @@ import {
     supportsDisplayHdr,
     supportsGamingMode,
     lockFreeLookWanted,
+    touchIsOnlyPointer,
 } from '../util/BrowserDetect.js';
 import { Av1Watch, noteAv1Failed, noteAv1Proven, noteHevcFailed } from '../util/CodecAuto.js';
 import * as RemoteNav from './RemoteNav.js';
@@ -279,6 +281,41 @@ function vsyncGridBudget() {
  * fine, and blowing it up there would look like a bug.
  */
 const PHONE_CURSOR_CSS_PX = 14;
+
+/**
+ * The same target for a touch screen that is neither a phone nor a tablet
+ * (S3XYCast PC, stream/FingerPointer.js) — a car's, first of all. It is looked
+ * at from an arm's length rather than a hand's, and the owner's Tesla shows a
+ * 3440-pixel desktop across 959 points: at its real size the arrow is 5 points
+ * high there, under 2 mm of glass. 22 points is about 7 mm on that screen, an
+ * ordinary Windows arrow as seen from a desk. A target and not a floor here
+ * too, and never below the real size.
+ */
+const FIXED_SCREEN_CURSOR_CSS_PX = 22;
+
+/**
+ * How far past its real size the pointer's bitmap may be stretched to reach
+ * its target. 2.5 on a phone, as the host does when it draws it. More on a
+ * fixed screen: the real size is at its smallest there (a wide desktop on a
+ * screen that is not), and a soft arrow is still one, where a 5-point arrow is
+ * not found at all.
+ */
+const PHONE_CURSOR_STRETCH_MAX = 2.5;
+const FIXED_SCREEN_CURSOR_STRETCH_MAX = 5;
+
+/**
+ * How large the ink of the pointer this page draws should be on the glass, in
+ * CSS pixels, and how far its bitmap may be stretched to get there — null
+ * where its real size reads fine: a tablet, held in the hands with a picture
+ * that fills it. A phone has its own target; any other touch screen is a fixed
+ * one, looked at from further away.
+ * @type {{px: number, stretch: number} | null}
+ */
+const CLIENT_CURSOR_TARGET = IS_MOBILE
+    ? { px: PHONE_CURSOR_CSS_PX, stretch: PHONE_CURSOR_STRETCH_MAX }
+    : IS_MOBILE_OR_TABLET
+      ? null
+      : { px: FIXED_SCREEN_CURSOR_CSS_PX, stretch: FIXED_SCREEN_CURSOR_STRETCH_MAX };
 
 /**
  * Phones and tablets: draw the pointer HERE, as an image moved from the finger,
@@ -668,6 +705,19 @@ export class StreamView {
         // There the finger is the pointer, and the host's is hidden (issue
         // #61). Not on a TV: its remote steers the host's pointer and needs it.
         this._touchScreenPointer = new TouchScreenPointer(this._touchScreen && !IS_TV);
+        // S3XYCast PC — whose pointer it is where the browser is neither a
+        // phone nor a tablet: a mouse's, or a finger's (stream/FingerPointer.js).
+        // A touch screen behind a desktop's user agent, a car's, had none at
+        // all. A phone or a tablet keeps the finger's for good, as before; a
+        // TV whose user agent is not a phone's keeps its own, as before.
+        this._fingerPointer = new FingerPointer({
+            always: IS_MOBILE_OR_TABLET,
+            never: IS_TV,
+            start: fingerStarts({ touchOnly: touchIsOnlyPointer() }),
+        });
+        // The host's last word on where its pointer is, in frame pixels: where
+        // a finger that takes the pointer over from a mouse starts from.
+        this._hostCursorAt = null;
         // iOS/iPadOS never grants the pointer lock: there a refusal is final,
         // and the mouse turns to relative look (A23). Elsewhere a refusal is
         // a moment (Chrome right after Escape), and the next click asks again.
@@ -9405,6 +9455,8 @@ export class StreamView {
         this.streamEl.addEventListener('touchmove', this._onTouchMove, { passive: false });
         this.streamEl.addEventListener('touchend', this._onTouchEnd, { passive: false });
         this.streamEl.addEventListener('touchcancel', this._onTouchEnd, { passive: false });
+        // Whose pointer it is, a finger's or a mouse's (S3XYCast PC).
+        this._bindFingerPointer();
         window.addEventListener('beforeunload', this._onBeforeUnload);
         window.addEventListener('pagehide', this._onPageHide);
         window.addEventListener('blur', this._onWindowBlur);
@@ -10020,8 +10072,10 @@ export class StreamView {
      * we draw it ourselves and should.
      */
     _sendCursorMode() {
+        // A finger's pointer, wherever a finger holds it: a phone, a tablet,
+        // and any other touch screen while it is touched (FingerPointer).
         const composite =
-            !!this.pointerLocked || (IS_MOBILE_OR_TABLET && !MOBILE_CURSOR_CLIENT_DRAWN);
+            !!this.pointerLocked || (this._fingerPointer.on() && !MOBILE_CURSOR_CLIENT_DRAWN);
         const cursorPx = composite ? this._compositeCursorPx() : 0;
         if (composite === this._sentCursorComposite && cursorPx === this._sentCursorPx) return;
         // Only the transition into compositing invalidates what we hold; a size
@@ -10056,9 +10110,84 @@ export class StreamView {
     // (`cursorpos`) place the pointer once, at the start, and are otherwise
     // ignored: see _clientCursorHostSaid.
 
-    /** Whether this view draws the pointer itself, right now. */
+    /**
+     * Whether this view draws the pointer itself, right now: where a finger
+     * holds it. A phone or a tablet, always; any other touch screen from the
+     * moment it is touched, until a mouse takes the pointer back
+     * (stream/FingerPointer.js) — a car's screen had no pointer at all.
+     */
     _clientCursorActive() {
-        return MOBILE_CURSOR_CLIENT_DRAWN && IS_MOBILE_OR_TABLET && !this.pointerLocked;
+        return MOBILE_CURSOR_CLIENT_DRAWN && this._fingerPointer.on() && !this.pointerLocked;
+    }
+
+    /**
+     * The pointer changed hands, mouse to finger or back.
+     *
+     * To the finger: the drawing starts where the host's pointer is, as far as
+     * the host has said, with the shape it has sent — both arrive whoever
+     * draws, and until now nobody was listening on a computer. To the mouse:
+     * the drawing goes and its place is forgotten, since the mouse is about to
+     * move the host's pointer somewhere else.
+     */
+    _fingerPointerChanged() {
+        if (this._fingerPointer.on()) {
+            if (!this._clientCursorPos && this._hostCursorAt) {
+                this._clientCursorPos = { x: this._hostCursorAt.x, y: this._hostCursorAt.y };
+            }
+            // Decodes the shape for the drawing and, should the host never
+            // have said where its pointer is, starts it from the middle.
+            this._clientCursorShapeChanged();
+        } else {
+            this._clientCursorPos = null;
+        }
+        // Who draws it only changes if the page does not (see _sendCursorMode).
+        this._sendCursorMode();
+        this._placeClientCursor();
+    }
+
+    /**
+     * Watch whose pointer it is, on the whole overlay as the trackpad is: a
+     * finger anywhere on the stream takes it, a mouse that really moves or
+     * presses takes it back. Apart from the gestures themselves (and before
+     * them: capture), which have their own reasons to look away from a touch —
+     * a button, the on-screen pad.
+     */
+    _bindFingerPointer() {
+        if (!this.streamEl || this._onFingerPointerTouch) return;
+        this._onFingerPointerTouch = (e) => {
+            if (e.type === 'touchstart') {
+                if (this._fingerPointer.touched()) this._fingerPointerChanged();
+            } else if (!e.touches || e.touches.length === 0) {
+                this._fingerPointer.lifted(performance.now());
+            }
+        };
+        this._onFingerPointerMouse = (e) => {
+            // The pointer event names its device, which the mouse events a
+            // browser makes up after a tap do not (see TouchScreenPointer).
+            if (e.pointerType !== 'mouse') return;
+            const now = performance.now();
+            const taken =
+                e.type === 'pointerdown'
+                    ? this._fingerPointer.mousePressed(now)
+                    : this._fingerPointer.mouseMoved(e.clientX, e.clientY, now);
+            if (taken) this._fingerPointerChanged();
+        };
+        const how = { capture: true, passive: true };
+        for (const type of ['touchstart', 'touchend', 'touchcancel'])
+            this.streamEl.addEventListener(type, this._onFingerPointerTouch, how);
+        for (const type of ['pointermove', 'pointerdown'])
+            this.streamEl.addEventListener(type, this._onFingerPointerMouse, how);
+    }
+
+    _unbindFingerPointer() {
+        if (!this.streamEl || !this._onFingerPointerTouch) return;
+        const how = { capture: true };
+        for (const type of ['touchstart', 'touchend', 'touchcancel'])
+            this.streamEl.removeEventListener(type, this._onFingerPointerTouch, how);
+        for (const type of ['pointermove', 'pointerdown'])
+            this.streamEl.removeEventListener(type, this._onFingerPointerMouse, how);
+        this._onFingerPointerTouch = null;
+        this._onFingerPointerMouse = null;
     }
 
     /** Frame height, the way _pictureWidth gives the width. */
@@ -10155,12 +10284,13 @@ export class StreamView {
      */
     _clientCursorCssScale() {
         const natural = this._pictureScale();
-        if (!IS_MOBILE || !this._clientCursorImg) return natural;
+        const target = CLIENT_CURSOR_TARGET;
+        if (!target || !this._clientCursorImg) return natural;
         const ink = Math.max(this._clientCursorImg.inkW, this._clientCursorImg.inkH);
         if (!(ink > 0)) return natural;
-        const magnify = PHONE_CURSOR_CSS_PX / (ink * natural);
+        const magnify = target.px / (ink * natural);
         if (!isFinite(magnify) || !(magnify > 1)) return natural;
-        return natural * Math.min(2.5, magnify);
+        return natural * Math.min(target.stretch, magnify);
     }
 
     /** Whether the finger steers the pointer we draw — which needs a place to
@@ -10249,11 +10379,14 @@ export class StreamView {
      * A hidden pointer carries no position at all and places nothing.
      */
     _clientCursorHostSaid(msg) {
-        if (!this._clientCursorActive() || this._clientCursorPos) return;
         if (msg.visible === false) return;
         const x = Number(msg.x),
             y = Number(msg.y);
         if (!isFinite(x) || !isFinite(y)) return;
+        // Kept whoever draws the pointer: a finger that takes it over from a
+        // mouse starts from the host's last word (_fingerPointerChanged).
+        this._hostCursorAt = { x, y };
+        if (!this._clientCursorActive() || this._clientCursorPos) return;
         this._clientCursorPos = { x, y };
         this._placeClientCursor();
     }
@@ -10310,7 +10443,7 @@ export class StreamView {
             if (el.getAttribute('src') !== CLIENT_CURSOR_ARROW_SVG) {
                 el.src = CLIENT_CURSOR_ARROW_SVG;
             }
-            const arrowScale = IS_MOBILE ? PHONE_CURSOR_CSS_PX / 19 : Math.max(1, s);
+            const arrowScale = CLIENT_CURSOR_TARGET ? CLIENT_CURSOR_TARGET.px / 19 : Math.max(1, s);
             w = 12 * arrowScale;
             h = 19 * arrowScale;
             hx = 0;
@@ -10469,6 +10602,10 @@ export class StreamView {
             if (e.pointerType !== 'mouse') return;
             this._touchScreenPointer.moved(e.pointerType);
             if (this._touchScreenPointer.hidden()) return;
+            // Only where the finger holds the pointer for good (an iPad with
+            // its keyboard case). Elsewhere a mouse has an arrow of its own,
+            // and takes the pointer back with it (stream/FingerPointer.js).
+            if (!this._fingerPointer.always()) return;
             const rect = this._mediaRect();
             if (!rect || !(rect.width > 0) || !(rect.height > 0)) return;
             const fx = (e.clientX - rect.left) / rect.width;
@@ -10533,6 +10670,7 @@ export class StreamView {
             this.streamEl.removeEventListener('touchmove', this._onTouchMove);
             this.streamEl.removeEventListener('touchend', this._onTouchEnd);
             this.streamEl.removeEventListener('touchcancel', this._onTouchEnd);
+            this._unbindFingerPointer();
             this._stopScrollMomentum();
             this._stopPanMomentum();
         }

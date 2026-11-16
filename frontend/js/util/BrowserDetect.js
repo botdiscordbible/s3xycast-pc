@@ -260,6 +260,24 @@ export function watchTouchEnabled(onChange, { nav = navigator, win = window } = 
     };
 }
 
+/**
+ * True when a touch screen is all this browser says it has to point with: one
+ * switched on (touchEnabled), and no mouse or trackpad beside it. A car's
+ * screen, a kiosk, a tablet asked for the desktop site — where the stream must
+ * draw the pointer for the finger (S3XYCast PC, stream/FingerPointer.js). What
+ * the browser says is a guess where it starts, never the last word: a browser
+ * that answers nothing is not taken for one.
+ * @param {{nav?: Navigator, win?: Window}} [env] replace the live sources (tests).
+ */
+export function touchIsOnlyPointer({ nav = navigator, win = window } = {}) {
+    if (!touchEnabled({ nav, win })) return false;
+    try {
+        return !!win.matchMedia && !win.matchMedia('(any-pointer: fine)').matches;
+    } catch {
+        return false;
+    }
+}
+
 /** The raw platform type string: 'mobile', 'tablet', or 'desktop'. */
 export const PLATFORM_TYPE = platform.type;
 
