@@ -116,6 +116,47 @@ export function stickFromFinger(origin, x, y, radius) {
     return { ox, oy, ax: (dx / length) * travel, ay: (dy / length) * travel };
 }
 
+/**
+ * S3XYCast edition. The two ways a stick can be had (touch_pad_sticks):
+ * `fixed`, a joystick that stays where it is drawn and is pushed from there;
+ * `follow`, upstream's floating stick, born under the thumb wherever it lands
+ * on that side of the screen.
+ */
+export const TOUCH_PAD_STICKS = ['fixed', 'follow'];
+
+/**
+ * S3XYCast edition. How far around a fixed stick's ring a thumb still takes
+ * it, as a share of the ring's radius: a thumb aims at the ring without
+ * looking and lands a little outside it, and past that the screen is the
+ * picture's again.
+ */
+export const FIXED_STICK_REACH = 1.3;
+
+/**
+ * S3XYCast edition. A fixed stick from where the finger is: its axes, and
+ * where its knob is drawn. The centre never moves; a finger past the ring
+ * holds the stick at full travel and the knob on the ring's edge.
+ * @param {{x: number, y: number}} centre
+ * @param {number} x
+ * @param {number} y
+ * @param {number} radius
+ * @returns {{ax: number, ay: number, kx: number, ky: number}}
+ */
+export function fixedStickFromFinger(centre, x, y, radius) {
+    const dx = x - centre.x;
+    const dy = y - centre.y;
+    const dist = Math.hypot(dx, dy);
+    if (dist === 0) return { ax: 0, ay: 0, kx: centre.x, ky: centre.y };
+    const held = Math.min(dist, radius);
+    const kx = centre.x + (dx / dist) * held;
+    const ky = centre.y + (dy / dist) * held;
+    const mag = held / radius;
+    if (mag < DEAD_ZONE) return { ax: 0, ay: 0, kx, ky };
+    // From the edge of the dead zone, as the floating stick does.
+    const travel = (mag - DEAD_ZONE) / (1 - DEAD_ZONE);
+    return { ax: (dx / dist) * travel, ay: (dy / dist) * travel, kx, ky };
+}
+
 export class TouchPadState {
     /**
      * @param {{ vibrate?: ((pattern: number|number[]) => unknown)|null,
@@ -239,18 +280,22 @@ export class TouchPadState {
      * @param {number} y
      * @param {number} radius
      * @param {number} [now]
+     * @param {{x: number, y: number}|null} [centre] S3XYCast edition: a fixed
+     *   stick's centre, where its ring is drawn. The stick then stays there
+     *   and is pushed at once from where the finger landed on it.
      * @returns {boolean} false if a finger is on this stick already.
      */
-    stickDown(side, x, y, radius, now = performance.now()) {
+    stickDown(side, x, y, radius, now = performance.now(), centre = null) {
         if (this._sticks.has(side)) return false;
         const tap = this._lastTap.get(side);
         const clicked =
             !!tap && now - tap.at <= DOUBLE_TAP_MS && Math.hypot(x - tap.x, y - tap.y) <= radius;
         this._lastTap.delete(side);
         if (clicked) this.press(this._clickButton(side));
-        this._sticks.set(side, {
-            x,
-            y,
+        const fixed = !!centre;
+        const stick = {
+            x: fixed ? centre.x : x,
+            y: fixed ? centre.y : y,
             startX: x,
             startY: y,
             fingerX: x,
@@ -259,20 +304,40 @@ export class TouchPadState {
             at: now,
             clicked,
             moved: false,
-        });
+            fixed,
+        };
+        this._sticks.set(side, stick);
+        if (fixed) this._pushFixed(side, stick, x, y);
         return true;
+    }
+
+    /**
+     * S3XYCast edition. A fixed stick under a finger: its axes, and its knob
+     * held inside the ring.
+     */
+    _pushFixed(side, stick, x, y) {
+        const { ax, ay, kx, ky } = fixedStickFromFinger(stick, x, y, stick.radius);
+        stick.fingerX = kx;
+        stick.fingerY = ky;
+        const base = this._axisBase(side);
+        this.axes[base] = ax;
+        this.axes[base + 1] = ay;
     }
 
     /** @param {'left'|'right'} side @param {number} x @param {number} y */
     stickMove(side, x, y) {
         const stick = this._sticks.get(side);
         if (!stick) return;
+        if (Math.hypot(x - stick.startX, y - stick.startY) > TAP_MOVE_PX) stick.moved = true;
+        if (stick.fixed) {
+            this._pushFixed(side, stick, x, y);
+            return;
+        }
         const { ox, oy, ax, ay } = stickFromFinger(stick, x, y, stick.radius);
         stick.x = ox;
         stick.y = oy;
         stick.fingerX = x;
         stick.fingerY = y;
-        if (Math.hypot(x - stick.startX, y - stick.startY) > TAP_MOVE_PX) stick.moved = true;
         const base = this._axisBase(side);
         this.axes[base] = ax;
         this.axes[base + 1] = ay;
@@ -428,6 +493,9 @@ export function touchPadSettings(data = {}) {
         outside: data.touch_pad_outside === 'ignore' ? 'ignore' : 'mouse',
         layout: touchPadLayouts(data.touch_pad_layout),
         style: TOUCH_PAD_STYLES.includes(data.touch_pad_style) ? data.touch_pad_style : 'xbox',
+        // S3XYCast edition: joysticks that stay where they are drawn, unless
+        // the viewer asked for upstream's, which follow the thumb.
+        sticks: data.touch_pad_sticks === 'follow' ? 'follow' : 'fixed',
     };
 }
 
@@ -451,9 +519,15 @@ export function touchPadSettings(data = {}) {
  * saved place as a share of the layer. With neither, the layout is exactly the
  * one above, which is what every screen and every setting is measured against.
  *
+ * `sticks` (S3XYCast edition): `fixed` turns each stick's zone into a disc
+ * around its resting ring (FIXED_STICK_REACH) and marks it `fixed`: the stick is
+ * taken there and nowhere else, and stays there. Left out, the sticks float as
+ * above, which is what upstream's layout is.
+ *
  * @param {{width: number, height: number, scale?: number,
  *          insets?: {top?: number, right?: number, bottom?: number, left?: number},
- *          preset?: string, overrides?: Record<string, {x: number, y: number, s: number}>|null}} opts
+ *          preset?: string, overrides?: Record<string, {x: number, y: number, s: number}>|null,
+ *          sticks?: string}} opts
  */
 export function layoutTouchPad({
     width: w,
@@ -462,6 +536,7 @@ export function layoutTouchPad({
     insets = {},
     preset = 'default',
     overrides = null,
+    sticks = 'follow',
 }) {
     const short = Math.min(w, h);
     // A button's diameter. Past what fits, the scale gives way, so the two sides
@@ -593,12 +668,45 @@ export function layoutTouchPad({
         w: toggleSize,
         h: toggleSize,
     };
+    // The preset and the viewer's own places first: a ring is kept inside the
+    // side it belongs to, which is its zone as laid out above.
+    const tuned = tunedToggle({
+        controls,
+        toggle,
+        preset,
+        overrides,
+        w,
+        h,
+        d,
+        left,
+        right,
+        insets,
+    });
+    if (sticks === 'fixed') fixSticks(controls);
     return {
         d,
         radius,
         controls,
-        toggle: tunedToggle({ controls, toggle, preset, overrides, w, h, d, left, right, insets }),
+        toggle: tuned,
     };
+}
+
+/**
+ * S3XYCast edition. Fixed sticks: each one's zone becomes the disc a thumb
+ * takes it on, around the ring where it rests. The rest of what was its side
+ * of the screen is no longer a control: the picture's, as the gaps are.
+ */
+function fixSticks(controls) {
+    for (const c of controls) {
+        if (c.kind !== 'stick') continue;
+        const reach = c.radius * FIXED_STICK_REACH;
+        c.fixed = true;
+        c.reach = reach;
+        c.x = c.restX - reach;
+        c.y = c.restY - reach;
+        c.w = reach * 2;
+        c.h = reach * 2;
+    }
 }
 
 /** The centre a control is drawn around, whichever way it was built. */
@@ -810,7 +918,9 @@ export function buttonsAt(controls, x, y) {
  */
 export function stickAt(controls, x, y) {
     for (const c of controls) {
-        if (c.kind === 'stick' && inBox(c, x, y)) return c;
+        if (c.kind !== 'stick') continue;
+        // S3XYCast edition: a fixed stick answers on its disc, not on a box.
+        if (c.fixed ? Math.hypot(x - c.restX, y - c.restY) <= c.reach : inBox(c, x, y)) return c;
     }
     return null;
 }

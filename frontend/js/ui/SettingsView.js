@@ -1128,6 +1128,8 @@ export class SettingsView {
             touch_pad_layout: this._touchPad.layout,
             // The pad the buttons are named after (labels only).
             touch_pad_style: this._touchPad.style,
+            // S3XYCast edition: joysticks that stay put, or that follow the thumb.
+            touch_pad_sticks: this._touchPad.sticks,
             // Per device too: a pad for the host, or a keyboard and a mouse.
             ...padKbmFields(this._padKbmForSave()),
             mic_enabled: this._micEnabled,
@@ -2710,6 +2712,14 @@ export class SettingsView {
                             ${option('never', pad.mode, 'settings.touchPadNever')}
                         </select>
                     </div>
+                    <div class="settings-field">
+                        <label class="settings-label" for="settings-touch-pad-sticks">${t('settings.touchPadSticks')}</label>
+                        <select id="settings-touch-pad-sticks" class="settings-select">
+                            ${option('fixed', pad.sticks, 'settings.touchPadSticksFixed')}
+                            ${option('follow', pad.sticks, 'settings.touchPadSticksFollow')}
+                        </select>
+                        <span class="setting-desc">${t('settings.touchPadSticksDesc')}</span>
+                    </div>
                     <div class="settings-field settings-touch-pad-customize">
                         <div class="settings-touch-pad-customize-row">
                             <div class="settings-touch-pad-customize-text">
@@ -2754,6 +2764,7 @@ export class SettingsView {
             touch_pad_outside: field('outside').value,
             touch_pad_layout: this._touchPad.layout,
             touch_pad_style: this._touchPad.style,
+            touch_pad_sticks: field('sticks') ? field('sticks').value : this._touchPad.sticks,
         });
     }
 
@@ -2794,7 +2805,8 @@ export class SettingsView {
             this._refreshShortcutsSection();
         });
         field('edit').addEventListener('click', () => this._openTouchPadLayoutEditor());
-        for (const name of ['vibrate', 'outside']) {
+        // 'sticks' is the S3XYCast edition's: fixed joysticks, or floating ones.
+        for (const name of ['vibrate', 'outside', 'sticks']) {
             field(name).addEventListener('change', () => this._autoSave());
         }
     }

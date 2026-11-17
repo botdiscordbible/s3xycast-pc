@@ -358,6 +358,8 @@ describe('touchPadSettings', () => {
             outside: 'mouse',
             layout: defaultLayout,
             style: 'xbox',
+            // S3XYCast edition: joysticks that stay where they are drawn.
+            sticks: 'fixed',
         });
     });
 
@@ -379,6 +381,7 @@ describe('touchPadSettings', () => {
             outside: 'ignore',
             layout: defaultLayout,
             style: 'switch',
+            sticks: 'fixed',
         });
     });
 

@@ -129,6 +129,9 @@ export class TouchPadView {
      *   layer has when it is laid out picks which of the two saves applies.
      *   `style`: the pad whose names the buttons wear (TOUCH_PAD_STYLES).
      *   `labels`: the viewer's own names for them, by control id (setLook).
+     *   `sticks` (S3XYCast edition): `fixed` for joysticks that stay where
+     *   they are drawn, taken on their ring; anything else, upstream's
+     *   floating ones (TOUCH_PAD_STICKS).
      */
     constructor(parent, state, options = {}) {
         this._parent = parent;
@@ -140,6 +143,7 @@ export class TouchPadView {
         // (S3XYCast PC, keyboard-and-mouse mode): control id → what to write.
         this._labels = options.labels || null;
         this._ignoreOutside = options.ignoreOutside === true;
+        this._sticks = options.sticks === 'fixed' ? 'fixed' : 'follow';
         this._layout = options.layout || null;
         this._onChanged = options.onChanged || null;
         this._onTouch = options.onTouch || null;
@@ -242,10 +246,11 @@ export class TouchPadView {
      * layout editor: fractions as in the options, 1 = 100%. Any may be left out.
      * `labels`: what each control is called instead of its pad's name (control
      * id → text), or null to give the pad its names back.
+     * `sticks` (S3XYCast edition): fixed joysticks or floating ones.
      * @param {{ scale?: number, opacity?: number, style?: string,
-     *           labels?: Record<string, string>|null }} look
+     *           labels?: Record<string, string>|null, sticks?: string }} look
      */
-    setLook({ scale, opacity, style, labels } = {}) {
+    setLook({ scale, opacity, style, labels, sticks } = {}) {
         const renamed = labels !== undefined;
         if (renamed) this._labels = labels || null;
         if ((style !== undefined && style !== this._style) || renamed) {
@@ -257,8 +262,11 @@ export class TouchPadView {
             this._opacity = opacity;
             if (this._el) this._el.style.setProperty('--touch-pad-opacity', String(opacity));
         }
-        if (scale !== undefined && scale !== this._scale) {
-            this._scale = scale;
+        const way = sticks === undefined ? this._sticks : sticks === 'fixed' ? 'fixed' : 'follow';
+        const resized = scale !== undefined && scale !== this._scale;
+        if (resized || way !== this._sticks) {
+            if (resized) this._scale = scale;
+            this._sticks = way;
             this._laidOutFor = '';
             this.relayout();
         }
@@ -314,7 +322,7 @@ export class TouchPadView {
             ? this._layout[layoutOrientation(width, height)] || null
             : null;
         // Asked more often than anything changes, and a finger may be down.
-        const laidOutFor = JSON.stringify([width, height, insets, preset, overrides]);
+        const laidOutFor = JSON.stringify([width, height, insets, preset, overrides, this._sticks]);
         if (laidOutFor === this._laidOutFor) return;
         this._laidOutFor = laidOutFor;
         // A rotation under a finger: the controls move, the finger does not.
@@ -326,6 +334,7 @@ export class TouchPadView {
             insets,
             preset,
             overrides,
+            sticks: this._sticks,
         });
         this._controls = layout.controls;
         this._toggle = layout.toggle;
@@ -406,7 +415,9 @@ export class TouchPadView {
     _drawStick(c, layout) {
         // The zone goes under the buttons: it takes what they leave.
         const zone = document.createElement('div');
-        zone.className = 'touch-pad-zone';
+        // S3XYCast edition: a fixed stick's zone is its disc, drawn round so
+        // that its corners stay the picture's.
+        zone.className = 'touch-pad-zone' + (c.fixed ? ' is-fixed' : '');
         zone.dataset.control = c.id;
         place(zone, c.x, c.y, c.w, c.h);
         this._el.insertBefore(zone, this._el.firstChild);
@@ -492,7 +503,9 @@ export class TouchPadView {
             return;
         }
         const zone = stickAt(this._controls, x, y);
-        if (zone && this._state.stickDown(zone.side, x, y, zone.radius)) {
+        // S3XYCast edition: a fixed stick keeps its centre where its ring rests.
+        const centre = zone && zone.fixed ? { x: zone.restX, y: zone.restY } : null;
+        if (zone && this._state.stickDown(zone.side, x, y, zone.radius, undefined, centre)) {
             finger.side = zone.side;
             this._state.tapHaptic();
         }

@@ -17,6 +17,7 @@
 
 import { t } from '../i18n/i18n.js';
 import { IS_MOBILE_OR_TABLET, IS_IOS, IS_STANDALONE } from '../util/BrowserDetect.js';
+import { closeFullscreenGuide, showFullscreenGuide } from './FullscreenGuide.js';
 
 /** @typedef {import('./StreamView.js').StreamView} StreamViewInstance */
 
@@ -515,6 +516,11 @@ export class StreamViewFullscreen {
         if (this._installHintShown) return;
         this._installHintShown = true;
 
+        // S3XYCast edition: the same advice as a card that stays until it is
+        // read (ui/FullscreenGuide.js). The line below is upstream's, kept for
+        // a page with nowhere to put the card.
+        if (showFullscreenGuide()) return;
+
         const hint = document.createElement('div');
         hint.className = 'install-hint';
         hint.textContent = t('stream.iosFullscreenHint');
@@ -639,6 +645,8 @@ export class StreamViewFullscreen {
         const streamView = this._rootEl || document.getElementById('stream-view');
         if (streamView) streamView.classList.remove('stream-css-fs');
         this._hideFsBar();
+        // S3XYCast edition: the guide speaks of this fullscreen; it goes with it.
+        closeFullscreenGuide();
 
         // Restore header fullscreen button visibility (per current orientation)
         this._updateMobileFsButtonVisibility();

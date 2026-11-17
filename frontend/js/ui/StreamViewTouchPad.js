@@ -71,6 +71,8 @@ export class StreamViewTouchPad {
             vibrate: true,
             outside: 'mouse',
             style: 'xbox',
+            // S3XYCast edition: joysticks stay where they are drawn.
+            sticks: 'fixed',
         };
         return prefs[name] === undefined ? defaults[name] : prefs[name];
     }
@@ -225,6 +227,8 @@ export class StreamViewTouchPad {
             // Played as a keyboard and a mouse, each button says its key.
             labels: this._padKbmLabels ? this._padKbmLabels() : null,
             ignoreOutside: this._touchPadPref('outside') === 'ignore',
+            // S3XYCast edition: fixed joysticks, or upstream's floating ones.
+            sticks: this._touchPadPref('sticks'),
             // The viewer's own arrangement, which orientation picks from.
             layout: this._touchPadLayout(),
             onChanged: poke,

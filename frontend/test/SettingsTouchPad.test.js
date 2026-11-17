@@ -144,6 +144,7 @@ describe('SettingsView on-screen controller section', () => {
             outside: 'ignore',
             layout: { preset: 'default', landscape: {}, portrait: {} },
             style: 'xbox',
+            sticks: 'fixed',
         });
     });
 
