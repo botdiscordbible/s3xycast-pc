@@ -203,7 +203,7 @@ describe('the words for the host limit, as Bruno chose them', () => {
     };
 
     it('reads the same in the three languages', () => {
-        expect(words('fr')).toBe("Résolution : 1920×1080 (limite de l'hôte)");
+        expect(words('fr')).toBe('Résolution : 1920×1080 (limite du PC)');
         expect(words('en')).toBe('Resolution: 1920×1080 (host limit)');
         expect(words('zh').replace(' ', '')).toBe('分辨率：1920×1080（主机上限）');
     });

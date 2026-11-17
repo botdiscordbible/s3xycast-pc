@@ -262,7 +262,7 @@ describe('its texts', () => {
             'This host is not showing the certificate it was paired with, so nothing is sent to it. If you reinstalled its software, remove it and add it again, then pair it.',
         );
         expect(read('fr').certificateChangedMessage).toBe(
-            'Cet hôte ne présente pas le certificat de son appairage : rien ne lui est envoyé. Si vous avez réinstallé son logiciel, retirez-le, ajoutez-le de nouveau puis appairez-le.',
+            'Ce PC ne présente pas le certificat de son appairage : rien ne lui est envoyé. Si vous avez réinstallé son logiciel, retirez-le, ajoutez-le de nouveau puis appairez-le.',
         );
         expect(read('zh').certificateChangedMessage).toBe(
             '此主机出示的证书与配对时的证书不一致，因此不会向其发送任何内容。如果您重新安装了它的软件，请将其移除并重新添加，然后再次配对。',

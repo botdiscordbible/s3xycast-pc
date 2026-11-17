@@ -537,10 +537,10 @@ describe('the words', () => {
         );
         expect(locale('fr').transport.enterPin).toBe('Saisir un PIN');
         expect(locale('fr').transport.hostKeyMissingOnHost).toBe(
-            "Le stream n'a pas été lancé : cette page n'a pas pu vérifier l'hôte. Rouvrez S3XYCast PC depuis son icône sur ce PC, puis relancez le stream.",
+            "Le stream n'a pas été lancé : cette page n'a pas pu vérifier le PC. Rouvrez S3XYCast PC depuis son icône sur ce PC, puis relancez le stream.",
         );
         expect(locale('fr').transport.keyRefused).toBe(
-            "Cet hôte a refusé ce navigateur, le stream n'a donc pas été lancé. Appairez-le à nouveau avec un PIN.",
+            "Ce PC a refusé ce navigateur, le stream n'a donc pas été lancé. Appairez-le à nouveau avec un PIN.",
         );
     });
 });
