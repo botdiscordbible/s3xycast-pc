@@ -106,6 +106,7 @@
 #include "common/CrashHandler.h"
 #include "common/DesktopSession.h"
 #include "common/Edition.h"
+#include "common/EditionWords.h"
 #include "backend/ComputerManager.h"
 #include "backend/IdentityManager.h"
 #include "backend/SunshineInstaller.h"
@@ -1881,6 +1882,10 @@ int main(int argc, char* argv[])
     // expects a dot, and the reader sees two values separated by a comma. Qt's
     // own QLocale is unaffected and still speaks to the user in their language.
     std::setlocale(LC_NUMERIC, "C");
+    // S3XYCast edition: the program's own words — the icon's menu, its
+    // notices — in French where Windows is (common/EditionWords.h). Before
+    // anything builds a menu.
+    mw::edition::installWords();
     // The plugin that actually loaded is the last word on whether Qt can draw:
     // it overrides the environment probe for the tray, the browser auto-open,
     // the Sunshine installer and the `headless` flag the API reports.

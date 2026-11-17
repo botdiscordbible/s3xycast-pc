@@ -123,6 +123,7 @@ add_executable(run_tests
     test_keyboard_layout.cpp
     test_native_capabilities_json.cpp
     test_edition.cpp
+    test_edition_words.cpp
     test_autostart_entry.cpp
     test_launch_env.cpp
     test_kms_helper_protocol.cpp
@@ -192,6 +193,9 @@ add_executable(run_tests
     # Which MoonlightWeb this is: the names, ports and version a DEV build
     # must answer to so it can sit beside a production install.
     ${_src}/src/common/Edition.cpp
+    # S3XYCast edition: the program's own words in French (the tray's menu and
+    # notices), a table behind a translator.
+    ${_src}/src/common/EditionWords.cpp
     # What the tray says about who watches this screen (A137): held notices,
     # the red dot, the recent viewers. QtCore only, without the tray itself.
     ${_src}/src/ViewerNotices.cpp
