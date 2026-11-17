@@ -73,6 +73,8 @@ import { touchPadSettings } from './stream/TouchPadState.js';
 import { padKbmSettings } from './stream/PadKeyMouse.js';
 import { padGameForStream } from './stream/PadGames.js';
 import { carAutoMaxHeight, carScreenAway } from './util/CarScreen.js';
+import { setWindowIcon } from './util/WindowIcon.js';
+import { routeWords } from './ui/StreamViewRoute.js';
 import { PcDashboard } from './ui/PcDashboard.js';
 // S3XYCast PC: the PC's screens, for going from one to another mid-stream.
 import { App as HostCard } from './models/App.js';
@@ -343,6 +345,10 @@ export const MoonlightApp = {
     async init() {
         console.log('[MW] Initializing MoonlightWeb...');
         bootMark('init');
+
+        // S3XYCast PC: the window's icon, handed to the browser by the page
+        // itself (util/WindowIcon.js). Not waited for: nothing depends on it.
+        setWindowIcon().catch(() => {});
 
         // A stored HEVC becomes « Auto » once, before anything reads it
         // (util/CodecAuto.js).
@@ -3344,6 +3350,9 @@ export const MoonlightApp = {
             Toast.warning(t('stream.micUnavailable', { why: result.mic_why || '' }));
         }
 
+        // S3XYCast PC: the route is said at a stream the viewer started, not
+        // at each relaunch of it (_sayStreamRoute).
+        this._routeNoticeDue = !suppressShortcuts;
         this.streamView = this._createStreamView(result, host, streamingSettings, {
             sessionSlot: slot,
             slotUniqueId: BackendClient.clientUniqueIdForSlot(slot),
@@ -3697,6 +3706,24 @@ export const MoonlightApp = {
             autoCeilingRetried: true,
         });
         return true;
+    },
+
+    /**
+     * S3XYCast PC: say which way a stream goes — straight to the PC, or
+     * through the S3XYCast relay — once, at a stream its viewer started from
+     * outside the PC's network. An owner who opened a port on his box to do
+     * without the relay had no way to see whether it worked. On the PC's own
+     * network there is nothing to choose between; a relaunch (a change of
+     * quality) says nothing again; a guest is told nothing.
+     * @param {object} sv the stream's view
+     * @param {boolean} relayed
+     */
+    _sayStreamRoute(sv, relayed) {
+        if (!this._routeNoticeDue || sv !== this.streamView) return;
+        this._routeNoticeDue = false;
+        if (this._viewerOnLan === true || sv._playerMode) return;
+        const words = routeWords(relayed);
+        if (words) Toast.info(t(words.notice));
     },
 
     /** The estimate's bitrate, in kbps, for a frame of that size — the LAN
@@ -4072,6 +4099,8 @@ export const MoonlightApp = {
         sv.onClientScreenChanged = (device) => this._onClientScreenChanged(device);
         // S3XYCast PC, the stream's quick actions: the PC's other screens.
         sv.onQuickScreens = () => this._streamScreens();
+        // S3XYCast PC: straight to the PC or through the relay, said once.
+        sv.onRoute = (relayed) => this._sayStreamRoute(sv, relayed);
         sv.onQuickSwitchScreen = (id) => this._switchStreamScreen(id);
         // onLive: the first picture on screen — the rung it came by works.
         sv.onLive = () => this._noteRungCarried();

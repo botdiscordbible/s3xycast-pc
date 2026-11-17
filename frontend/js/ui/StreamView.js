@@ -181,6 +181,7 @@ import { StreamViewTouchPad } from './StreamViewTouchPad.js';
 import { StreamViewPadKbm } from './StreamViewPadKbm.js';
 // S3XYCast PC: the keys no touch screen has, the PC's other screens, the zoom.
 import { StreamViewQuick } from './StreamViewQuick.js';
+import { StreamViewRoute } from './StreamViewRoute.js';
 import { StreamViewFullscreen } from './StreamViewFullscreen.js';
 import { flushClientLog, refreshClientLog, serverDiag } from '../util/ClientLog.js';
 import { scheduleErrorTrail } from '../util/ErrorTrail.js';
@@ -1810,6 +1811,9 @@ export class StreamView {
         // The host side failed under the stream (Sunshine crashed, its encoder
         // hung) — not this link.
         this.webrtc.onHostLost = () => this._handleHostLost();
+        // S3XYCast PC: which way the stream goes, straight to the PC or
+        // through the relay (StreamViewRoute). Only the WebRTC transports say.
+        this.webrtc.onRoute = (relayed) => this._onStreamRoute(relayed);
 
         // Physical keys currently held down (e.code → keyup payload). Used to
         // release everything when the window loses focus: the OS can steal focus
@@ -7481,6 +7485,12 @@ export class StreamView {
                 rows.push(
                     legRow(escapeHtml(t('stream.statScreen')), escapeHtml(this._screenLabel)),
                 );
+            }
+            // S3XYCast PC: which way the stream goes — straight to the PC, or
+            // through the relay. A row once the browser has said which.
+            {
+                const route = this._routeStat();
+                if (route) rows.push(legRow(escapeHtml(route.label), escapeHtml(route.value)));
             }
             // Which encoder produced these stages. Named here rather than in
             // the compact block above because it explains the numbers under it
@@ -14877,6 +14887,7 @@ for (const Mixin of [
     StreamViewTouchPad,
     StreamViewPadKbm,
     StreamViewQuick,
+    StreamViewRoute,
     StreamViewFullscreen,
 ]) {
     for (const name of Object.getOwnPropertyNames(Mixin.prototype)) {
