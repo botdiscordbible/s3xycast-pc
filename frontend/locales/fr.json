@@ -111,6 +111,7 @@
     "hosts": {
         "nativeCapturePermission": "Ce Mac a perdu son autorisation d'enregistrement de l'écran : il ne peut plus diffuser son écran. Sur le Mac : Réglages Système → Confidentialité et sécurité → Enregistrement de l'écran, activez S3XYCast PC, puis quittez et relancez S3XYCast PC.",
         "sessionLeftByRemoteDesktop": "Le Bureau à distance a quitté la session de ce PC, qui n'a plus d'écran. Connectez-vous sur le PC, ou voyez le README pour quitter le Bureau à distance sans perdre l'écran.",
+        "signInScreenHint": "Après un Bureau à distance, votre PC attend votre code Windows. Ouvrez cette carte et entrez-le : vos écrans reviennent.",
         "somebodySignedIn": "Quelqu'un est connecté sur ce PC.",
         "nativeInputPermission": "Ce Mac a perdu son autorisation d'Accessibilité : un stream affichera l'image, mais votre clavier et votre souris ne l'atteindront pas. Sur le Mac : Réglages Système → Confidentialité et sécurité → Accessibilité, activez S3XYCast PC.",
         "nativeInputPermissionStream": "Ce Mac a perdu son autorisation d'Accessibilité — votre clavier et votre souris ne l'atteindront pas. Activez S3XYCast PC dans Réglages Système → Confidentialité et sécurité → Accessibilité, sur le Mac.",

@@ -1498,3 +1498,13 @@ textarea {
 .stream-css-fs.stream-quick-open .stream-fs-handle {
     display: none;
 }
+
+/* ── S3XYCast edition: a session Remote Desktop left (HostListView) ────────
+   The PC's one card is then its sign-in screen. One sentence above it says
+   why the screens are gone and what the card is for. */
+.host-signin-hint {
+    margin: 0 var(--space-4) var(--space-3);
+    font-size: var(--fs-sm);
+    color: var(--text-2);
+    line-height: 1.5;
+}

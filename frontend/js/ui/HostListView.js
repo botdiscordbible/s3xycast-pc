@@ -1274,7 +1274,18 @@ export class HostListView {
                           : `<button class="btn btn-secondary btn-mac-perm" data-pane="accessibility">${t('setup.openAccessibility')}</button>`
                   }</div>`
                 : '';
-            return inputWarn + `<div class="host-apps" data-uuid="${host.uuid}"></div>`;
+            // S3XYCast edition: a session Remote Desktop left has one card,
+            // the PC's sign-in screen, in place of its screens — and nothing
+            // said why they were gone, nor what that card is for (the owner,
+            // 17/11/2026). One sentence above it does. Never in a kiosk,
+            // which is not offered the card.
+            const signInHint =
+                host.opensSignInScreen && !this._booth()
+                    ? `<p class="host-signin-hint">${t('hosts.signInScreenHint')}</p>`
+                    : '';
+            return (
+                inputWarn + signInHint + `<div class="host-apps" data-uuid="${host.uuid}"></div>`
+            );
         }
         // A booth pairs nothing, nor does a TV on plain HTTP: an unpaired host
         // just shows its badge.

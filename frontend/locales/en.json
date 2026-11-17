@@ -111,6 +111,7 @@
     "hosts": {
         "nativeCapturePermission": "This Mac has lost its Screen Recording permission, so it cannot stream its screen. On the Mac: System Settings → Privacy & Security → Screen Recording, turn S3XYCast PC on, then quit and reopen S3XYCast PC.",
         "sessionLeftByRemoteDesktop": "This PC's session was left by Remote Desktop and has no screen. Sign in on the PC, or see the README for how to leave Remote Desktop without losing the screen.",
+        "signInScreenHint": "After a Remote Desktop session, your PC is waiting for your Windows PIN or password. Open this card and enter it: your screens come back.",
         "somebodySignedIn": "Somebody is signed in on this PC.",
         "nativeInputPermission": "This Mac has lost its Accessibility permission: a stream will show the picture, but your keyboard and mouse will not reach it. On the Mac: System Settings → Privacy & Security → Accessibility, turn S3XYCast PC on.",
         "nativeInputPermissionStream": "This Mac has lost its Accessibility permission — your keyboard and mouse will not reach it. Turn S3XYCast PC on in System Settings → Privacy & Security → Accessibility on the Mac.",

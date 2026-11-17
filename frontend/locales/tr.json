@@ -111,6 +111,7 @@
     "hosts": {
         "nativeCapturePermission": "Bu Mac Ekran Kaydı iznini kaybettiği için ekranını yayınlayamıyor. Mac'te: Sistem Ayarları → Gizlilik ve Güvenlik → Ekran Kaydı, S3XYCast PC'i açın, ardından S3XYCast PC'den çıkıp yeniden açın.",
         "sessionLeftByRemoteDesktop": "Bu bilgisayarın oturumu Uzak Masaüstü tarafından bırakıldı ve ekranı yok. Bilgisayarda oturum açın veya ekranı kaybetmeden Uzak Masaüstü'nden nasıl çıkılacağı için README'ye bakın.",
+        "signInScreenHint": "Uzak Masaüstü oturumundan sonra bilgisayarınız Windows PIN’inizi veya parolanızı bekliyor. Bu kartı açıp girin: ekranlarınız geri gelir.",
         "somebodySignedIn": "Bu bilgisayarda birisi oturum açmış.",
         "nativeInputPermission": "Bu Mac Erişilebilirlik iznini kaybetti: yayın görüntüyü gösterir ama klavyeniz ve fareniz ona ulaşmaz. Mac'te: Sistem Ayarları → Gizlilik ve Güvenlik → Erişilebilirlik, S3XYCast PC'i açın.",
         "nativeInputPermissionStream": "Bu Mac Erişilebilirlik iznini kaybetti — klavyeniz ve fareniz ona ulaşmayacak. Mac'te Sistem Ayarları → Gizlilik ve Güvenlik → Erişilebilirlik bölümünde S3XYCast PC'i açın.",
