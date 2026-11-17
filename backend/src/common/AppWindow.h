@@ -15,7 +15,8 @@
  * (Chrome, Edge and their kin open one when asked with --app=<address>), so
  * nothing is added to the installer and the page runs in the engine it always
  * ran in. The default browser is asked when it is one of those, Edge when it
- * is not, and where there is neither the page opens in a tab as before.
+ * is not — if it has ever been opened on this PC — and where there is neither
+ * the page opens in a tab as before.
  *
  * One window, not one per click: the window a new one replaces is closed once
  * the new one is up. A fresh page each time rather than the old one brought
@@ -51,6 +52,14 @@ bool opensAppWindow(const QString& browser);
 /// The browser the window is asked of: the default one when it can, Edge
 /// otherwise, none (empty) when there is neither.
 QString chooseBrowser(const QString& defaultBrowser, const QString& edge);
+
+/// The file Edge writes at its first run, under the user's local application
+/// data (@p localAppData), and keeps from then on. An Edge that never ran
+/// greets its user with a window of its own beside ours — "Sans titre -
+/// Personnel – Microsoft Edge", seen on a new profile on 17/11/2026, and gone
+/// at the second start — so it stands in for the default browser only once it
+/// has run. Empty when the folder is not known.
+QString edgeStateFile(const QString& localAppData);
 
 /// What that browser is started with. @p isDefault: it is the one the user
 /// browses with; one that is not may never have been opened, and must not

@@ -80,6 +80,17 @@ void run_edition_app_window_tests()
     CHECK(chooseBrowser(QString(), QString()).isEmpty());
     CHECK(chooseBrowser(firefox, firefox).isEmpty());
 
+    SECTION("AppWindow (edition) — Edge stands in only once it has run");
+
+    // The file its first run leaves, and every run after it finds.
+    CHECK_EQ(edgeStateFile(QStringLiteral("C:\\Users\\x\\AppData\\Local")),
+             QStringLiteral("C:\\Users\\x\\AppData\\Local\\Microsoft\\Edge\\User Data\\Local State"));
+    CHECK_EQ(edgeStateFile(QStringLiteral("  D:\\Profils\\y\\Local ")),
+             QStringLiteral("D:\\Profils\\y\\Local\\Microsoft\\Edge\\User Data\\Local State"));
+    // No folder known: no file to look for, and Edge is not asked.
+    CHECK(edgeStateFile(QString()).isEmpty());
+    CHECK(edgeStateFile(QStringLiteral("   ")).isEmpty());
+
     SECTION("AppWindow (edition) — what the browser is started with");
 
     const QString link = QStringLiteral("https://pc.s3xycast.com/abc#k=clef%2Bune&p=/admin");

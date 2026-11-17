@@ -82,6 +82,13 @@ QString chooseBrowser(const QString& defaultBrowser, const QString& edge)
     return {};
 }
 
+QString edgeStateFile(const QString& localAppData)
+{
+    const QString base = localAppData.trimmed();
+    if (base.isEmpty()) return {};
+    return base + QStringLiteral("\\Microsoft\\Edge\\User Data\\Local State");
+}
+
 QStringList arguments(const QString& url, bool isDefault, const QStringList& extra)
 {
     QStringList args;
@@ -129,9 +136,13 @@ QString defaultBrowser()
         HKEY_CLASSES_ROOT, progId + QStringLiteral("\\shell\\open\\command"), nullptr));
 }
 
-/// Edge, where Windows says it is, then where it is installed by default.
+/// Edge, where Windows says it is, then where it is installed by default — and
+/// only an Edge that has been opened on this PC before (edgeStateFile).
 QString edge()
 {
+    const QString state = edgeStateFile(qEnvironmentVariable("LOCALAPPDATA"));
+    if (state.isEmpty() || !QFileInfo::exists(state)) return {};
+
     QStringList places;
     places << programOfCommand(registryString(
         HKEY_LOCAL_MACHINE,
