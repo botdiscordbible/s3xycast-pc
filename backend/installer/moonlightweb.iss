@@ -204,12 +204,12 @@ fr.TaskArecord=Activer le lien Internet
 fr.ButtonUpdate=&Mettre à jour
 fr.UpdatePageCaption=Mise à jour de {#MyAppDisplayName}
 fr.UpdatePageDesc=Une version plus récente va remplacer celle installée
-fr.UpdateReadyMemo={#MyAppDisplayName} %1 est installé et va être mis à jour vers %2.%n%nVos réglages, le lien Internet et vos hôtes appairés sont conservés tels quels. Il n'y a rien à configurer.
-fr.UpdateReadyMemoFresh={#MyAppDisplayName} va être mis à jour vers %1.%n%nVos réglages, le lien Internet et vos hôtes appairés sont conservés tels quels. Il n'y a rien à configurer.
+fr.UpdateReadyMemo={#MyAppDisplayName} %1 est installé et va être mis à jour vers %2.%n%nVos réglages, votre lien et votre code personnel sont conservés tels quels. Il n'y a rien à configurer.
+fr.UpdateReadyMemoFresh={#MyAppDisplayName} va être mis à jour vers %1.%n%nVos réglages, votre lien et votre code personnel sont conservés tels quels. Il n'y a rien à configurer.
 fr.UninstConfigTitle=Désinstallation de {#MyAppDisplayName}
 fr.UninstConfigBody=Votre configuration est conservée par défaut : si vous réinstallez {#MyAppDisplayName}, il redémarrera exactement dans l'état où vous l'avez laissé.
 fr.UninstConfigOption=Supprimer aussi ma configuration
-fr.UninstConfigDetail=Les réglages, comptes, certificats et appairages d'hôtes seront définitivement effacés.
+fr.UninstConfigDetail=Les réglages, le code personnel, les certificats et les appairages seront définitivement effacés.
 ; --- Simplified Chinese ---
 zh.AutoStartTask=登录时启动 {#MyAppDisplayName}
 zh.InternetPageCaption=互联网链接
