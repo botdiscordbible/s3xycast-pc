@@ -188,6 +188,7 @@ import {
 import { InstanceMenu } from './ui/InstanceMenu.js';
 import { currentInstanceRef, importInstances, rememberInstance } from './util/instances.js';
 import { bootMark } from './util/bootTiming.js';
+import { launchErrorText } from './util/LaunchErrorText.js';
 import { mountAboutButton } from './ui/AboutDialog.js';
 
 // Every module above arrived and ran: the boot watchdog (bootWatch.js) stands down.
@@ -2966,7 +2967,9 @@ export const MoonlightApp = {
                     ? t('launch.timeout')
                     : err && err.statusCode === 409 && err.message === 'somebody_signed_in'
                       ? t('hosts.somebodySignedIn')
-                      : err.message || t('launch.failed');
+                      : // S3XYCast edition: the program's own sentence, in plain
+                        // words where it is a known one (util/LaunchErrorText.js).
+                        launchErrorText(err && err.message);
             Toast.error(msg);
             this.transition('app_list');
         }
