@@ -126,6 +126,7 @@ add_executable(run_tests
     test_edition_words.cpp
     test_edition_worker_service.cpp
     test_edition_update_notice.cpp
+    test_edition_app_window.cpp
     test_autostart_entry.cpp
     test_launch_env.cpp
     test_kms_helper_protocol.cpp
@@ -198,6 +199,9 @@ add_executable(run_tests
     # S3XYCast edition: the program's own words in French (the tray's menu and
     # notices), a table behind a translator.
     ${_src}/src/common/EditionWords.cpp
+    # S3XYCast edition: the program's page in a window of its own — which
+    # browser is asked, with what, and which window a new one replaces.
+    ${_src}/src/common/AppWindow.cpp
     # What the tray says about who watches this screen (A137): held notices,
     # the red dot, the recent viewers. QtCore only, without the tray itself.
     ${_src}/src/ViewerNotices.cpp

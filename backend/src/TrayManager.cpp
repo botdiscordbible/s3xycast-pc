@@ -18,6 +18,7 @@
 #include "TrayManager.h"
 #include "Autostart.h"
 #include "common/Edition.h"
+#include "common/AppWindow.h"
 #include "common/DetachedProcess.h"
 #include "server/HttpServer.h"
 
@@ -553,7 +554,9 @@ void TrayManager::openAppPage(const QString& path)
         logged.setFragment(QString());
         qInfo() << "[TrayManager] Opening" << (path.isEmpty() ? QStringLiteral("/") : path)
                 << "by the owner's link" << logged.toString();
-        QDesktopServices::openUrl(QUrl(link));
+        // S3XYCast edition: in a window of its own (common/AppWindow.h), and
+        // in a tab only where no browser here has such a window.
+        if (!mw::edition::appwindow::open(link)) QDesktopServices::openUrl(QUrl(link));
         return;
     }
 
@@ -563,7 +566,8 @@ void TrayManager::openAppPage(const QString& path)
         return;
     }
     qInfo() << "[TrayManager] Opening" << url.toString();
-    QDesktopServices::openUrl(url);
+    if (!mw::edition::appwindow::open(url.toString(QUrl::FullyEncoded)))
+        QDesktopServices::openUrl(url);
 }
 
 void TrayManager::onOpen()

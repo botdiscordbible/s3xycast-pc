@@ -375,6 +375,7 @@ add_executable(mw-server
     src/common/LoopbackKey.cpp
     src/common/Edition.cpp
     src/common/EditionWords.cpp
+    src/common/AppWindow.cpp
     src/common/OwnerAccount.cpp
     src/common/LinuxCapabilities.cpp
     src/common/RendezvousId.cpp

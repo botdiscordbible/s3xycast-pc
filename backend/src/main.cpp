@@ -158,6 +158,7 @@
 #include "network/SessionMetrics.h"
 #include "network/UpdateChecker.h"
 #include "common/UpdateNotice.h"
+#include "common/AppWindow.h"
 #include "TrayManager.h"
 #include "LatencyFlag.h"
 #include "streaming/InputMessageCodec.h"
@@ -490,13 +491,21 @@ static bool arecordRunning()
 // .desktop launcher uses) delivers the URL reliably. Other platforms use Qt's
 // opener. Note: a self-signed localhost cert still shows a one-time browser
 // warning the user must accept — that is inherent to self-signed TLS.
-static void openInBrowser(const QString& url)
+//
+// S3XYCast edition: every page opened here is the program's own, and on
+// Windows it opens in a window of its own (common/AppWindow.h) — the browser's
+// still, and a tab only where no browser has such a window. True when it went
+// to a window of its own, which replaces the one already open a moment later:
+// a caller about to exit waits for that (runOwnerLinkCommand).
+static bool openInBrowser(const QString& url)
 {
 #if defined(Q_OS_LINUX)
-    if (mw::startDetached(QStringLiteral("xdg-open"), {url})) return;
+    if (mw::startDetached(QStringLiteral("xdg-open"), {url})) return false;
     // xdg-open missing (minimal desktop): fall through to Qt's opener.
 #endif
+    if (mw::edition::appwindow::open(url)) return true;
     QDesktopServices::openUrl(QUrl(url));
+    return false;
 }
 
 // ── The running server, asked from another process ─────────────────────────
@@ -1278,7 +1287,10 @@ static int runOwnerLinkCommand(quint16 persistedHttpsPort, bool print)
         out.flush();
         return 0;
     }
-    openInBrowser(url);
+    // S3XYCast edition: a window of its own takes the place of the one already
+    // open (the page an update was started from) once it is up. This process
+    // stays for that: gone at once, it would leave the two.
+    if (openInBrowser(url)) waitMs(mw::edition::appwindow::kCloseDelayMs + 600);
     return 0;
 }
 
@@ -2545,6 +2557,13 @@ int main(int argc, char* argv[])
             // S3XYCast edition: the page a launch shows (mw::edition::kOwnerPage),
             // where upstream opens the administration page.
             Logger::info("Asking the running instance to surface its page: " + base);
+#ifdef Q_OS_WIN
+            // S3XYCast edition: this launch is the user's own click, and the
+            // window the running program opens for it belongs in front. Windows
+            // lets a program that was not just clicked only blink in the taskbar,
+            // unless the one that was says otherwise — which this does.
+            AllowSetForegroundWindow(ASFW_ANY);
+#endif
             if (!requestFocusAdmin()) {
                 Logger::info("Running instance unreachable — opening its page directly");
                 openInBrowser(base + mw::edition::ownerPage());
