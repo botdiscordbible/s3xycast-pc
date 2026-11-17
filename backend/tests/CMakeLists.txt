@@ -124,6 +124,7 @@ add_executable(run_tests
     test_native_capabilities_json.cpp
     test_edition.cpp
     test_edition_words.cpp
+    test_edition_worker_service.cpp
     test_autostart_entry.cpp
     test_launch_env.cpp
     test_kms_helper_protocol.cpp

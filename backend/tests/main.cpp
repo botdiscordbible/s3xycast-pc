@@ -87,6 +87,7 @@ void run_keyboard_layout_tests();
 void run_native_capabilities_json_tests();
 void run_edition_tests();
 void run_edition_words_tests();
+void run_edition_worker_service_tests();
 void run_autostart_entry_tests();
 void run_launch_env_tests();
 void run_kms_helper_protocol_tests();
@@ -238,6 +239,7 @@ int main(int argc, char** argv)
     run_native_capabilities_json_tests();
     run_edition_tests();
     run_edition_words_tests();
+    run_edition_worker_service_tests();
     run_autostart_entry_tests();
     run_launch_env_tests();
     run_kms_helper_protocol_tests();

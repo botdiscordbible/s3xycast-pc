@@ -112,6 +112,28 @@ inline bool controlPipeServerIsService(quint32 pipeServerPid, quint32 servicePid
     return servicePid != 0 && pipeServerPid == servicePid;
 }
 
+/// S3XYCast edition. The service's plain refusal, as requestWorker() gets it
+/// (the service answers "err refused"): the caller is not on the console, or
+/// nobody is signed in on it.
+inline constexpr char kRefusal[] = "refused";
+
+/// S3XYCast edition. Whether a failed request for an ordinary worker puts the
+/// service out of use for the rest of this run (available() false from then
+/// on). True for what fails the same way every time: a service that is not
+/// running, a pipe that is not its own, no answer, a worker it could not
+/// start. False for its plain refusal: that is how it answers a caller in a
+/// Remote Desktop session, and such a session ends.
+///
+/// Upstream counted the refusal as a breakdown too. The sign-in screen's
+/// worker, which only the service starts, then went with it until the program
+/// restarted: one stream opened while Remote Desktop was connected, and once
+/// that connection was closed the PC offered no screen at all — it could only
+/// be opened by connecting Remote Desktop again (a subscriber, 17/11/2026).
+inline bool failureBreaksService(const QString& why)
+{
+    return why != QLatin1String(kRefusal);
+}
+
 /// Whether a native worker started from this desktop process should go through
 /// the service: Windows, on the desktop, the service registered with THIS
 /// executable as its image, and in a state it can be started from. Cached like

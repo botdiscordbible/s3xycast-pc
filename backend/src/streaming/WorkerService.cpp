@@ -1020,7 +1020,10 @@ bool askService(const QByteArray& request, QString* error)
 bool requestWorker(const QString& base, QString* error)
 {
     auto fail = [&](const QString& why) {
-        g_ServiceBroken.store(true);
+        // S3XYCast edition: its plain refusal is the service's answer for
+        // now — a Remote Desktop session — not a service out of order
+        // (failureBreaksService).
+        if (failureBreaksService(why)) g_ServiceBroken.store(true);
         if (error) *error = why;
         return false;
     };
