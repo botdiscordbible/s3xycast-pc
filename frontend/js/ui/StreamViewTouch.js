@@ -15,6 +15,9 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+// S3XYCast PC: how far the zoomed picture may be moved.
+import { panBounds } from '../stream/ViewZoom.js';
+
 /** @typedef {import('./StreamView.js').StreamView} StreamViewInstance */
 
 /**
@@ -291,14 +294,19 @@ export class StreamViewTouch {
                 imgW = iw * fit;
                 imgH = ih * fit;
             }
-            const maxX = Math.max(0, (imgW * this._zoom - rect.width) / 2);
-            const maxY = Math.max(0, (imgH * this._zoom - rect.height) / 2);
-            // Allow pushing the image up beyond the standard clamp so its bottom
-            // edge can travel up to the middle of the visible area (black bar up
-            // to half the height). Other edges keep the strict no-black clamp.
-            const extraDown = typing ? 0 : rect.height / 2;
-            this._panX = Math.max(-maxX, Math.min(maxX, this._panX));
-            this._panY = Math.max(-(maxY + extraDown), Math.min(maxY, this._panY));
+            // S3XYCast PC: every edge of the picture may come as far as the
+            // middle of the area, not the bottom one alone (stream/ViewZoom.js
+            // says why, and how that freedom grows with the zoom).
+            const max = panBounds({
+                areaW: rect.width,
+                areaH: rect.height,
+                imgW,
+                imgH,
+                zoom: this._zoom,
+                typing,
+            });
+            this._panX = Math.max(-max.x, Math.min(max.x, this._panX));
+            this._panY = Math.max(-max.y, Math.min(max.y, this._panY));
         }
         const transform =
             this._zoom > 1.001
@@ -313,6 +321,8 @@ export class StreamViewTouch {
         this._invalidateMediaRect();
         // And the pointer drawn over the picture goes where the picture went.
         this._placeClientCursor();
+        // The quick actions say the zoom, whoever changed it (the pinch too).
+        this._quickSyncZoom?.();
     }
 
     /**

@@ -811,8 +811,29 @@ bool ControlTunnel::channelOpen(const Peer& p)
 
 void ControlTunnel::noteCaller(Peer& p, const HttpRequest& req)
 {
+    // S3XYCast edition: the owner's own page, which closeVisitors() keeps.
+    if (!p.owner && m_Auth && m_Auth->isHostSession(HttpServer::sessionTokenFromRequest(req)))
+        p.owner = true;
     if (p.known) return;
     p.known = m_KnownCaller ? m_KnownCaller(req) : m_Http->isAuthenticated(req);
+}
+
+int ControlTunnel::closeVisitors(const QString& why)
+{
+    QStringList visitors;
+    for (auto it = m_Peers.cbegin(); it != m_Peers.cend(); ++it)
+        if (it.value() && !it.value()->owner) visitors.append(it.key());
+    if (visitors.isEmpty()) return 0;
+    // Once the request that asked for it is answered, not from inside it: the
+    // one asking may be a visitor itself (an administrator signed in from
+    // elsewhere), whose tunnel is on the stack right now and carries the answer.
+    QTimer::singleShot(0, this, [this, visitors, why]() {
+        for (const QString& id : visitors) {
+            const Peer* pp = peer(id);
+            if (pp && !pp->owner) dropPeer(id, why);
+        }
+    });
+    return static_cast<int>(visitors.size());
 }
 
 void ControlTunnel::dropUnfinishedPeers()

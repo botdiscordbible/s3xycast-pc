@@ -7829,7 +7829,8 @@ int main(int argc, char* argv[])
     registerSystemRoutes(
         server, appSettings, authManager, internetAccess, computerManager,
         [&hostKeys](const QString& key) { return hostKeys.spend(key); },
-        [&rendezvous, rendezvousShouldRun, &entryVerdictReached, &sinceLineWanted](bool enabled) {
+        [&rendezvous, rendezvousShouldRun, &entryVerdictReached, &sinceLineWanted, &g_Pool,
+         &detachWorkerSlot, &noteEndedBy, &endStreamsOf](bool enabled) {
             if (enabled && rendezvousShouldRun()) {
                 // A line that is not up yet restarts the "not yet" window, so
                 // the wizard's button waits for it instead of settling for
@@ -7839,8 +7840,38 @@ int main(int argc, char* argv[])
                     sinceLineWanted.restart();
                 }
                 rendezvous.start();
-            } else
+            } else {
                 rendezvous.stop();
+                // S3XYCast edition: turned off, the streaming stops. Upstream
+                // closes the line and nothing else, so a browser that was
+                // already in kept its tunnel and its stream: the owner pressed
+                // "Turn streaming off" on the PC and watched the phone go on
+                // showing it (15/11/2026). Every stream ends, said to its
+                // viewer as stopped on this machine (as the tray's Disconnect
+                // says it), and every tunnel closes but the owner's own, on
+                // which the streaming is allowed again (ControlTunnel).
+                if (!enabled) {
+                    int streams = 0;
+                    for (int i = 0; i < g_Pool.size(); ++i) {
+                        if (g_Pool.at(i).worker.isNull()) continue;
+                        noteEndedBy(i, ConnectionHistory::EndedBy::Admin);
+                        detachWorkerSlot(i, false, i < kOwnerSlots);
+                        ++streams;
+                    }
+                    // A stream carried by this process rather than by a worker
+                    // (stream workers turned off in the settings) ends too.
+                    endStreamsOf(QString());
+                    const int tunnels =
+                        g_ControlTunnel
+                            ? g_ControlTunnel->closeVisitors(QStringLiteral(
+                                  "the streaming was turned off on this machine"))
+                            : 0;
+                    Logger::info(QStringLiteral("[main] Streaming turned off: %1 stream(s) "
+                                                "stopped, %2 tunnel(s) closed")
+                                     .arg(streams)
+                                     .arg(tunnels));
+                }
+            }
         },
         [&rendezvous]() {
             // `url` is empty until the identity is claimed, and

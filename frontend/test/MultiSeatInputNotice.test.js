@@ -63,7 +63,11 @@ const seat = (name, httpPort, busy = false) => ({
     busy,
 });
 
-describe('MultiSeat input notice', () => {
+// Every test here re-imports the whole player (vi.resetModules), which takes
+// seconds on a loaded machine: the default 5 s timeout is the import, not a
+// stuck code path. The suite ran green three times in a row on its own and
+// failed by timeout inside the full run (15/11/2026).
+describe('MultiSeat input notice', { timeout: 20000 }, () => {
     beforeEach(() => {
         document.body.innerHTML = '';
         localStorage.clear();

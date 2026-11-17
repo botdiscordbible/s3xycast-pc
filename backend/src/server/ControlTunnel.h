@@ -112,6 +112,22 @@ public:
     /// How many browsers are connected through the tunnel right now.
     int peerCount() const { return static_cast<int>(m_Peers.size()); }
 
+    /// S3XYCast edition: close every tunnel but the owner's own, with the
+    /// streaming sockets each one opened here. "Turn streaming off" on the PC
+    /// ends what is under way; closing the line to the introduction server, as
+    /// upstream does, only keeps new browsers out, and one that was already in
+    /// kept its tunnel for as long as it liked.
+    ///
+    /// The tunnels kept are those that carried a request of this machine's
+    /// owner (a session opened with an owner's key, which only this machine
+    /// hands out, to its own browser): the page the button was pressed on,
+    /// which is also where the streaming is allowed again.
+    ///
+    /// The tunnels close once the caller's own request is answered (the next
+    /// turn of the event loop), never from inside it.
+    /// @return how many tunnels are being closed
+    int closeVisitors(const QString& why);
+
     /// Colon-separated SHA-256 of this host's signing key, as a browser sees it.
     /// Shown on the admin page so a user can compare what their browser trusted
     /// against what this machine actually holds — the out-of-band check that
@@ -208,6 +224,9 @@ private:
 
         /// A request on this tunnel has vouched for its device (setKnownCaller).
         bool known = false;
+        /// S3XYCast edition: a request on this tunnel was this machine's
+        /// owner's (a host session). closeVisitors() leaves it open.
+        bool owner = false;
         /// The server has said `close` and the tunnel stayed up: the server no
         /// longer counts it, and nothing is sent to it about this session.
         bool detached = false;

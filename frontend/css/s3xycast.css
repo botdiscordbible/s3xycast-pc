@@ -1253,3 +1253,248 @@ textarea {
         font-size: var(--fs-lg);
     }
 }
+
+/* ── S3XYCast edition: the stream's quick actions (ui/StreamViewQuick.js) ──
+   A button on the stream bar, and under the bar the strip it opens: the keys
+   no touch screen has, the PC's other screens, the zoom and the move. */
+
+/* The button: the keyboard button's shape, with its word where there is room
+   for one (a phone held upright shows the dots alone). */
+.btn-stream-quick {
+    gap: 7px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+.btn-stream-quick-dots {
+    font-size: 20px;
+    line-height: 1;
+}
+@media (max-width: 767px) {
+    .btn-stream-quick-label {
+        display: none;
+    }
+}
+
+/* The strip: in the page's flow, between the bar and the picture, so that the
+   picture shrinks to make room and nothing of the PC's screen is covered. Its
+   groups sit side by side and wrap where the screen is narrow. */
+.stream-quick {
+    position: relative;
+    flex: none;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 20px;
+    /* The close button's room on the right; the notch's on both sides. */
+    padding: 8px calc(max(10px, env(safe-area-inset-right)) + 46px) 8px
+        max(14px, env(safe-area-inset-left));
+    background: #111;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--text-1);
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+}
+.stream-quick[hidden],
+.stream-quick-row[hidden] {
+    display: none;
+}
+.stream-quick-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+.stream-quick-title {
+    flex: none;
+    color: var(--text-3);
+    font: 600 11px/1 var(--font-ui);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+.stream-quick-items {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+/* A finger's worth of target, on a car's screen as on a phone. */
+.stream-quick-btn {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    min-width: 44px;
+    min-height: 42px;
+    padding: 4px 12px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    color: #fff;
+    font: 600 13px/1.1 var(--font-ui);
+    white-space: nowrap;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+.stream-quick-btn.is-square {
+    width: 44px;
+    padding: 0;
+    font-size: 22px;
+    font-weight: 500;
+}
+.stream-quick-name {
+    pointer-events: none;
+}
+/* The keys a button presses, under what it is for. */
+.stream-quick-caption {
+    color: rgba(255, 255, 255, 0.5);
+    font: 500 10.5px/1 var(--font-mono);
+    pointer-events: none;
+}
+@media (hover: hover) {
+    .stream-quick-btn:not(:disabled):hover {
+        background: rgba(255, 255, 255, 0.12);
+        border-color: rgba(255, 255, 255, 0.3);
+    }
+}
+.stream-quick-btn:not(:disabled):active {
+    transform: scale(0.96);
+    background: rgba(255, 255, 255, 0.16);
+}
+.stream-quick-btn.active,
+.stream-quick-btn.is-current {
+    background: var(--accent-1);
+    border-color: var(--accent-strong);
+    color: var(--on-accent);
+}
+.stream-quick-btn.active .stream-quick-caption,
+.stream-quick-btn.is-current .stream-quick-caption {
+    color: rgba(255, 255, 255, 0.8);
+}
+.stream-quick-btn:disabled {
+    cursor: default;
+}
+.stream-quick-btn:disabled:not(.is-current) {
+    opacity: 0.38;
+}
+.stream-quick-zoom {
+    min-width: 6ch;
+    color: var(--text-2);
+    font: 600 13px/1 var(--font-mono);
+    text-align: center;
+}
+.stream-quick-close {
+    position: absolute;
+    top: 9px;
+    right: max(10px, env(safe-area-inset-right));
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    background: none;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 50%;
+    color: var(--text-2);
+    font-size: 15px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+@media (hover: hover) {
+    .stream-quick-close:hover {
+        color: #fff;
+        border-color: rgba(255, 255, 255, 0.35);
+    }
+}
+/* A phone held sideways: little height, everything a step tighter. */
+@media (max-height: 480px) {
+    .stream-quick {
+        gap: 6px 14px;
+        padding-top: 5px;
+        padding-bottom: 5px;
+    }
+    .stream-quick-btn {
+        min-height: 36px;
+        padding: 3px 10px;
+        font-size: 12px;
+    }
+    .stream-quick-btn.is-square {
+        width: 40px;
+    }
+    .stream-quick-caption {
+        font-size: 9.5px;
+    }
+    .stream-quick-close {
+        top: 5px;
+        width: 36px;
+        height: 36px;
+    }
+}
+
+/* "The picture is being moved": said over the picture, with the way out. */
+.stream-quick-badge {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    z-index: 210;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 40px;
+    padding: 0 5px 0 16px;
+    transform: translateX(-50%);
+    background: rgba(8, 10, 14, 0.82);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: var(--radius-pill);
+    color: #fff;
+    font: 600 13px/1 var(--font-ui);
+    white-space: nowrap;
+    cursor: pointer;
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+.stream-quick-badge[hidden] {
+    display: none;
+}
+.stream-quick-badge-text,
+.stream-quick-badge-done {
+    pointer-events: none;
+}
+.stream-quick-badge-done {
+    padding: 8px 14px;
+    background: var(--accent-1);
+    border-radius: var(--radius-pill);
+    color: var(--on-accent);
+}
+/* While the picture is being moved the hand shows it, where there is a mouse. */
+.stream-quick-moving .stream-input-layer {
+    cursor: grab !important;
+}
+
+/* The fullscreen that fills the page (an iPhone held sideways, where the
+   browser has no fullscreen of its own): the picture's area is pinned over
+   everything, and the bar is away. For as long as the strip is open, the bar,
+   the strip and the area come back into the page's flow, as outside
+   fullscreen: the strip is reachable, and still covers nothing. Closing it
+   gives the whole screen back to the picture. (The browser's own fullscreen
+   hides the bar for good: a strip left open there keeps its place above the
+   picture, in the flow as it is, with its own way out.) */
+.stream-css-fs.stream-quick-open .stream-header,
+.stream-css-fs.stream-quick-open.stream-fs-bar .stream-header {
+    display: flex !important;
+    position: relative;
+    z-index: auto;
+    background: #111;
+}
+.stream-css-fs.stream-quick-open .stream-canvas-area {
+    position: relative !important;
+    inset: auto !important;
+    z-index: auto !important;
+}
+.stream-css-fs.stream-quick-open .stream-fs-handle {
+    display: none;
+}

@@ -72,6 +72,8 @@ import { lanHttpStatus } from './api/LanHttpApi.js';
 import { touchPadSettings } from './stream/TouchPadState.js';
 import { padKbmSettings } from './stream/PadKeyMouse.js';
 import { PcDashboard } from './ui/PcDashboard.js';
+// S3XYCast PC: the PC's screens, for going from one to another mid-stream.
+import { App as HostCard } from './models/App.js';
 import { BackendClient } from './api/BackendClient.js';
 import { Toast } from './ui/Toast.js';
 import { DiscordLink } from './ui/DiscordLink.js';
@@ -4046,6 +4048,9 @@ export const MoonlightApp = {
         };
         sv.onHostDisplayFormat = (msg) => this._onHostDisplayFormat(msg);
         sv.onClientScreenChanged = (device) => this._onClientScreenChanged(device);
+        // S3XYCast PC, the stream's quick actions: the PC's other screens.
+        sv.onQuickScreens = () => this._streamScreens();
+        sv.onQuickSwitchScreen = (id) => this._switchStreamScreen(id);
         // onLive: the first picture on screen — the rung it came by works.
         sv.onLive = () => this._noteRungCarried();
         sv.autoCeilingIdle = () => !!(this._standbyView || this._relaunching);
@@ -4984,6 +4989,86 @@ export const MoonlightApp = {
             clearTimeout(failsafe);
             this._hideRelaunchLoader();
         };
+    },
+
+    // ── S3XYCast PC: another screen of the same PC, without stopping ───────
+
+    /**
+     * The PC's own screens, for the stream's quick actions: the ones a stream
+     * showing one of them may go to. Empty — and their row stays away — for
+     * anything else: another kind of host, a guest, a stream on a screen made
+     * for it or on one of the host's apps (its size and its life are that
+     * app's), a PC with one screen.
+     * @returns {Promise<Array<{ id: number, name: string, current: boolean }>>}
+     */
+    async _streamScreens() {
+        const host = this._lastStreamHost;
+        const current = this._lastStreamApp;
+        const sv = this.streamView;
+        if (!host || !current || !sv || sv._playerMode) return [];
+        if (host.backendType !== 'native' || current.isPcScreen !== true) return [];
+        let data = null;
+        try {
+            data = await BackendClient.getAppList(host.uuid);
+        } catch (e) {
+            return [];
+        }
+        if (!data || data.status !== 'ok') return [];
+        const screens = (data.apps || [])
+            .map((a) => new HostCard(a, host.uuid))
+            .filter((a) => a.isPcScreen);
+        if (!screens.some((a) => a.id === current.id)) return [];
+        this._streamScreenApps = screens;
+        return screens.map((a) => ({
+            id: a.id,
+            name: a.displayName,
+            current: a.id === current.id,
+        }));
+    },
+
+    /**
+     * Go to another of the PC's screens (_streamScreens). The stream is
+     * relaunched the way a change of transport is — same settings, same rung,
+     * the last picture held meanwhile, the quick actions left open — with the
+     * other screen as its app. The native host streams each display at its own
+     * shape, so nothing else has to change.
+     *
+     * Refused while guests are on the stream (the picture is theirs too) and
+     * while another relaunch is on its way. A screen that does not start
+     * brings back the one that was showing.
+     * @param {number} id the card of the screen to show
+     * @returns {Promise<boolean>} false when nothing was changed
+     */
+    async _switchStreamScreen(id) {
+        const host = this._lastStreamHost;
+        const from = this._lastStreamApp;
+        const to = (this._streamScreenApps || []).find((a) => a.id === id);
+        if (!host || !from || !to || to.id === from.id) return false;
+        if (this._nav.overlay !== 'streaming' || this._startupAborted) return false;
+        if (this._relaunching || this._standbyView || this._standbyLaunching) return false;
+        if (this._sharePinsQuality()) {
+            Toast.warning(t('quick.switchShared'));
+            return false;
+        }
+        console.log(`[MW] Screen change: ${from.name} → ${to.name}`);
+        this._relaunching = true;
+        this._noteLiveQuality();
+        const index = this._transportIndex || 0;
+        let failReason = null;
+        try {
+            this._lastStreamApp = to;
+            failReason = await this._doRelaunchTransport(index, host, to);
+            if (failReason && !this._startupAborted && this._nav.overlay === 'streaming') {
+                console.warn(`[MW] Screen change failed (${failReason}) — back to ${from.name}`);
+                Toast.warning(t('quick.switchFailed'));
+                this._lastStreamApp = from;
+                failReason = await this._doRelaunchTransport(index, host, from);
+            }
+        } finally {
+            this._relaunching = false;
+        }
+        if (failReason) this._onTransportFailed(failReason);
+        return true;
     },
 
     // ── Seamless dual-stream transition ───────────────────────────────────

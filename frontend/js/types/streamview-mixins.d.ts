@@ -6,6 +6,8 @@ import { StreamViewFullscreen } from '../ui/StreamViewFullscreen.js';
 import { StreamViewPadKbm } from '../ui/StreamViewPadKbm.js';
 import { PadKeyMouse } from '../stream/PadKeyMouse.js';
 import { PadKeyMouseDialog } from '../ui/PadKeyMouseDialog.js';
+// S3XYCast PC: the stream's quick actions (keys, screens, zoom).
+import { StreamViewQuick } from '../ui/StreamViewQuick.js';
 
 /**
  * `StreamView` is assembled at runtime: the bottom of StreamView.js copies the
@@ -25,6 +27,7 @@ declare module '../ui/StreamView.js' {
             StreamViewTouch,
             StreamViewTouchPad,
             StreamViewPadKbm,
+            StreamViewQuick,
             StreamViewFullscreen {
         /**
          * Latched toolbar modifiers on the mobile soft keyboard. The index
@@ -62,6 +65,31 @@ declare module '../ui/StreamView.js' {
         _padKbmPrefs: { mode: string; sens: number; map: Record<string, string> } | null;
         _padKbmBtn: HTMLButtonElement | null;
         _padKbmDialog: PadKeyMouseDialog | null;
+        /** S3XYCast PC — the stream's quick actions (StreamViewQuick). */
+        _quickBtn: HTMLButtonElement | null;
+        _quickStrip: HTMLElement | null;
+        _quickBadge: HTMLButtonElement | null;
+        /** "Move the picture" is on: a finger on the picture moves it. */
+        _quickMoveOn: boolean;
+        /** Where the fingers (or the held mouse) were at the last move. */
+        _quickMoveLast: { count: number; x: number; y: number; spread: number } | null;
+        _quickMouseHeld: boolean;
+        /** The mode ended under the fingers: the rest of that gesture is dropped. */
+        _quickMoveTail: boolean;
+        /** A replaced view's state, kept until this one's strip is mounted. */
+        _quickCarry: { open?: boolean; move?: boolean } | null;
+        /** What re-lays the bar's middle out when the bar changes. */
+        _quickBarChildren: MutationObserver | null;
+        _quickBarWidth: ResizeObserver | null;
+        _quickBarFrame: number;
+        _quickMoveTouch: ((e: TouchEvent) => void) | null;
+        _quickMoveMouse: ((e: MouseEvent) => void) | null;
+        /** Set by the application: the PC's screens this stream may go to. */
+        onQuickScreens:
+            | (() => Promise<Array<{ id: number; name: string; current: boolean }>>)
+            | null;
+        /** Set by the application: go to that screen. False when it refused. */
+        onQuickSwitchScreen: ((id: number) => Promise<boolean>) | null;
         /** Suppress the one-shot gesture-hint slide on the next activation. */
         _suppressShortcutsSlide: boolean;
     }

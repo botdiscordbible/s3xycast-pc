@@ -177,6 +177,8 @@ import { StreamViewTouch } from './StreamViewTouch.js';
 import { StreamViewTouchPad } from './StreamViewTouchPad.js';
 // S3XYCast PC: the controllers played as a keyboard and a mouse.
 import { StreamViewPadKbm } from './StreamViewPadKbm.js';
+// S3XYCast PC: the keys no touch screen has, the PC's other screens, the zoom.
+import { StreamViewQuick } from './StreamViewQuick.js';
 import { StreamViewFullscreen } from './StreamViewFullscreen.js';
 import { flushClientLog, refreshClientLog, serverDiag } from '../util/ClientLog.js';
 import { scheduleErrorTrail } from '../util/ErrorTrail.js';
@@ -4624,6 +4626,7 @@ export class StreamView {
         this._mountGamepadButton();
         this._mountTouchPad();
         this._mountMicButton();
+        this._mountQuick();
         this._mountShareMenu();
         this._mountGuestPresence();
         this._mountSupportButton();
@@ -4901,6 +4904,7 @@ export class StreamView {
             statsClosed: this._statsClosed === true,
             touchPad: this._touchPadSnapshot(),
             padKbm: this._padKbmSnapshot(),
+            quick: this._quickSnapshot(),
         };
     }
 
@@ -4918,6 +4922,7 @@ export class StreamView {
         this._adoptOverlayDismissals(state);
         this._adoptTouchPad(state.touchPad);
         this._adoptPadKbm(state.padKbm);
+        this._adoptQuick(state.quick);
         if (!this._firstFrameRendered) {
             this._pendingViewState = state;
             return;
@@ -6947,7 +6952,10 @@ export class StreamView {
         // A real rect only: the fullscreen CSS hides the header with display
         // none, which collapses it to 0 rather than clearing any inline style.
         const r = header ? header.getBoundingClientRect() : null;
-        el.style.top = r && r.height > 0 ? Math.round(r.bottom + 10) + 'px' : '';
+        // S3XYCast PC: under the quick actions when they are open, or the card
+        // would cover their first keys.
+        const bars = this._quickBottom() || (r && r.height > 0 ? r.bottom : 0);
+        el.style.top = bars > 0 ? Math.round(bars + 10) + 'px' : '';
     }
 
     /**
@@ -7013,7 +7021,22 @@ export class StreamView {
             const right = dock ? el.getBoundingClientRect().width + gap : 0;
             const shift = (right - left) / 2;
             if (shift) fsBtn.style.transform = `translate(calc(-50% - ${shift}px), -50%)`;
-            const rb = fsBtn.getBoundingClientRect();
+            let rb = fsBtn.getBoundingClientRect();
+            // S3XYCast PC: this group is centred over the bar, out of its flow,
+            // and the buttons on the right are in it. On a car's screen they
+            // met: the gamepad button sat on "Fullscreen". Where they would,
+            // the group moves left by what is missing, and the mark gives up
+            // the room below (StreamViewQuick._barFlowStart).
+            const flowStart = this._barFlowStart ? this._barFlowStart() : null;
+            if (flowStart !== null) {
+                const hr = fsBtn.parentElement ? fsBtn.parentElement.getBoundingClientRect() : null;
+                const most = hr ? Math.max(0, rb.left - left - hr.left - gap) : 0;
+                const over = Math.min(most, rb.right + right + gap - flowStart);
+                if (over > 0) {
+                    fsBtn.style.transform = `translate(calc(-50% - ${shift + over}px), -50%)`;
+                    rb = fsBtn.getBoundingClientRect();
+                }
+            }
             // Both anchored by their right edge (translateX(-100%) in the CSS).
             if (mic && mic.parentElement) {
                 const hr = mic.parentElement.getBoundingClientRect();
@@ -14223,6 +14246,7 @@ export class StreamView {
         }
         this._destroyTouchPad();
         this._destroyPadKbm();
+        this._destroyQuick();
         if (this._gamepadDialog) {
             this._gamepadDialog.close();
             this._gamepadDialog = null;
@@ -14631,6 +14655,7 @@ export class StreamView {
         }
         this._destroyTouchPad();
         this._destroyPadKbm();
+        this._destroyQuick();
         if (this._gamepadDialog) {
             this._gamepadDialog.close();
             this._gamepadDialog = null;
@@ -14703,6 +14728,7 @@ for (const Mixin of [
     StreamViewTouch,
     StreamViewTouchPad,
     StreamViewPadKbm,
+    StreamViewQuick,
     StreamViewFullscreen,
 ]) {
     for (const name of Object.getOwnPropertyNames(Mixin.prototype)) {

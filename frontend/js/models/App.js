@@ -154,6 +154,24 @@ export class App {
         return this.isVirtualDisplay || this.isGamescope || this.screen === 'virtual';
     }
 
+    /**
+     * S3XYCast edition: is this card one of the PC's own screens, on and there
+     * to be watched as it is? Neither a screen made for the stream, nor one of
+     * the host's apps, nor the cards that stand in for a session without a
+     * screen. These are the screens a stream can go from one to the other of
+     * without stopping (the stream's quick actions).
+     */
+    get isPcScreen() {
+        return (
+            !!this.device &&
+            !this.isOff &&
+            !this.isSignInScreen &&
+            !this.isRemoteDesktopReturn &&
+            !this.isMadeForStream &&
+            !this.isHostApp
+        );
+    }
+
     get boxArtUrl() {
         if (!this.hostUuid || !this.id || !this.hasBoxArt) return null;
         const url = `/api/hosts/${encodeURIComponent(this.hostUuid)}/appasset?appid=${this.id}`;
