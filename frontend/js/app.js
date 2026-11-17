@@ -72,6 +72,7 @@ import { lanHttpStatus } from './api/LanHttpApi.js';
 import { touchPadSettings } from './stream/TouchPadState.js';
 import { padKbmSettings } from './stream/PadKeyMouse.js';
 import { padGameForStream } from './stream/PadGames.js';
+import { carAutoMaxHeight, carScreenAway } from './util/CarScreen.js';
 import { PcDashboard } from './ui/PcDashboard.js';
 // S3XYCast PC: the PC's screens, for going from one to another mid-stream.
 import { App as HostCard } from './models/App.js';
@@ -2775,7 +2776,7 @@ export const MoonlightApp = {
             decodeLimit,
         );
         if (!codecOverride) await this._guardAutoCeiling(askAt, streamingSettings);
-        const size = sizeAt(autoMaxHeightFor(this._autoCeilingBudget()));
+        const size = sizeAt(this._autoMaxHeight(this._autoCeilingBudget()));
         const budgeted = this._applyPixelBudget(streamingSettings, size, choice.mode, fpsAuto);
         const bounded = this._capToDecoder(budgeted, decodeLimit);
         if (this._autoCeiling) this._autoCeiling.weigh(askAt, choice.mode === 'auto' || fpsAuto);
@@ -3564,6 +3565,23 @@ export const MoonlightApp = {
         return bounded.size;
     },
 
+    /**
+     * S3XYCast PC: the ceiling Auto works under for this launch — a computer's
+     * (autoMaxHeightFor), brought down to a car's when this page is on a car's
+     * screen away from the PC's own network, where the mobile link, not the
+     * PC, sets the delay (util/CarScreen.js). The automatic bitrate follows
+     * the size. A size or a bitrate the viewer named is not Auto's to touch.
+     * @param {number} [budget] pixels a second
+     */
+    _autoMaxHeight(budget) {
+        const car = carScreenAway(this._viewerOnLan === true);
+        if (car && !this._carScreenSaid) {
+            this._carScreenSaid = true;
+            console.log('[MW] Auto: a car screen away from the host — light, latency first');
+        }
+        return carAutoMaxHeight(autoMaxHeightFor(budget), car);
+    },
+
     /** The pixels a second this launch may spend: see AutoCeilingSession. */
     _autoCeilingBudget() {
         return this._autoCeiling ? this._autoCeiling.budget : undefined;
@@ -3614,7 +3632,7 @@ export const MoonlightApp = {
         const aspect = settings.stream_aspect;
         const clientFps = measuredFps();
         return (budget) => {
-            const size = sizeAt(autoMaxHeightFor(budget));
+            const size = sizeAt(this._autoMaxHeight(budget));
             const fit =
                 mode !== 'auto' && !fpsAuto
                     ? { size, fps }
@@ -3824,7 +3842,7 @@ export const MoonlightApp = {
                     autoMaxHeight,
                 },
             );
-        const size = sizeAt(autoMaxHeightFor(this._autoCeilingBudget()));
+        const size = sizeAt(this._autoMaxHeight(this._autoCeilingBudget()));
         // The new screen carries its own budget: a window moved from a 1080p
         // monitor to a 4K one asks for more pixels, and the pair is weighed
         // again before anything is relaunched. An Auto rate is read from the

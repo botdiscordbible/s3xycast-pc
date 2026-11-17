@@ -131,6 +131,7 @@ import {
     namedMicrophones,
     saveMicDevice,
 } from '../audio/MicUplink.js';
+import { carAutoMaxHeight, carScreenAway } from '../util/CarScreen.js';
 
 const STORAGE_KEY = 'mw-streaming-settings';
 // The microphone list's values, a device being its prefix and its id.
@@ -838,6 +839,15 @@ export class SettingsView {
     }
 
     /**
+     * S3XYCast PC: whether these settings are being read on a car's screen
+     * away from the PC's network, where Auto goes light (util/CarScreen.js).
+     * As a launch decides it: the host's own network is the one exception.
+     */
+    _onCarScreenAway() {
+        return carScreenAway(this._viewerPath === 'lan');
+    }
+
+    /**
      * The size and rate the stream will carry for this resolution choice at
      * this rate: what the pixel budget leaves of them, the half the viewer
      * named kept as named (util/StreamResolution.js). The size is the one the
@@ -863,7 +873,9 @@ export class SettingsView {
             undefined,
             IS_HANDHELD,
             IS_TV,
-            autoMaxHeightFor(budget),
+            // S3XYCast PC: a car's screen away from the PC asks for less
+            // (util/CarScreen.js); the bitrate shown is the one it will get.
+            carAutoMaxHeight(autoMaxHeightFor(budget), this._onCarScreenAway()),
         );
         const aspect =
             choice.mode === 'fixed'
@@ -2077,9 +2089,14 @@ export class SettingsView {
         const customMost = customSizeMax(CUSTOM_SIZE_MAX);
         const resolutionDesc =
             resolutionMode === 'auto'
-                ? t(IS_TV ? 'settings.resolutionAutoDescTv' : 'settings.resolutionAutoDesc', {
-                      size: sizeText,
-                  })
+                ? t(
+                      IS_TV
+                          ? 'settings.resolutionAutoDescTv'
+                          : this._onCarScreenAway()
+                            ? 'settings.resolutionAutoDescCar'
+                            : 'settings.resolutionAutoDesc',
+                      { size: sizeText },
+                  )
                 : resolutionMode === 'device'
                   ? t('settings.resolutionDeviceDesc', { size: sizeText })
                   : resolutionMode === 'custom'
