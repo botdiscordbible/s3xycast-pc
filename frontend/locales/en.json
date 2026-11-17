@@ -1417,6 +1417,7 @@
         "hintLetters": "A letter is the key that carries it on the PC’s keyboard. The move keys are W A S D on a QWERTY keyboard, Z Q S D on an AZERTY one.",
         "reset": "Default keys",
         "done": "Done",
+        "moveControls": "Move the joysticks and buttons…",
         "close": "Close",
         "button": "Controller mode",
         "pillPad": "Mode: normal",

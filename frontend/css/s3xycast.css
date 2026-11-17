@@ -1679,3 +1679,22 @@ textarea {
         min-height: 40px;
     }
 }
+
+/* "Move the joysticks and buttons…" in the controller dialog, over a stream
+   (PadKeyMouseDialog, onMoveControls): one wide button under the two modes. */
+.pad-kbm-move {
+    margin: 2px 0 12px;
+}
+.pad-kbm-move-btn {
+    width: 100%;
+    min-height: 44px;
+}
+
+/* The layout editor on a short screen (a phone held sideways, Safari keeping
+   its bars): unfolded, its bar never goes past the screen — it scrolls inside
+   itself, so that Reset, Cancel and Done can always be reached. */
+.tp-layout-editor-bar:not(.is-folded) {
+    max-height: calc(100% - 16px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}

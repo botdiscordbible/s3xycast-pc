@@ -1417,6 +1417,7 @@
         "hintLetters": "Bir harf, bilgisayarın klavyesinde o harfi taşıyan tuştur. Hareket tuşları QWERTY klavyede W A S D, AZERTY klavyede Z Q S D’dir.",
         "reset": "Varsayılan tuşlar",
         "done": "Bitti",
+        "moveControls": "Joystickleri ve düğmeleri taşı…",
         "close": "Kapat",
         "button": "Oyun kolu modu",
         "pillPad": "Mod: normal",

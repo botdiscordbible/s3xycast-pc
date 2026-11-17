@@ -4954,6 +4954,8 @@ export class StreamView {
             statsClosed: this._statsClosed === true,
             touchPad: this._touchPadSnapshot(),
             padKbm: this._padKbmSnapshot(),
+            // S3XYCast PC: where the viewer put the on-screen controls, in this stream.
+            padLook: this._padLookSnapshot(),
             quick: this._quickSnapshot(),
         };
     }
@@ -4972,6 +4974,7 @@ export class StreamView {
         this._adoptOverlayDismissals(state);
         this._adoptTouchPad(state.touchPad);
         this._adoptPadKbm(state.padKbm);
+        this._adoptPadLook(state.padLook);
         this._adoptQuick(state.quick);
         if (!this._firstFrameRendered) {
             this._pendingViewState = state;

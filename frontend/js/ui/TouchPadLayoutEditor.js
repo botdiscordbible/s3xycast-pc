@@ -123,8 +123,20 @@ export class TouchPadLayoutEditor {
      *   and opacity as fractions, 1 = 100%); `onChange` is told of all four once
      *   they press Done; `onClosed` when the overlay is gone.
      */
-    constructor(container, { layout, scale, opacity, style, onChange, onClosed } = {}) {
+    constructor(
+        container,
+        { layout, scale, opacity, style, onChange, onClosed, startFolded, labels } = {},
+    ) {
         this._container = container;
+        // S3XYCast edition: what the controls are called in the game the
+        // viewer comes from (control id → text), where they are keys rather
+        // than a pad's buttons. Null: the pad's own names.
+        this._labels = labels || null;
+        // S3XYCast edition: opened from a game, the editor starts as its pill
+        // (grip, unfold, Done) with the controller in full view. On a phone
+        // held sideways the unfolded bar is taller than the screen, and the
+        // viewer came to move a joystick, not to pick a preset.
+        this._startFolded = startFolded === true;
         this._onChange = onChange || null;
         this._onClosed = onClosed || null;
         this._before = clone(layout);
@@ -163,6 +175,10 @@ export class TouchPadLayoutEditor {
         this._showBackground();
         this._showLook();
         this._refresh();
+        if (this._startFolded) {
+            this._folded = true;
+            this._bar.classList.add('is-folded');
+        }
         this._placeBar();
     }
 
@@ -271,6 +287,7 @@ export class TouchPadLayoutEditor {
             scale: this._scale / 100,
             opacity: this._opacity / 100,
             style: this._style,
+            labels: this._labels,
         });
         this._view.mount();
         const layer = this._stage.querySelector('.touch-pad');
@@ -620,7 +637,9 @@ export class TouchPadLayoutEditor {
         input.value = String(size);
         text.textContent = this._selected
             ? t('settings.touchPadEditorControlSize', {
-                  name: nameOf(this._selected, this._style),
+                  name:
+                      (this._labels && this._labels[this._selected]) ||
+                      nameOf(this._selected, this._style),
                   size: Math.round(size * 100),
               })
             : t('settings.touchPadEditorHint');

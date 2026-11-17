@@ -22,6 +22,8 @@ import {
     padKbmShortLabel,
 } from '../stream/PadKeyMouse.js';
 import { PadKeyMouseDialog } from './PadKeyMouseDialog.js';
+import { TouchPadLayoutEditor } from './TouchPadLayoutEditor.js';
+import { touchPadLayouts } from '../stream/TouchPadState.js';
 
 /** @typedef {import('./StreamView.js').StreamView} StreamViewInstance */
 
@@ -42,6 +44,28 @@ export function savePadKbmSettings(settings) {
     } catch {
         // No store here (private browsing), or one that is not ours to read:
         // the choice lasts this stream.
+    }
+}
+
+/**
+ * Keep where the viewer put the on-screen controls and how they look, with
+ * the rest of this browser's streaming settings: what the settings page's own
+ * editor saves, written from a stream. Nothing else in the store is touched.
+ * @param {{ layout: object, scale: number, opacity: number, style: string }} look
+ */
+export function saveTouchPadLook({ layout, scale, opacity, style }) {
+    try {
+        const stored = localStorage.getItem(STREAMING_SETTINGS_KEY);
+        const data = stored ? JSON.parse(stored) : {};
+        Object.assign(data, {
+            touch_pad_layout: layout,
+            touch_pad_scale: scale,
+            touch_pad_opacity: opacity,
+            touch_pad_style: style,
+        });
+        localStorage.setItem(STREAMING_SETTINGS_KEY, JSON.stringify(data));
+    } catch {
+        // No store here, or one that is not ours to read: it lasts this stream.
     }
 }
 
@@ -189,8 +213,92 @@ export class StreamViewPadKbm {
             onOpen: () => this._holdPads('pad-kbm'),
             onChange: (settings) => this._setPadKbm(settings),
             onClose: () => this._releasePads('pad-kbm'),
+            // Where the joysticks and buttons sit, without leaving the game.
+            onMoveControls: this._padLayoutEditable() ? () => this._openPadLayoutEditor() : null,
         });
         this._padKbmDialog.open();
+    }
+
+    /**
+     * Whether the on-screen controls can be moved from this stream: there is a
+     * controller on it, and its viewer has settings to keep the places in (a
+     * guest's are the invitation's).
+     * @this {StreamViewInstance}
+     */
+    _padLayoutEditable() {
+        return !!this._touchPadView && !this._playerMode;
+    }
+
+    /**
+     * The layout editor of the settings page, over the stream. A player finds
+     * out where his thumbs want the joysticks while playing, not before, and
+     * the editor was three screens away, behind the game (a subscriber,
+     * 17/11/2026). The pads stop reaching the host while it is up.
+     * @this {StreamViewInstance}
+     */
+    _openPadLayoutEditor() {
+        if (!this._padLayoutEditable() || this._padLayoutEditor) return;
+        const prefs = this._touchPadPrefs || {};
+        const editor = new TouchPadLayoutEditor(document.body, {
+            layout: touchPadLayouts(prefs.layout),
+            scale: this._touchPadPref('scale'),
+            opacity: this._touchPadPref('opacity'),
+            style: this._touchPadPref('style'),
+            // The controller in full view, and Done one tap away.
+            startFolded: true,
+            // The names the game shows: a key each, while they are keys.
+            labels: this._padKbmLabels(),
+            onChange: (layout, look) => this._setPadLook({ layout, ...look }),
+            onClosed: () => {
+                this._padLayoutEditor = null;
+                this._releasePads('pad-layout');
+            },
+        });
+        this._padLayoutEditor = editor;
+        this._holdPads('pad-layout');
+        editor.open();
+    }
+
+    /**
+     * Take what the editor gave back: on the controller at once, and kept for
+     * the next stream and for the settings page.
+     * @this {StreamViewInstance}
+     * @param {{ layout: object, scale: number, opacity: number, style: string }} look
+     * @param {{ save?: boolean }} [options]
+     */
+    _setPadLook(look, { save = true } = {}) {
+        const next = {
+            layout: touchPadLayouts(look.layout),
+            scale: look.scale,
+            opacity: look.opacity,
+            style: look.style,
+        };
+        this._touchPadPrefs = { ...(this._touchPadPrefs || {}), ...next };
+        this._padLook = next;
+        const view = this._touchPadView;
+        if (view) {
+            view.setLayout(next.layout);
+            view.setLook({ scale: next.scale, opacity: next.opacity, style: next.style });
+        }
+        this._placePadKbmButton();
+        if (save) saveTouchPadLook(next);
+    }
+
+    /**
+     * What the viewer arranged in this stream, for the view that replaces this one.
+     * @this {StreamViewInstance}
+     */
+    _padLookSnapshot() {
+        return this._padLook || null;
+    }
+
+    /**
+     * Adopt a replaced view's arrangement: a change of quality is no reason to
+     * put the joysticks back where they were.
+     * @this {StreamViewInstance}
+     */
+    _adoptPadLook(look) {
+        if (look) this._setPadLook(look, { save: false });
     }
 
     /**
@@ -240,6 +348,8 @@ export class StreamViewPadKbm {
     _destroyPadKbm() {
         if (this._padKbmDialog) this._padKbmDialog.close();
         this._padKbmDialog = null;
+        if (this._padLayoutEditor) this._padLayoutEditor.close();
+        this._padLayoutEditor = null;
         if (this._padKbm) this._padKbm.destroy();
         this._padKbm = null;
         if (this._padKbmBtn) this._padKbmBtn.remove();

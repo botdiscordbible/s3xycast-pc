@@ -70,14 +70,19 @@ export class PadKeyMouseDialog {
      * @param {{ container?: HTMLElement,
      *           settings: { mode: string, sens: number, map: Record<string, string> },
      *           onChange?: (settings: { mode: string, sens: number, map: Record<string, string> }) => void,
-     *           onOpen?: () => void, onClose?: () => void }} options
+     *           onOpen?: () => void, onClose?: () => void,
+     *           onMoveControls?: (() => void)|null }} options
+     *   `onMoveControls`: given by a stream that has the on-screen controller.
+     *   The dialog then offers to move its joysticks and buttons; a press
+     *   closes the dialog first, then calls it.
      */
-    constructor({ container, settings, onChange, onOpen, onClose }) {
+    constructor({ container, settings, onChange, onOpen, onClose, onMoveControls }) {
         this._container = container || document.body;
         this._settings = { mode: settings.mode, sens: settings.sens, map: padKbmMap(settings.map) };
         this._onChange = onChange || null;
         this._onOpen = onOpen || null;
         this._onClose = onClose || null;
+        this._onMoveControls = onMoveControls || null;
         this._overlay = null;
         // What had the keyboard when the dialog opened.
         this._returnFocus = null;
@@ -113,6 +118,14 @@ export class PadKeyMouseDialog {
                 <select class="pad-kbm-select" data-control="${id}">${choices}</select>
             </label>`;
         const map = this._settings.map;
+        // Where the joysticks and buttons sit: offered where there is a
+        // controller on screen to move (a stream), not on the settings page,
+        // which has its own button for it.
+        const moveControls = this._onMoveControls
+            ? `<div class="pad-kbm-move">
+                        <button type="button" class="btn btn-neutral pad-kbm-move-btn">${escapeHtml(t('padKbm.moveControls'))}</button>
+                    </div>`
+            : '';
         overlay.innerHTML = `
             <div class="pad-kbm" role="dialog" aria-modal="true" aria-labelledby="pad-kbm-title">
                 <div class="pad-kbm-head">
@@ -127,6 +140,7 @@ export class PadKeyMouseDialog {
                         <button type="button" class="pad-kbm-mode" data-mode="kbm">${escapeHtml(t('padKbm.modeKbm'))}</button>
                     </div>
                     <p class="pad-kbm-desc"></p>
+                    ${moveControls}
                     <div class="pad-kbm-body">
                         <h4 class="pad-kbm-subtitle">${escapeHtml(t('padKbm.keysTitle'))}</h4>
                         <label class="pad-kbm-sens">
@@ -176,6 +190,15 @@ export class PadKeyMouseDialog {
         });
         overlay.querySelector('.pad-kbm-close').addEventListener('click', () => this.close());
         overlay.querySelector('.pad-kbm-done').addEventListener('click', () => this.close());
+        const move = overlay.querySelector('.pad-kbm-move-btn');
+        if (move) {
+            move.addEventListener('click', () => {
+                // The dialog goes first: the editor takes the whole screen.
+                const go = this._onMoveControls;
+                this.close();
+                if (go) go();
+            });
+        }
         overlay.querySelector('.pad-kbm-reset').addEventListener('click', () => {
             this._settings.map = padKbmMap(PAD_KBM_DEFAULT_MAP);
             for (const select of overlay.querySelectorAll('.pad-kbm-select')) {

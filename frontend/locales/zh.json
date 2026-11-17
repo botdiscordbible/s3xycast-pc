@@ -1417,6 +1417,7 @@
         "hintLetters": "字母指电脑键盘上印有该字母的按键。移动键在 QWERTY 键盘上是 W A S D，在 AZERTY 键盘上是 Z Q S D。",
         "reset": "恢复默认按键",
         "done": "完成",
+        "moveControls": "移动摇杆和按键…",
         "close": "关闭",
         "button": "手柄模式",
         "pillPad": "模式：普通",
