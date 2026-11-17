@@ -122,6 +122,15 @@ bool TrayManager::init()
     // else it could be read without opening a page.
     refreshTooltip({});
 
+    // S3XYCast edition: "Update to 0.1.11…", first in the menu and only while
+    // a newer version is on offer (setUpdateOffered). It opens the program's
+    // page, where the update is one button away.
+    m_UpdateAction = m_Menu->addAction(QString());
+    m_UpdateAction->setVisible(false);
+    m_UpdateSeparator = m_Menu->addSeparator();
+    m_UpdateSeparator->setVisible(false);
+    connect(m_UpdateAction, &QAction::triggered, this, &TrayManager::onOpen);
+
     // Build context menu. In client mode the server is a service in another
     // session this process cannot see: the header says so, and Restart / Quit act
     // on that server (over loopback, via the handlers) rather than on this bare
@@ -176,6 +185,9 @@ bool TrayManager::init()
         quitAction->setVisible(false);
     }
     connect(m_TrayIcon, &QSystemTrayIcon::activated, this, &TrayManager::onActivated);
+    connect(m_TrayIcon, &QSystemTrayIcon::messageClicked, this, &TrayManager::onNoticeClicked);
+    // A version that was offered before the icon existed.
+    if (!m_UpdateVersion.isEmpty()) setUpdateOffered(m_UpdateVersion, false);
 
     m_TrayIcon->setContextMenu(m_Menu);
     m_TrayIcon->show();
@@ -277,8 +289,37 @@ void TrayManager::onDisconnect(const QString& instance)
         qWarning() << "[TrayManager] Disconnect: that stream had ended already";
 }
 
+void TrayManager::setUpdateOffered(const QString& version, bool announce)
+{
+    m_UpdateVersion = version;
+    if (!m_UpdateAction || m_AdminLocked) return;
+    const bool on = !version.isEmpty();
+    m_UpdateAction->setText(on ? tr("&Update to %1…").arg(version) : QString());
+    m_UpdateAction->setVisible(on);
+    m_UpdateSeparator->setVisible(on);
+    if (!on || !announce || !m_TrayIcon) return;
+    qInfo().noquote() << "[TrayManager] Notifying: version" << version << "is available";
+    const QString text = tr("Version %1 is available. Click here to install it.").arg(version);
+    // Longer than a viewer's notice: this one asks for something.
+#ifdef Q_OS_WIN
+    m_TrayIcon->showMessage(mw::edition::displayName(), text, noticeIcon(), 10000);
+#else
+    m_TrayIcon->showMessage(mw::edition::displayName(), text, QSystemTrayIcon::Information, 10000);
+#endif
+    m_UpdateNoticeUp = true;
+}
+
+void TrayManager::onNoticeClicked()
+{
+    if (!m_UpdateNoticeUp) return;
+    m_UpdateNoticeUp = false;
+    onOpen();
+}
+
 void TrayManager::notify(const QString& text)
 {
+    // Another notice takes the update's place: a click on it leads nowhere.
+    m_UpdateNoticeUp = false;
 #ifdef Q_OS_WIN
     m_TrayIcon->showMessage(mw::edition::displayName(), text, noticeIcon(), 5000);
 #else

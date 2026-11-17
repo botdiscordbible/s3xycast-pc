@@ -131,6 +131,13 @@ public:
         m_Disconnect = std::move(handler);
     }
 
+    /// S3XYCast edition. A newer version is on offer (@p version), or none is
+    /// (empty): the menu gets, or loses, its "Update to …" entry, first of
+    /// all. With @p announce a notification says it too. A click on either
+    /// opens the program's page, where the update is one button away. Not in
+    /// booth mode, whose menu changes nothing on the server.
+    void setUpdateOffered(const QString& version, bool announce);
+
 private slots:
     void onActivated(QSystemTrayIcon::ActivationReason reason);
     void onOpen();
@@ -139,6 +146,9 @@ private slots:
     void onRestart();
     void onQuit();
     void onAutostartToggled(bool on);
+    /// S3XYCast edition: a notification was clicked (the update's leads to
+    /// the page; the others only say what happened).
+    void onNoticeClicked();
 
 private:
     /// Re-read the login item from the OS before the menu shows, so the tick
@@ -187,6 +197,11 @@ private:
     QMenu* m_Menu;
     QMenu* m_DockMenu;                    // macOS Dock right-click menu (null elsewhere)
     QAction* m_AutostartAction = nullptr; // "Start at login" — only where it can be done
+    // S3XYCast edition: "Update to 0.1.11…", hidden while no version is on offer.
+    QAction* m_UpdateAction = nullptr;
+    QAction* m_UpdateSeparator = nullptr;
+    QString m_UpdateVersion;       // the version on offer, empty when none
+    bool m_UpdateNoticeUp = false; // the last notification shown was the update's
     QElapsedTimer m_StartedAt;            // filters out the app-launch activation (macOS)
     QIcon m_NoticeIcon;                   // a notification's icon, rendered once...
     qreal m_NoticeIconDpr = 0;            // ...at this device pixel ratio

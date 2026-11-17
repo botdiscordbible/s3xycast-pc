@@ -157,6 +157,7 @@
 #include "network/SelfUpdater.h"
 #include "network/SessionMetrics.h"
 #include "network/UpdateChecker.h"
+#include "common/UpdateNotice.h"
 #include "TrayManager.h"
 #include "LatencyFlag.h"
 #include "streaming/InputMessageCodec.h"
@@ -8023,6 +8024,26 @@ int main(int argc, char* argv[])
         [disconnectStream](const QString& id) { return disconnectStream(id) > 0; });
     trayManager.setAdminLocked(adminLocked);
     if (hasGuiSession()) trayManager.init();
+    // S3XYCast edition: a newer version is said where the owner is — a
+    // notification from the icon, once per version and per run, and an entry
+    // at the top of its menu while it is on offer (common/UpdateNotice.h).
+    // Until now only the page said it, to whoever happened to open it.
+    mw::edition::UpdateNotice updateNotice;
+    QObject::connect(&updateChecker, &UpdateChecker::checkFinished, &trayManager,
+                     [&updateChecker, &updateNotice, &trayManager]() {
+                         const QString fresh = updateNotice.take(updateChecker.lastResult());
+                         trayManager.setUpdateOffered(updateNotice.offered(), !fresh.isEmpty());
+                     });
+    // A --dev copy can be shown an update without a release existing:
+    // MW_DEV_OFFER_UPDATE=<version> puts the entry in its menu, and
+    // MW_DEV_OFFER_UPDATE_NOTICE raises the notification too.
+    if (mw::edition::devFlag() && qEnvironmentVariableIsSet("MW_DEV_OFFER_UPDATE")) {
+        const QString offered = qEnvironmentVariable("MW_DEV_OFFER_UPDATE");
+        const bool announce = qEnvironmentVariableIsSet("MW_DEV_OFFER_UPDATE_NOTICE");
+        QTimer::singleShot(2000, &trayManager, [&trayManager, offered, announce]() {
+            trayManager.setUpdateOffered(offered, announce);
+        });
+    }
     // A login item an earlier version wrote may name the bare binary, which
     // comes back after a reboot unable to capture (Linux; see Autostart.h).
     if (Autostart::isSupported()) Autostart::refreshLoginItem();

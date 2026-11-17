@@ -42,6 +42,10 @@ const Words kFrench[] = {
     {"Could not disable start at login",
      "Le démarrage à l'ouverture de session n'a pas pu être désactivé"},
     {"Restarting the server…", "Redémarrage du programme…"},
+    // A newer version, said from the icon (TrayManager::setUpdateOffered).
+    {"&Update to %1…", "&Mettre à jour vers %1…"},
+    {"Version %1 is available. Click here to install it.",
+     "La version %1 est disponible. Cliquez ici pour l'installer."},
 
     // ── Who watches, in the menu and in the notices (ViewerNotices.cpp) ────
     {"This computer", "Cet ordinateur"},

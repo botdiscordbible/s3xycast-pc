@@ -88,6 +88,12 @@ public:
     // Kicks a background refresh when the cache is older than kCacheHours.
     QJsonObject statusJson();
 
+    // S3XYCast edition: the last result as it stands, and nothing else.
+    // statusJson() starts a fetch when the cache is stale, which is what a
+    // listener of checkFinished() must not do: after a check that failed (no
+    // network) it would start the next one, and so on.
+    QJsonObject lastResult() const { return m_result; }
+
     // Force an immediate refresh, ignoring the cache window.
     void refresh();
 
