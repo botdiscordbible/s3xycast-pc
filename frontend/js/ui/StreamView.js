@@ -1246,6 +1246,10 @@ export class StreamView {
         // What the controllers are for the host, a pad or a keyboard and a
         // mouse, and their keys (StreamViewPadKbm._padKbmSettings).
         this._padKbmPrefs = opts.padKbm || null;
+        // S3XYCast PC: the game these settings are, when the viewer keeps them
+        // game by game: its name (empty for every game's), the card it was
+        // opened from, and a name to offer (StreamViewPadKbm._padGameName).
+        this._padGame = opts.padGame ? { ...opts.padGame } : null;
         // A guest's choice between it and a real pad, kept for their next visit.
         this._touchPadRemember = opts.onTouchPadMode || null;
         // Click-to-photon probe (debug builds, Windows host): the launch reply
@@ -4956,6 +4960,8 @@ export class StreamView {
             padKbm: this._padKbmSnapshot(),
             // S3XYCast PC: where the viewer put the on-screen controls, in this stream.
             padLook: this._padLookSnapshot(),
+            // S3XYCast PC: the game the controller is set for, in this stream.
+            padGame: this._padGameSnapshot(),
             quick: this._quickSnapshot(),
         };
     }
@@ -4973,6 +4979,7 @@ export class StreamView {
         // independently of frames.
         this._adoptOverlayDismissals(state);
         this._adoptTouchPad(state.touchPad);
+        this._adoptPadGame(state.padGame);
         this._adoptPadKbm(state.padKbm);
         this._adoptPadLook(state.padLook);
         this._adoptQuick(state.quick);

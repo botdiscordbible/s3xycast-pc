@@ -24,11 +24,25 @@ import {
 import { PadKeyMouseDialog } from './PadKeyMouseDialog.js';
 import { TouchPadLayoutEditor } from './TouchPadLayoutEditor.js';
 import { touchPadLayouts } from '../stream/TouchPadState.js';
+import {
+    PadGames,
+    padGameKeys,
+    padGameLook,
+    padGameSettings,
+    storedStreamingSettings,
+} from '../stream/PadGames.js';
 
 /** @typedef {import('./StreamView.js').StreamView} StreamViewInstance */
 
 /** Where the stream's settings are kept on this device (app.js reads it at each launch). */
 export const STREAMING_SETTINGS_KEY = 'mw-streaming-settings';
+
+/**
+ * How long the controller's button stays plain before it steps back. It sits
+ * over the top of the game's picture: long enough to be read and found, then
+ * faint — still there, still one touch from its dialog.
+ */
+export const PAD_KBM_PILL_REST_MS = 4000;
 
 /**
  * Keep the viewer's choice with the stream's other settings, for the next
@@ -179,8 +193,12 @@ export class StreamViewPadKbm {
         const btn = this._padKbmBtn;
         if (!btn) return;
         const kbm = this._padKbmSettings().mode === 'kbm';
-        btn.textContent = t(kbm ? 'padKbm.pillKbm' : 'padKbm.pillPad');
+        const text = t(kbm ? 'padKbm.pillKbm' : 'padKbm.pillPad');
+        const changed = btn.textContent !== text;
+        btn.textContent = text;
         btn.classList.toggle('is-kbm', kbm);
+        // It has something new to say: said plainly, even while it rested.
+        if (changed && !btn.hidden) this._wakePadKbmButton();
     }
 
     /**
@@ -192,11 +210,43 @@ export class StreamViewPadKbm {
         if (!btn) return;
         const view = this._touchPadView;
         const rect = view && view.isVisible() ? view.toggleRect() : null;
+        const wasHidden = btn.hidden;
         btn.hidden = !rect;
-        if (!rect) return;
+        if (!rect) {
+            this._stopPadKbmButtonRest();
+            return;
+        }
         btn.style.left = rect.x + rect.w / 2 + 'px';
         btn.style.top = rect.y + rect.h + 6 + 'px';
-        btn.style.opacity = String(this._touchPadPref('opacity'));
+        // The controller's own opacity, which the resting button takes a part
+        // of (css/s3xycast.css): a property, so the style sheet has the say.
+        btn.style.setProperty('--touch-pad-mode-opacity', String(this._touchPadPref('opacity')));
+        // Back on screen (the stream started, a dialog closed): plain again.
+        if (wasHidden) this._wakePadKbmButton();
+    }
+
+    /**
+     * Show the button plainly, then let it step back. It sat over the top of
+     * the game's picture for as long as the controller was on screen; it now
+     * says what the controllers are for a few seconds, each time it comes
+     * back or has something new to say, and stays faint in between.
+     * @this {StreamViewInstance}
+     */
+    _wakePadKbmButton() {
+        const btn = this._padKbmBtn;
+        if (!btn) return;
+        this._stopPadKbmButtonRest();
+        btn.classList.remove('is-resting');
+        this._padKbmRestTimer = setTimeout(() => {
+            this._padKbmRestTimer = null;
+            if (this._padKbmBtn) this._padKbmBtn.classList.add('is-resting');
+        }, PAD_KBM_PILL_REST_MS);
+    }
+
+    /** @this {StreamViewInstance} */
+    _stopPadKbmButtonRest() {
+        if (this._padKbmRestTimer) clearTimeout(this._padKbmRestTimer);
+        this._padKbmRestTimer = null;
     }
 
     /**
@@ -215,8 +265,132 @@ export class StreamViewPadKbm {
             onClose: () => this._releasePads('pad-kbm'),
             // Where the joysticks and buttons sit, without leaving the game.
             onMoveControls: this._padLayoutEditable() ? () => this._openPadLayoutEditor() : null,
+            // Whose settings these are: every game's, or one the viewer named.
+            games: this._padGame ? this._padGameList() : null,
+            onGame: (name) => this._choosePadGame(name),
+            onNewGame: (typed) => this._addPadGame(typed),
+            onDeleteGame: (name) => this._removePadGame(name),
         });
         this._padKbmDialog.open();
+    }
+
+    // ── The controller's settings, game by game (stream/PadGames.js) ───────
+
+    /**
+     * The game this stream's controller is set for; empty for every game's
+     * settings, which is all a guest and a stream without a card have.
+     * @this {StreamViewInstance}
+     */
+    _padGameName() {
+        return (this._padGame && this._padGame.name) || '';
+    }
+
+    /** @this {StreamViewInstance} */
+    _padGames() {
+        if (!this._padGamesStore) this._padGamesStore = new PadGames();
+        return this._padGamesStore;
+    }
+
+    /**
+     * What the dialog shows of the games: their names, the one in play, and
+     * the name to offer for a new one.
+     * @this {StreamViewInstance}
+     */
+    _padGameList() {
+        return {
+            names: this._padGames().names(),
+            current: this._padGameName(),
+            suggested: (this._padGame && this._padGame.suggested) || '',
+        };
+    }
+
+    /** The games and the keys in play, for the dialog to show. */
+    _padGameState() {
+        return { ...this._padGameList(), settings: this._padKbmSettings() };
+    }
+
+    /**
+     * Where the on-screen controls are and how they look, now.
+     * @this {StreamViewInstance}
+     */
+    _padLookNow() {
+        return {
+            layout: touchPadLayouts((this._touchPadPrefs || {}).layout),
+            scale: this._touchPadPref('scale'),
+            opacity: this._touchPadPref('opacity'),
+            style: this._touchPadPref('style'),
+        };
+    }
+
+    /**
+     * Play with a game's settings — or every game's, for an empty name — and
+     * remember it for this card's next stream. Nothing of either set changes.
+     * @this {StreamViewInstance}
+     * @param {string} name
+     */
+    _choosePadGame(name) {
+        if (!this._padGame) return null;
+        const games = this._padGames();
+        const fields = name ? games.fields(name) : null;
+        const chosen = fields ? name : '';
+        games.choose(this._padGame.card, chosen);
+        this._padGame.name = chosen;
+        const { kbm, look } = padGameSettings(storedStreamingSettings(), fields);
+        this._setPadKbm(kbm, { save: false });
+        this._setPadLook(look, { save: false });
+        return this._padGameState();
+    }
+
+    /**
+     * A new game, which starts as the controller is now. A name already taken
+     * is that game: it is chosen, as it was left.
+     * @this {StreamViewInstance}
+     * @param {string} typed
+     */
+    _addPadGame(typed) {
+        if (!this._padGame) return null;
+        const games = this._padGames();
+        const added = games.add(typed, {
+            ...padGameKeys(this._padKbmSettings()),
+            ...padGameLook(this._padLookNow()),
+        });
+        if (!added) return null;
+        if (added.existed) return this._choosePadGame(added.name);
+        games.choose(this._padGame.card, added.name);
+        this._padGame.name = added.name;
+        return this._padGameState();
+    }
+
+    /**
+     * Forget a game. The stream it was in play in goes back to every game's.
+     * @this {StreamViewInstance}
+     * @param {string} name
+     */
+    _removePadGame(name) {
+        if (!this._padGame) return null;
+        this._padGames().remove(name);
+        if (this._padGameName() === name) return this._choosePadGame('');
+        return this._padGameState();
+    }
+
+    /**
+     * The game in play, for the view that replaces this one.
+     * @this {StreamViewInstance}
+     */
+    _padGameSnapshot() {
+        return this._padGame ? { name: this._padGameName(), look: this._padLookNow() } : null;
+    }
+
+    /**
+     * Adopt a replaced view's game: a change of quality, or of screen, is the
+     * same game going on. Its keys come with the view's own (_adoptPadKbm);
+     * its controls' places come here.
+     * @this {StreamViewInstance}
+     */
+    _adoptPadGame(state) {
+        if (!state || !this._padGame) return;
+        this._padGame.name = state.name || '';
+        if (state.look) this._setPadLook(state.look, { save: false });
     }
 
     /**
@@ -281,7 +455,12 @@ export class StreamViewPadKbm {
             view.setLook({ scale: next.scale, opacity: next.opacity, style: next.style });
         }
         this._placePadKbmButton();
-        if (save) saveTouchPadLook(next);
+        if (!save) return;
+        // A game the viewer named keeps its own places; every game's are the
+        // settings page's.
+        const game = this._padGameName();
+        if (game) this._padGames().update(game, padGameLook(next));
+        else saveTouchPadLook(next);
     }
 
     /**
@@ -320,7 +499,11 @@ export class StreamViewPadKbm {
         }
         if (this._touchPadView) this._touchPadView.setLook({ labels: this._padKbmLabels() });
         this._syncPadKbmButton();
-        if (save) savePadKbmSettings(next);
+        if (!save) return;
+        // A game the viewer named keeps its own mode and keys.
+        const game = this._padGameName();
+        if (game) this._padGames().update(game, padGameKeys(next));
+        else savePadKbmSettings(next);
     }
 
     /**
@@ -352,6 +535,7 @@ export class StreamViewPadKbm {
         this._padLayoutEditor = null;
         if (this._padKbm) this._padKbm.destroy();
         this._padKbm = null;
+        this._stopPadKbmButtonRest();
         if (this._padKbmBtn) this._padKbmBtn.remove();
         this._padKbmBtn = null;
     }

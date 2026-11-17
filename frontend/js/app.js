@@ -71,6 +71,7 @@ import { qrDrawer } from './ui/qrSvg.js';
 import { lanHttpStatus } from './api/LanHttpApi.js';
 import { touchPadSettings } from './stream/TouchPadState.js';
 import { padKbmSettings } from './stream/PadKeyMouse.js';
+import { padGameForStream } from './stream/PadGames.js';
 import { PcDashboard } from './ui/PcDashboard.js';
 // S3XYCast PC: the PC's screens, for going from one to another mid-stream.
 import { App as HostCard } from './models/App.js';
@@ -4118,6 +4119,16 @@ export const MoonlightApp = {
         // question asked of the user. The forced values exist only in debug
         // builds, to tell "the detection was wrong" from "the profile is wrong".
         const gamepadProfile = streamingSettings.gamepad_profile || 'auto';
+        // S3XYCast PC: the controller's settings game by game. The game this
+        // card was last played as, if the viewer named one, has its own mode,
+        // keys and places for the on-screen controls (stream/PadGames.js);
+        // they stand in for every game's below. A guest has neither.
+        const padGame =
+            viewOpts.playerMode === true ? null : padGameForStream(host, this._lastStreamApp);
+        const padSettings =
+            padGame && padGame.fields
+                ? { ...streamingSettings, ...padGame.fields }
+                : streamingSettings;
         const opts = {
             ...viewOpts,
             plainHttp: this._plainHttpTv === true,
@@ -4130,10 +4141,13 @@ export const MoonlightApp = {
             // Turns the notched wheel around, not the trackpad, on this device.
             invertWheel: streamingSettings.invert_wheel === true,
             // A guest has no settings page: only what they chose in their dialog.
-            touchPad: viewOpts.touchPad || touchPadSettings(streamingSettings),
+            touchPad: viewOpts.touchPad || touchPadSettings(padSettings),
             // S3XYCast PC: whether the controllers are a pad for the host or a
             // keyboard and a mouse, and their keys (a guest's stay a pad).
-            padKbm: padKbmSettings(streamingSettings),
+            padKbm: padKbmSettings(padSettings),
+            padGame: padGame
+                ? { card: padGame.card, name: padGame.name, suggested: padGame.suggested }
+                : null,
             // Click-to-photon probe: the host says whether it raises its flag
             // on every click (debug builds on Windows, setting on). Only then
             // does the view install its measuring side.

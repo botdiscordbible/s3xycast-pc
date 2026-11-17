@@ -30,6 +30,13 @@ import {
     padKbmLabel,
     padKbmMap,
 } from '../stream/PadKeyMouse.js';
+import { PAD_GAMES_MAX, PAD_GAME_NAME_MAX } from '../stream/PadGames.js';
+
+/** The game list's entries that are not games (a game's is its name, prefixed). */
+const GAME_ALL = 'all';
+const GAME_NEW = 'new';
+const GAME_DELETE = 'delete';
+const GAME_PREFIX = 'game:';
 
 /** The order the groups of a button's choices come in. */
 const GROUPS = ['mouse', 'keys', 'digits', 'letters', 'functions'];
@@ -75,14 +82,41 @@ export class PadKeyMouseDialog {
      *   `onMoveControls`: given by a stream that has the on-screen controller.
      *   The dialog then offers to move its joysticks and buttons; a press
      *   closes the dialog first, then calls it.
+     *   `games`: given by a stream whose viewer keeps settings game by game
+     *   (stream/PadGames.js) — the games named so far, the one these settings
+     *   are (`current`, empty for every game's) and a name to offer for a new
+     *   one. `onGame(name)`, `onNewGame(typed)` and `onDeleteGame(name)` do
+     *   what their names say and answer with what the dialog shows next:
+     *   `{ names, current, settings }`, or nothing when nothing was done.
      */
-    constructor({ container, settings, onChange, onOpen, onClose, onMoveControls }) {
+    constructor({
+        container,
+        settings,
+        onChange,
+        onOpen,
+        onClose,
+        onMoveControls,
+        games,
+        onGame,
+        onNewGame,
+        onDeleteGame,
+    }) {
         this._container = container || document.body;
         this._settings = { mode: settings.mode, sens: settings.sens, map: padKbmMap(settings.map) };
         this._onChange = onChange || null;
         this._onOpen = onOpen || null;
         this._onClose = onClose || null;
         this._onMoveControls = onMoveControls || null;
+        this._games = games
+            ? {
+                  names: [...(games.names || [])],
+                  current: games.current || '',
+                  suggested: games.suggested || '',
+              }
+            : null;
+        this._onGame = onGame || null;
+        this._onNewGame = onNewGame || null;
+        this._onDeleteGame = onDeleteGame || null;
         this._overlay = null;
         // What had the keyboard when the dialog opened.
         this._returnFocus = null;
@@ -126,6 +160,33 @@ export class PadKeyMouseDialog {
                         <button type="button" class="btn btn-neutral pad-kbm-move-btn">${escapeHtml(t('padKbm.moveControls'))}</button>
                     </div>`
             : '';
+        // Whose settings these are, first: everything below is that game's.
+        // The list holds the games, then what can be done about them; adding
+        // one and deleting one each ask their one question in the row below.
+        const games = this._games
+            ? `<div class="pad-kbm-game">
+                        <label class="pad-kbm-game-row">
+                            <span class="pad-kbm-name">${escapeHtml(t('padKbm.game'))}</span>
+                            <select class="pad-kbm-game-select"></select>
+                        </label>
+                        <form class="pad-kbm-game-new" hidden>
+                            <input type="text" class="pad-kbm-game-name" required
+                                   maxlength="${PAD_GAME_NAME_MAX}"
+                                   placeholder="${escapeHtml(t('padKbm.gameName'))}"
+                                   aria-label="${escapeHtml(t('padKbm.gameName'))}"
+                                   autocomplete="off" autocapitalize="words"
+                                   spellcheck="false" enterkeyhint="done" />
+                            <button type="submit" class="btn btn-save pad-kbm-game-add">${escapeHtml(t('padKbm.gameAdd'))}</button>
+                            <button type="button" class="btn btn-neutral pad-kbm-game-cancel">${escapeHtml(t('padKbm.gameCancel'))}</button>
+                        </form>
+                        <div class="pad-kbm-game-ask" hidden>
+                            <span class="pad-kbm-game-question"></span>
+                            <button type="button" class="btn btn-danger pad-kbm-game-delete">${escapeHtml(t('padKbm.gameDeleteYes'))}</button>
+                            <button type="button" class="btn btn-neutral pad-kbm-game-keep">${escapeHtml(t('padKbm.gameCancel'))}</button>
+                        </div>
+                        <p class="pad-kbm-game-hint"></p>
+                    </div>`
+            : '';
         overlay.innerHTML = `
             <div class="pad-kbm" role="dialog" aria-modal="true" aria-labelledby="pad-kbm-title">
                 <div class="pad-kbm-head">
@@ -135,6 +196,7 @@ export class PadKeyMouseDialog {
                 <!-- Between the title and the way out, which stay in sight: on a
                      phone held sideways the keys are taller than the screen. -->
                 <div class="pad-kbm-scroll">
+                    ${games}
                     <div class="pad-kbm-modes" role="group" aria-labelledby="pad-kbm-title">
                         <button type="button" class="pad-kbm-mode" data-mode="pad">${escapeHtml(t('padKbm.modePad'))}</button>
                         <button type="button" class="pad-kbm-mode" data-mode="kbm">${escapeHtml(t('padKbm.modeKbm'))}</button>
@@ -233,6 +295,7 @@ export class PadKeyMouseDialog {
                 this._changed();
             });
         }
+        this._bindGames();
         document.addEventListener('keydown', this._onKey, true);
         this._sync();
         // The keyboard comes in here with the dialog: left on the stream, what
@@ -281,5 +344,134 @@ export class PadKeyMouseDialog {
 
     _changed() {
         if (this._onChange) this._onChange(this.settings);
+    }
+
+    // ── The games (a stream's dialog) ───────────────────────────────────────
+
+    /** The list as it stands: the games, then what can be done about them. */
+    _renderGames() {
+        const overlay = this._overlay;
+        const games = this._games;
+        if (!overlay || !games) return;
+        const select = /** @type {HTMLSelectElement} */ (
+            overlay.querySelector('.pad-kbm-game-select')
+        );
+        const current = games.current;
+        const chosen = current ? GAME_PREFIX + current : GAME_ALL;
+        select.innerHTML =
+            option(GAME_ALL, t('padKbm.gameAll'), chosen) +
+            games.names.map((name) => option(GAME_PREFIX + name, name, chosen)).join('') +
+            // No room left for one more: not offered, rather than refused.
+            (games.names.length < PAD_GAMES_MAX
+                ? option(GAME_NEW, t('padKbm.gameNew'), chosen)
+                : '') +
+            (current ? option(GAME_DELETE, t('padKbm.gameDelete', { name: current }), chosen) : '');
+        select.value = chosen;
+        overlay.querySelector('.pad-kbm-game-hint').textContent = t(
+            current ? 'padKbm.gameHintOne' : 'padKbm.gameHintAll',
+        );
+    }
+
+    /** Put the two one-question rows away, and the list back on its game. */
+    _hideGameForms() {
+        const overlay = this._overlay;
+        if (!overlay || !this._games) return;
+        /** @type {HTMLElement} */ (overlay.querySelector('.pad-kbm-game-new')).hidden = true;
+        /** @type {HTMLElement} */ (overlay.querySelector('.pad-kbm-game-ask')).hidden = true;
+        const select = /** @type {HTMLSelectElement} */ (
+            overlay.querySelector('.pad-kbm-game-select')
+        );
+        select.value = this._games.current ? GAME_PREFIX + this._games.current : GAME_ALL;
+    }
+
+    _bindGames() {
+        const overlay = this._overlay;
+        if (!overlay || !this._games) return;
+        this._renderGames();
+        const select = /** @type {HTMLSelectElement} */ (
+            overlay.querySelector('.pad-kbm-game-select')
+        );
+        const form = /** @type {HTMLFormElement} */ (overlay.querySelector('.pad-kbm-game-new'));
+        const input = /** @type {HTMLInputElement} */ (overlay.querySelector('.pad-kbm-game-name'));
+        const ask = /** @type {HTMLElement} */ (overlay.querySelector('.pad-kbm-game-ask'));
+
+        select.addEventListener('change', () => {
+            const value = select.value;
+            if (value === GAME_NEW) {
+                this._hideGameForms();
+                // One of the PC's apps offers its own name, unless it is taken.
+                const suggested = this._games.suggested;
+                input.value = suggested && !this._games.names.includes(suggested) ? suggested : '';
+                form.hidden = false;
+                input.focus({ preventScroll: true });
+                input.select();
+                return;
+            }
+            if (value === GAME_DELETE) {
+                this._hideGameForms();
+                overlay.querySelector('.pad-kbm-game-question').textContent = t(
+                    'padKbm.gameDeleteAsk',
+                    { name: this._games.current },
+                );
+                ask.hidden = false;
+                return;
+            }
+            this._hideGameForms();
+            const name = value === GAME_ALL ? '' : value.slice(GAME_PREFIX.length);
+            if (name === this._games.current) return;
+            this._takeGames(this._onGame ? this._onGame(name) : null);
+        });
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const state = this._onNewGame ? this._onNewGame(input.value) : null;
+            if (!state) {
+                // Nothing to call it by: the question stays.
+                input.focus({ preventScroll: true });
+                return;
+            }
+            this._takeGames(state);
+        });
+        overlay
+            .querySelector('.pad-kbm-game-cancel')
+            .addEventListener('click', () => this._hideGameForms());
+        overlay
+            .querySelector('.pad-kbm-game-keep')
+            .addEventListener('click', () => this._hideGameForms());
+        overlay.querySelector('.pad-kbm-game-delete').addEventListener('click', () => {
+            const name = this._games.current;
+            this._takeGames(name && this._onDeleteGame ? this._onDeleteGame(name) : null);
+        });
+    }
+
+    /**
+     * Show what the stream answered: the games as they are now, and the
+     * settings of the one chosen in every field. Nothing is told back
+     * (`onChange`): these were read, not set.
+     * @param {{ names: string[], current: string,
+     *           settings: { mode: string, sens: number, map: Record<string, string> } }|null} state
+     */
+    _takeGames(state) {
+        const overlay = this._overlay;
+        this._hideGameForms();
+        if (!overlay || !state || !this._games) return;
+        this._games = {
+            names: [...(state.names || [])],
+            current: state.current || '',
+            suggested: this._games.suggested,
+        };
+        this._settings = {
+            mode: state.settings.mode,
+            sens: state.settings.sens,
+            map: padKbmMap(state.settings.map),
+        };
+        this._renderGames();
+        /** @type {HTMLInputElement} */ (overlay.querySelector('.pad-kbm-range')).value = String(
+            Math.round(this._settings.sens * 100),
+        );
+        for (const select of overlay.querySelectorAll('.pad-kbm-select')) {
+            const el = /** @type {HTMLSelectElement} */ (select);
+            el.value = this._settings.map[el.dataset.control];
+        }
+        this._sync();
     }
 }
