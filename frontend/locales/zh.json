@@ -110,7 +110,7 @@
     },
     "hosts": {
         "nativeCapturePermission": "这台 Mac 已失去“屏幕录制”权限，无法串流其屏幕。请在 Mac 上：系统设置 → 隐私与安全性 → 屏幕录制，打开 S3XYCast PC，然后退出并重新打开 S3XYCast PC。",
-        "sessionLeftByRemoteDesktop": "远程桌面断开后，这台电脑的会话没有屏幕。请在电脑上登录，或查看 README 了解如何退出远程桌面而不丢失屏幕。",
+        "sessionLeftByRemoteDesktop": "使用远程桌面之后，这台电脑没有可显示的屏幕。请在这台电脑本机上登录 Windows，它的屏幕就会回到这里。",
         "signInScreenHint": "使用远程桌面之后，这台电脑在等待您的 Windows PIN 或密码。打开此卡片并输入，您的屏幕就会回来。",
         "somebodySignedIn": "有人已登录这台电脑。",
         "nativeInputPermission": "这台 Mac 已失去“辅助功能”权限：串流会显示画面，但您的键盘和鼠标无法控制它。请在 Mac 上：系统设置 → 隐私与安全性 → 辅助功能，打开 S3XYCast PC。",

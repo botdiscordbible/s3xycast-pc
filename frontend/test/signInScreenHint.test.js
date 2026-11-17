@@ -117,6 +117,17 @@ describe('the sentence, in every language the interface speaks', () => {
                 'Ouvrez cette carte et entrez-le : vos écrans reviennent.',
         );
     });
+
+    it('where the card cannot be offered, the text sends nobody to a README', () => {
+        // Upstream's text ends on "see the README": its users have one, this
+        // edition's subscribers do not. It says what to do instead.
+        for (const lang of ['en', 'fr', 'tr', 'zh']) {
+            const text = catalogue(lang).hosts.sessionLeftByRemoteDesktop;
+            expect(text, lang).toBeTruthy();
+            expect(text, lang).not.toMatch(/readme/i);
+            expect(text, lang).toContain('Windows');
+        }
+    });
 });
 
 describe('where HostListView was touched for the sentence', () => {
