@@ -8,6 +8,9 @@
  * The French catalogue says "PC" — "ordinateur" where the machine may be a
  * Mac or a Linux box, "propriétaire" for the person a guest plays with — and a
  * merge of a new upstream release that brings the word back fails here.
+ *
+ * The same pass, for "le serveur" (what MoonlightWeb calls itself: "ce PC" or
+ * "S3XYCast PC" here) and "le backend" ("le moteur de streaming").
  */
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -34,6 +37,55 @@ describe('the French catalogue', () => {
     it('never says "hôte"', () => {
         const still = fr.filter(([, text]) => /\bh[ôo]tes?\b/i.test(text)).map(([path]) => path);
         expect(still).toEqual([]);
+    });
+
+    it('says "serveur" only of a real server', () => {
+        // MoonlightWeb calls itself "the server". To a subscriber the program
+        // is on their PC: a page that says "Connexion au serveur..." sends them
+        // looking for a machine that is not theirs. The word stays for what is
+        // one — the S3XYCast entry server, a STUN server, Sunshine.
+        const real = new Set([
+            'setup.internetBody',
+            'admin.internetInfo1',
+            'setup.stepInstall',
+            'admin.rendezvousOffline',
+            'admin.rendezvousHalted',
+        ]);
+        const still = fr
+            .filter(([path, text]) => /\bserveurs?\b/i.test(text) && !real.has(path))
+            .map(([path]) => path);
+        expect(still).toEqual([]);
+    });
+
+    it('names the entry server the way the agreement does', () => {
+        // One name for it, wherever it is spoken of: the agreement a subscriber
+        // accepted says "serveur d'entrée de S3XYCast".
+        const c = catalogue('fr');
+        for (const text of [
+            c.setup.internetBody,
+            c.admin.internetInfo1,
+            c.admin.rendezvousOffline,
+            c.admin.rendezvousHalted,
+        ])
+            expect(text).toContain("serveur d'entrée de S3XYCast");
+        expect(fr.filter(([, text]) => /serveur d'introduction/i.test(text))).toEqual([]);
+    });
+
+    it('never says "backend"', () => {
+        const still = fr.filter(([, text]) => /\bbackends?\b/i.test(text)).map(([path]) => path);
+        expect(still).toEqual([]);
+    });
+
+    it('says a link that fails in plain words', () => {
+        const c = catalogue('fr');
+        expect(c.login.connecting).toBe('Connexion au PC...');
+        expect(c.launch.timeout).toBe('Le PC ne répond pas — démarrage annulé');
+        // One event, one sentence: whether the program or this page found that
+        // no path led to the PC.
+        expect(c.transport.allFailed).toBe(c.launch.noRoute);
+        expect(c.transport.allFailed).toMatch(/^La liaison avec votre PC n’a pas pu s’établir\./);
+        expect(c.stream.webrtcError).toBe('La liaison avec votre PC a été interrompue');
+        expect(c.admin.serverConfig).toBe('Configuration de S3XYCast PC');
     });
 
     it('keeps every variable the English text has', () => {
