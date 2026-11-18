@@ -499,12 +499,13 @@ static bool arecordRunning()
 // The last word stands. When it keeps nothing where an earlier word of the
 // same stream was kept — said "direct", then shown to be the relay for a
 // browser with no UDP — what that earlier word replaced is put back
-// (StreamRouteMemory, one per stream; a second stream writing in between,
-// seconds apart, would see its word replaced: accepted).
+// (StreamRouteMemory, one per stream), but only while the last word written
+// is still this stream's: another stream that wrote since has the last word.
 struct StreamRouteMemory
 {
     bool wrote = false;
     QJsonValue before;
+    QJsonValue mine;
 };
 
 static void noteStreamRoute(AppSettings& settings, const QJsonObject& event, bool browserHome,
@@ -530,9 +531,11 @@ static void noteStreamRoute(AppSettings& settings, const QJsonObject& event, boo
                           << "would change it)";
     if (kept != Kept::Yes) {
         if (memory.wrote) {
-            settings.restoreLastOutsideRoute(memory.before);
+            if (settings.lastOutsideRouteValue() == memory.mine) {
+                settings.restoreLastOutsideRoute(memory.before);
+                qInfo().noquote() << "[Route] what this stream said before is taken back";
+            }
             memory.wrote = false;
-            qInfo().noquote() << "[Route] what this stream said before is taken back";
         }
         return;
     }
@@ -548,6 +551,7 @@ static void noteStreamRoute(AppSettings& settings, const QJsonObject& event, boo
         memory.wrote = true;
     }
     settings.setLastOutsideRoute(seen.relayed, seen.hole);
+    memory.mine = settings.lastOutsideRouteValue();
 }
 
 // Open a URL in the user's default browser. On Linux, QDesktopServices::openUrl

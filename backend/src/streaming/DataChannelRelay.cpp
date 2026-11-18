@@ -1081,6 +1081,11 @@ void DataChannelRelay::setupPeerConnection(const rtc::Configuration& config)
 
     PacketMarking::apply();
     m_Pc = std::make_shared<rtc::PeerConnection>(pcConfig);
+    // S3XYCast edition: the wrapper, for the callbacks below that read the
+    // selected pair, rather than m_Pc: stop() resets m_Pc on another thread,
+    // while the wrapper outlives every run of its callbacks (its close takes
+    // each one back under that callback's own lock before it can go).
+    rtc::PeerConnection* const pcForRoute = m_Pc.get();
 
     // `sctpss=` (plan Wi-Fi W2.3): the host's small messages on the input
     // channel wait behind the video's 16 KB chunks inside usrsctp. Its stream
@@ -1108,7 +1113,7 @@ void DataChannelRelay::setupPeerConnection(const rtc::Configuration& config)
     });
 
     // --- State change callback ---
-    m_Pc->onStateChange([this](rtc::PeerConnection::State state) {
+    m_Pc->onStateChange([this, pcForRoute](rtc::PeerConnection::State state) {
         // This callback runs on a libdatachannel thread. QTimer is thread-affine
         // and signal-driven teardown must happen on the Qt main thread, so
         // marshal everything that touches Qt objects (avoids the
@@ -1117,7 +1122,7 @@ void DataChannelRelay::setupPeerConnection(const rtc::Configuration& config)
         qInfo() << "[DataChannelRelay] PC state changed to" << static_cast<int>(state);
         if (state == rtc::PeerConnection::State::Connected) {
             qInfo() << "[DataChannelRelay] PeerConnection connected — canceling ICE timeout";
-            logSelectedCandidatePair(*m_Pc, "[DataChannelRelay]");
+            logSelectedCandidatePair(*pcForRoute, "[DataChannelRelay]");
             QMetaObject::invokeMethod(
                 this,
                 [this]() {
@@ -1148,10 +1153,6 @@ void DataChannelRelay::setupPeerConnection(const rtc::Configuration& config)
 
     // S3XYCast edition: the pair once ICE has nominated one, which may not be
     // the one read at Connected (RelayBase::recheckSelectedPair).
-    // The wrapper, not m_Pc: stop() resets m_Pc on another thread, while the
-    // wrapper outlives every run of its callbacks (its close takes them back
-    // under their own lock).
-    rtc::PeerConnection* const pcForRoute = m_Pc.get();
     m_Pc->onIceStateChange([this, pcForRoute](rtc::PeerConnection::IceState state) {
         if (state == rtc::PeerConnection::IceState::Completed)
             recheckSelectedPair(*pcForRoute, "[DataChannelRelay]");

@@ -303,6 +303,11 @@ void MediaTrackRelay::setupPeerConnection(const rtc::Configuration& config)
 
     PacketMarking::apply();
     m_Pc = std::make_shared<rtc::PeerConnection>(config);
+    // S3XYCast edition: the wrapper, for the callbacks below that read the
+    // selected pair, rather than m_Pc: stop() resets m_Pc on another thread,
+    // while the wrapper outlives every run of its callbacks (its close takes
+    // each one back under that callback's own lock before it can go).
+    rtc::PeerConnection* const pcForRoute = m_Pc.get();
 
     // --- Local description callback ---
     m_Pc->onLocalDescription([this](const rtc::Description& sdp) {
@@ -319,11 +324,11 @@ void MediaTrackRelay::setupPeerConnection(const rtc::Configuration& config)
     });
 
     // --- State change callback ---
-    m_Pc->onStateChange([this](rtc::PeerConnection::State state) {
+    m_Pc->onStateChange([this, pcForRoute](rtc::PeerConnection::State state) {
         qInfo() << "[MediaTrackRelay] PC state changed to" << static_cast<int>(state);
         if (state == rtc::PeerConnection::State::Connected) {
             qInfo() << "[MediaTrackRelay] PeerConnection connected";
-            logSelectedCandidatePair(*m_Pc, "[MediaTrackRelay]");
+            logSelectedCandidatePair(*pcForRoute, "[MediaTrackRelay]");
             // This callback runs on a libdatachannel thread; QTimer must be
             // stopped from its owning (relay) thread.
             QMetaObject::invokeMethod(
@@ -350,10 +355,6 @@ void MediaTrackRelay::setupPeerConnection(const rtc::Configuration& config)
 
     // S3XYCast edition: the pair once ICE has nominated one, which may not be
     // the one read at Connected (RelayBase::recheckSelectedPair).
-    // The wrapper, not m_Pc: stop() resets m_Pc on another thread, while the
-    // wrapper outlives every run of its callbacks (its close takes them back
-    // under their own lock).
-    rtc::PeerConnection* const pcForRoute = m_Pc.get();
     m_Pc->onIceStateChange([this, pcForRoute](rtc::PeerConnection::IceState state) {
         if (state == rtc::PeerConnection::IceState::Completed)
             recheckSelectedPair(*pcForRoute, "[MediaTrackRelay]");

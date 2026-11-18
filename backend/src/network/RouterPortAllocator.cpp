@@ -568,6 +568,7 @@ void RouterPortAllocator::onDiscovered(bool ok, const QString& publicIp, const Q
                          .arg(m_Misses)
                          .arg(m_Misses == 1 ? QStringLiteral("y") : QStringLiteral("ies")));
     m_Misses = 0;
+    m_ClaimsRefused = false; // S3XYCast edition: a new answer, a new chance
     m_State = GatewayState::Ready;
     m_PublicIp = publicIp;
     m_LanIp = lanIp;

@@ -123,11 +123,14 @@ public:
         return enabled() && m_Misses == 0 &&
                (m_State == GatewayState::Unknown || m_State == GatewayState::Discovering);
     }
-    /// S3XYCast edition: the router answered, and the last port asked of it
-    /// was not given (every candidate held by a neighbour or refused) — a box
-    /// that answers UPnP and opens nothing, which the PC's page treats as one
-    /// that does not open ports by itself. Cleared by the next port given.
-    bool claimsRefused() const { return m_ClaimsRefused; }
+    /// S3XYCast edition: the router answered, the last port asked of it was
+    /// not given (every candidate held by a neighbour or refused), and it
+    /// holds none for this PC — a box that answers UPnP and opens nothing,
+    /// which the PC's page treats as one that does not open ports by itself.
+    /// A refusal for one purpose while a hole is held for another says
+    /// nothing of the box. Cleared by the next port given, and when the
+    /// router answers a look again.
+    bool claimsRefused() const { return m_ClaimsRefused && m_Held.isEmpty(); }
     /// This host's address as the router reports it; empty until Ready.
     QString publicIp() const { return m_PublicIp; }
     /// The gateway's own address and this host's address on its LAN; empty
