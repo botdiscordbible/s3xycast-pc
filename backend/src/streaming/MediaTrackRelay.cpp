@@ -285,7 +285,11 @@ bool MediaTrackRelay::addRemoteCandidate(const std::string& candidate, const std
 {
     if (!m_Pc) return false;
     try {
-        m_Pc->addRemoteCandidate(rtc::Candidate(candidate, mid));
+        const rtc::Candidate given(candidate, mid);
+        // S3XYCast edition: what it tells of the way the stream goes, noted
+        // before the agent can pair with it.
+        noteRemoteCandidate(given);
+        m_Pc->addRemoteCandidate(given);
         return true;
     } catch (const std::exception& e) {
         qWarning() << "[MediaTrackRelay] addRemoteCandidate failed:" << e.what();
@@ -342,6 +346,17 @@ void MediaTrackRelay::setupPeerConnection(const rtc::Configuration& config)
     // --- Gathering state ---
     m_Pc->onGatheringStateChange([this](rtc::PeerConnection::GatheringState state) {
         qInfo() << "[MediaTrackRelay] ICE gathering state:" << static_cast<int>(state);
+    });
+
+    // S3XYCast edition: the pair once ICE has nominated one, which may not be
+    // the one read at Connected (RelayBase::recheckSelectedPair).
+    // The wrapper, not m_Pc: stop() resets m_Pc on another thread, while the
+    // wrapper outlives every run of its callbacks (its close takes them back
+    // under their own lock).
+    rtc::PeerConnection* const pcForRoute = m_Pc.get();
+    m_Pc->onIceStateChange([this, pcForRoute](rtc::PeerConnection::IceState state) {
+        if (state == rtc::PeerConnection::IceState::Completed)
+            recheckSelectedPair(*pcForRoute, "[MediaTrackRelay]");
     });
 
     // Create the media tracks + DataChannels

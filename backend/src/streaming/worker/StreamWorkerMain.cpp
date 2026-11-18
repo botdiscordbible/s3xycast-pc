@@ -912,19 +912,18 @@ int runStreamWorker(QCoreApplication& app)
     QObject::connect(session, &StreamSession::relayCreated, qApp, [&state](DataChannelRelay* r) {
         state.relay = r;
         QObject::connect(r, &DataChannelRelay::sessionEnded, qApp, []() { teardownAndExit(0); });
-        // S3XYCast edition: which way the connection went, for the PC's page.
-        QObject::connect(r, &RelayBase::routeSelected, qApp, [](bool relayed, bool lan) {
-            emitEvent(mw::edition::route::event(relayed, lan));
-        });
+        // S3XYCast edition: which way the connection went, for the PC's page
+        // (already the route event, common/StreamRoute.h).
+        QObject::connect(r, &RelayBase::routeSelected, qApp,
+                         [](const QJsonObject& event) { emitEvent(event); });
         relayMouseKeys(r->mediaEngine());
     });
     QObject::connect(
         session, &StreamSession::mediaTrackRelayCreated, qApp, [&state](MediaTrackRelay* r) {
             state.mediaRelay = r;
             QObject::connect(r, &MediaTrackRelay::sessionEnded, qApp, []() { teardownAndExit(0); });
-            QObject::connect(r, &RelayBase::routeSelected, qApp, [](bool relayed, bool lan) {
-                emitEvent(mw::edition::route::event(relayed, lan));
-            });
+            QObject::connect(r, &RelayBase::routeSelected, qApp,
+                             [](const QJsonObject& event) { emitEvent(event); });
             relayMouseKeys(r->mediaEngine());
         });
     QObject::connect(session, &StreamSession::streamRelayCreated, qApp, [&state](StreamRelay* r) {

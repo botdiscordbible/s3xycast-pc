@@ -1544,11 +1544,27 @@ QJsonObject AppSettings::lastOutsideRoute() const
         readAll().value(QLatin1String(mw::edition::route::kSettingsKey)));
 }
 
-void AppSettings::setLastOutsideRoute(bool relayed)
+void AppSettings::setLastOutsideRoute(bool relayed, bool hole)
 {
     QJsonObject obj = readAll();
     obj[QLatin1String(mw::edition::route::kSettingsKey)] =
-        mw::edition::route::record(relayed, QDateTime::currentDateTimeUtc());
+        mw::edition::route::record(relayed, hole, QDateTime::currentDateTimeUtc());
+    writeAll(obj);
+}
+
+QJsonValue AppSettings::lastOutsideRouteValue() const
+{
+    return readAll().value(QLatin1String(mw::edition::route::kSettingsKey));
+}
+
+void AppSettings::restoreLastOutsideRoute(const QJsonValue& value)
+{
+    QJsonObject obj = readAll();
+    const QLatin1String key(mw::edition::route::kSettingsKey);
+    if (value.isUndefined() || value.isNull())
+        obj.remove(key);
+    else
+        obj[key] = value;
     writeAll(obj);
 }
 

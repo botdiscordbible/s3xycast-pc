@@ -853,10 +853,12 @@ void RouterPortAllocator::onClaimed(quint64 token, const RouterPortCore::Result&
         Logger::warning(QStringLiteral("[UPNP] %1: nothing left — every candidate is held by a "
                                        "neighbour or refused (%2)")
                             .arg(name, skipped.join(QStringLiteral(", "))));
+        m_ClaimsRefused = true; // S3XYCast edition: see claimsRefused()
         deliver(token, {}, QStringLiteral("no router port left"));
         return;
     }
 
+    m_ClaimsRefused = false;
     const Claim& claim = result.claim;
     m_Held.append(claim);
     switch (purpose) {
@@ -940,10 +942,17 @@ void RouterPortAllocator::switchChanged()
 {
     // TCP 443 first: off, it is taken back before the port it leads to is
     if (!enabled()) consider443();
-    if (enabled())
+    if (enabled()) {
+        // S3XYCast edition: switched on where the router was never asked (UPnP
+        // was off at start-up, so the eager look was skipped): ask it now, as
+        // a start with the switch on would have. Without it the PC's page
+        // waited for an answer nothing was going to bring (firstLookPending)
+        // until a tunnel or a stream came. Idempotent: nothing once asked.
+        ensureStarted();
         emit switchedOn();
-    else
+    } else {
         emit switchedOff();
+    }
     // On: asked for once the shared block port has its hole again (onClaimed)
 }
 

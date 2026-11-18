@@ -729,7 +729,7 @@ void StreamWorkerHost::onStdoutData(const QByteArray& data)
         } else if (type == QLatin1String("iceMux")) {
             onMuxEvent(event);
         } else if (type == QLatin1String("route")) {
-            emit routeObserved(event["relayed"].toBool(), event["lan"].toBool());
+            emit routeObserved(event);
         } else if (type == QLatin1String("mouseKeys")) {
             m_MouseKeysHeld = event["on"].toBool();
             m_MouseKeysSaved = m_MouseKeysHeld ? event["saved"].toObject() : QJsonObject();

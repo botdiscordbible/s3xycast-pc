@@ -68,23 +68,57 @@ export function pcDashboardView({ internet, auth, native, starting }) {
  * stream from the car went direct with no drop of rate and no freeze
  * (18/11/2026), and he wants the customers told, plainly, where they can act.
  *
- *   'relayed' — the last stream from outside went through the relay, and the
- *               box does not open ports by itself: it is why.
- *   'noUpnp'  — no stream from outside yet, and the box does not open ports
- *               by itself: the first one would take the relay.
+ *   'relayed' — the owner's last stream from outside went through the relay
+ *               with no port open on the box for it (`hole`): it is why. Said
+ *               even where the box answers UPnP: one that answers and then
+ *               refuses, or gives the port away, is exactly the box that needs
+ *               the rule made by hand.
+ *   'noUpnp'  — no stream from outside yet, and the box has not opened ports
+ *               by itself: the first one takes the relay, unless the owner
+ *               already made the rule — which the program cannot see before a
+ *               stream has come in. The card says it as a condition, and both
+ *               cards say they go once a stream comes in directly: the first
+ *               owner had made his rule, and the card said otherwise until his
+ *               next stream from outside (18/11/2026, "Oui, corrige"). Not
+ *               while the program is still asking the box (`upnp_looking`, the
+ *               seconds after start-up).
  *   null      — nothing to do: the last stream from outside came straight in
- *               (a rule on the box, or the box's own), the box opens ports by
- *               itself (a relayed stream is then the car's network's doing),
- *               or the PC does not allow streaming from outside at all.
+ *               (a rule on the box, or the box's own), it went through the
+ *               relay although the box had a port open for it (the car's
+ *               network's doing), no stream yet and the box opens ports by
+ *               itself, or the PC does not allow streaming from outside at all.
+ * What is kept leaves out what says nothing of the box (common/StreamRoute.h
+ * in the program): streams on the PC's own network, guests' streams, and
+ * relayed streams from a browser that showed no UDP. A record kept by 0.1.14
+ * has no `hole`. Relayed, the box's word stands in for it, as 0.1.14 read it.
+ * Direct, it is not trusted: 0.1.14 took a phone at home on the box's IPv6,
+ * a guest, or a relayed stream it misread for one (18/11/2026 review) — it
+ * reads as no stream yet, and the next one from outside settles it.
+ * "The box opens ports by itself" holds only while the program may ask it:
+ * a box that answered once stays available after the owner switched UPnP off,
+ * and nothing is opened then. Nor while it refuses the ports asked of it
+ * (`upnp_refusing`): it answers UPnP and opens nothing.
  * @param {any} net /api/internet/status
  * @returns {'relayed'|'noUpnp'|null}
  */
 export function portsAdvice(net) {
     if (!net || net.internet_access_enabled !== true || net.lan_only === true) return null;
-    if (net.upnp_available === true) return null;
+    const boxOpens =
+        net.upnp_enabled !== false &&
+        net.upnp_refusing !== true &&
+        (net.upnp_available === true || net.upnp_looking === true);
     const route = net.last_outside_route;
-    if (route && typeof route.relayed === 'boolean') return route.relayed ? 'relayed' : null;
-    return 'noUpnp';
+    if (route && typeof route.relayed === 'boolean') {
+        const hole = typeof route.hole === 'boolean' ? route.hole : null;
+        if (route.relayed === true) {
+            if (hole !== null) return hole ? null : 'relayed';
+            return boxOpens ? null : 'relayed';
+        }
+        if (hole !== null) return null;
+    }
+    // No stream from outside yet (or none to trust): the box opens ports by
+    // itself, or is still being asked (no advice, or not yet).
+    return boxOpens ? null : 'noUpnp';
 }
 
 /**
@@ -231,6 +265,7 @@ export class PcDashboard {
                        <p class="pc-dash-ports-text">${escapeHtml(t(advice === 'relayed' ? 'pcDash.portsRelayed' : 'pcDash.portsNoUpnp'))}</p>
                        <p class="pc-dash-ports-rule">${escapeHtml(ruleText)}</p>
                        <a class="btn btn-primary pc-dash-ports-how" href="${escapeHtml(BOX_HELP_URL)}" target="_blank" rel="noopener noreferrer">${escapeHtml(t('pcDash.portsHow'))}</a>
+                       <p class="pc-dash-ports-done">${escapeHtml(t('pcDash.portsDone'))}</p>
                    </div>`;
               })()
             : '';

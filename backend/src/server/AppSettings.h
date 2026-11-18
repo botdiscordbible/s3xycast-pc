@@ -877,13 +877,20 @@ public:
 
     // ── S3XYCast edition: the last stream from outside the PC's network ──────
     //
-    // Straight to the PC, or through the S3XYCast relay, and when: what the
-    // PC's own page reads to tell its owner whether a rule on the box would
-    // shorten the delay (common/StreamRoute.h). JSON object
-    // "last_outside_route", file-only, written by the program at each stream
-    // from outside. Empty when none was ever seen.
+    // Straight to the PC, or through the S3XYCast relay, whether the box had
+    // a port open for it, and when: what the PC's own page reads to tell its
+    // owner whether a rule on the box would shorten the delay
+    // (common/StreamRoute.h). JSON object "last_outside_route", file-only,
+    // written by the program at each of the owner's streams from outside that
+    // says something of the box (route::keep). Empty when none was ever seen.
     QJsonObject lastOutsideRoute() const;
-    void setLastOutsideRoute(bool relayed);
+    void setLastOutsideRoute(bool relayed, bool hole);
+    /// The value under that key as it is in the file (undefined when none),
+    /// and putting such a value back (the key removed when it was undefined):
+    /// for a stream whose later word takes back what its first one kept
+    /// (noteStreamRoute in main.cpp).
+    QJsonValue lastOutsideRouteValue() const;
+    void restoreLastOutsideRoute(const QJsonValue& value);
 
     // ── Display rates the capture did not hold (vddmatch) ────────────────────
     //

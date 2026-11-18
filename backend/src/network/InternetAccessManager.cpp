@@ -327,6 +327,18 @@ QJsonObject InternetAccessManager::statusJson() const
     obj[QStringLiteral("cert_key")] = m_Settings->certKey();
     obj[QStringLiteral("upnp_available")] =
         m_RouterPorts && m_RouterPorts->gatewayState() == RouterPortAllocator::GatewayState::Ready;
+    // S3XYCast edition: the router's first answer has not come yet (the search
+    // at start-up, deferred two seconds), so "not available" means nothing
+    // yet. The PC's page waits for it before telling its owner to open the
+    // box's ports (PcDashboard.portsAdvice): a box that opens them by itself
+    // would otherwise be told to, at the very moment the program's window
+    // opens. A look again after a miss is not waited for
+    // (RouterPortAllocator::firstLookPending).
+    obj[QStringLiteral("upnp_looking")] = m_RouterPorts && m_RouterPorts->firstLookPending();
+    // S3XYCast edition: it answers, and refused the last port asked of it
+    // (RouterPortAllocator::claimsRefused): the page treats it as a box that
+    // does not open ports by itself.
+    obj[QStringLiteral("upnp_refusing")] = m_RouterPorts && m_RouterPorts->claimsRefused();
     // What a router without UPnP should forward by hand: the stream block,
     // UDP, each port to itself. The tunnel has no fixed port to give there —
     // without a hole of its own it takes an ephemeral one.

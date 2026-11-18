@@ -112,6 +112,22 @@ public:
     void discover();
 
     GatewayState gatewayState() const { return m_State; }
+    /// S3XYCast edition: the first look for the router has not answered yet —
+    /// none since start-up, or since UPnP or Internet Access was turned on —
+    /// so whether this box opens ports by itself is not known yet. A look
+    /// again after a miss does not count: the answer then was no, and stays
+    /// no until one answers (the PC's page would otherwise lose its advice
+    /// for the seconds of each look, every ten minutes).
+    bool firstLookPending() const
+    {
+        return enabled() && m_Misses == 0 &&
+               (m_State == GatewayState::Unknown || m_State == GatewayState::Discovering);
+    }
+    /// S3XYCast edition: the router answered, and the last port asked of it
+    /// was not given (every candidate held by a neighbour or refused) — a box
+    /// that answers UPnP and opens nothing, which the PC's page treats as one
+    /// that does not open ports by itself. Cleared by the next port given.
+    bool claimsRefused() const { return m_ClaimsRefused; }
     /// This host's address as the router reports it; empty until Ready.
     QString publicIp() const { return m_PublicIp; }
     /// The gateway's own address and this host's address on its LAN; empty
@@ -269,6 +285,8 @@ private:
     /// Discoveries missed in a row, for the back-off and for logging the
     /// first miss only.
     int m_Misses = 0;
+    /// See claimsRefused().
+    bool m_ClaimsRefused = false;
     QTimer* m_Rediscover = nullptr;
     QString m_PublicIp;
     QString m_LanIp;

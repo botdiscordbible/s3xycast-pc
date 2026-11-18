@@ -74,6 +74,7 @@
 #include "server/routes/ErrorRoutes.h"
 #include "server/routes/LogRoutes.h"
 #include "common/RunFlags.h"
+#include "common/StreamRoute.h"
 #include "server/CertManager.h"
 #include "server/Provisioning.h"
 #include "server/HostKeyVault.h"
@@ -484,14 +485,69 @@ static bool arecordRunning()
     return Provisioning::stepStatus(QStringLiteral("arecord")) == QLatin1String("running");
 }
 
-// S3XYCast edition: which way a stream went, kept for the PC's own page when
-// it came from outside the PC's network (common/StreamRoute.h). A stream on
-// that network says nothing of the box, and is not kept.
-static void noteStreamRoute(AppSettings& settings, bool relayed, bool lan)
+// S3XYCast edition: which way one of the owner's streams went, kept for the
+// PC's own page when it says something of the box (common/StreamRoute.h,
+// route::keep). A stream on the PC's own network does not, whatever pair it
+// ends on: its browser came from this network (browserHome: its request's
+// address), or the pair's address is this network's own — the box's public
+// address (UPnP's, or STUN's where the box answers no UPnP), or a global IPv6
+// of the PC's own prefix. Nor does a stream through the relay from a browser
+// that showed no UDP to the internet: no rule on the box would change it.
+//
+// One stream may say it more than once: at Connected, once ICE has nominated,
+// and when a late candidate of the browser's shows what the pair really was.
+// The last word stands. When it keeps nothing where an earlier word of the
+// same stream was kept — said "direct", then shown to be the relay for a
+// browser with no UDP — what that earlier word replaced is put back
+// (StreamRouteMemory, one per stream; a second stream writing in between,
+// seconds apart, would see its word replaced: accepted).
+struct StreamRouteMemory
 {
-    qInfo().noquote() << "[Route] a stream" << (lan ? "on this PC's network" : "from outside")
-                      << "went" << (relayed ? "through the relay" : "direct");
-    if (!lan) settings.setLastOutsideRoute(relayed);
+    bool wrote = false;
+    QJsonValue before;
+};
+
+static void noteStreamRoute(AppSettings& settings, const QJsonObject& event, bool browserHome,
+                            bool browserUdpBlocked, const QStringList& hostPublicIpv4,
+                            StreamRouteMemory& memory)
+{
+    using namespace mw::edition::route;
+    Seen seen = seenOf(event);
+    // The browser's own probe got no answer over UDP (UdpProbe.js, the
+    // request's udp_blocked): its word wins over a public address among its
+    // candidates, which a network that lets no UDP out still hands out.
+    if (browserUdpBlocked) seen.browserUdp = false;
+    const bool pairHome =
+        !seen.relayed && !seen.peer.isEmpty() &&
+        NetClassify::sharesHostNetwork(seen.peer, hostPublicIpv4, QNetworkInterface::allAddresses());
+    const char* way = seen.relayed ? "through the relay" : "direct";
+    const Kept kept = keep(seen, browserHome || pairHome);
+    if (kept == Kept::OnThisNetwork)
+        qInfo().noquote() << "[Route] a stream on this PC's network went" << way;
+    else if (kept == Kept::NoBrowserUdp)
+        qInfo().noquote() << "[Route] a stream from outside went through the relay, from a browser"
+                          << "that showed no UDP to the internet: not kept (no rule on the box"
+                          << "would change it)";
+    if (kept != Kept::Yes) {
+        if (memory.wrote) {
+            settings.restoreLastOutsideRoute(memory.before);
+            memory.wrote = false;
+            qInfo().noquote() << "[Route] what this stream said before is taken back";
+        }
+        return;
+    }
+    // What "hole" measures, said as such: a direct stream with none came in
+    // by a rule made on the box, or by the box itself.
+    qInfo().noquote() << "[Route] a stream from outside went" << way
+                      << (seen.hole      ? "(the box had a port open for it)"
+                          : seen.relayed ? "(no port open on the box for it)"
+                                         : "(no UPnP port for it: a rule made on the box, or the "
+                                           "box itself, let it in)");
+    if (!memory.wrote) {
+        memory.before = settings.lastOutsideRouteValue();
+        memory.wrote = true;
+    }
+    settings.setLastOutsideRoute(seen.relayed, seen.hole);
 }
 
 // Open a URL in the user's default browser. On Linux, QDesktopServices::openUrl
@@ -3839,7 +3895,8 @@ int main(int argc, char* argv[])
                             &g_StreamEnds, &dropPendingHostCancel, &detachWorkerSlot,
                             &quitsPerDevice, &quitDeviceApp, &releaseSeatIfIdle, &slotSignalingPort,
                             &slotWsPath, &anyOtherSlotLive, &reapCoopSession, &server, &appSettings,
-                            &authManager, &sessionMetrics, &routerPorts, stunServer, &historyBegin,
+                            &authManager, &sessionMetrics, &routerPorts, &internetAccess,
+                            stunServer, &historyBegin,
                             &historyEnd](const HttpRequest& req, ResponseCallback respond) {
         QString uuid = req.pathParams.value("id");
         if (uuid.isEmpty()) {
@@ -4530,6 +4587,25 @@ int main(int argc, char* argv[])
         const NetClassify::Kind clientKind = streamClientKind(req);
         const bool clientSameNetwork =
             streamClientSameNetwork(req, clientKind, {routerPorts.publicIp()});
+        // S3XYCast edition: which way this stream goes, kept for the PC's page
+        // when it says something of the box (noteStreamRoute). The browser's
+        // own word first: its request came from this network — a private
+        // address, a mesh VPN's, or a public one of this network's own, the
+        // box's address as STUN found it included (UPnP's is empty exactly
+        // where the box opens no port, which is where the card speaks).
+        const QStringList routeBoxAddresses{internetAccess.publicIp(), routerPorts.publicIp()};
+        const bool routeBrowserHome =
+            NetClassify::isTrustedPeer(clientKind) ||
+            NetClassify::sharesHostNetwork(req.clientAddress, routeBoxAddresses,
+                                           QNetworkInterface::allAddresses());
+        // One memory for this stream, shared by every copy of keepRoute.
+        const auto routeMemory = std::make_shared<StreamRouteMemory>();
+        const bool routeUdpBlocked = body.value(QStringLiteral("udp_blocked")).toBool(false);
+        const auto keepRoute = [&appSettings, &internetAccess, &routerPorts, routeBrowserHome,
+                                routeUdpBlocked, routeMemory](const QJsonObject& event) {
+            noteStreamRoute(appSettings, event, routeBrowserHome, routeUdpBlocked,
+                            {internetAccess.publicIp(), routerPorts.publicIp()}, *routeMemory);
+        };
         // Its line in the connection history, once its picture starts.
         ConnectionHistory::Entry historyLine;
         historyLine.address = AuthManager::cleanClientAddress(req.clientAddress);
@@ -4702,6 +4778,17 @@ int main(int argc, char* argv[])
             // browser's Sunshine session (keyed like /launch), never a co-located
             // iOS/Qt client's session. Empty → shared id (legacy fallback).
             const QString& quitUid = reqClientUniqueId;
+
+            // S3XYCast edition: the way the stream went, kept as on the
+            // worker's path (keepRoute) — here, where the relays run in this
+            // process (stream_worker_enabled off), nothing else would.
+            QObject::connect(s, &StreamSession::relayCreated, [keepRoute](DataChannelRelay* r) {
+                QObject::connect(r, &RelayBase::routeSelected, qApp, keepRoute);
+            });
+            QObject::connect(s, &StreamSession::mediaTrackRelayCreated,
+                             [keepRoute](MediaTrackRelay* r) {
+                                 QObject::connect(r, &RelayBase::routeSelected, qApp, keepRoute);
+                             });
 
             // WSS mode: StreamRelay tracking
             QObject::connect(
@@ -5206,11 +5293,10 @@ int main(int argc, char* argv[])
                                  NvComputer* h = computerManager.getHost(hostUuidCopy);
                                  if (h) h->observedIpTtl = ttl;
                              });
-            // S3XYCast edition: straight to the PC or through the relay.
+            // S3XYCast edition: straight to the PC or through the relay
+            // (keepRoute, above: a copy of it lives as long as the worker).
             QObject::connect(worker, &StreamWorkerHost::routeObserved, qApp,
-                             [&appSettings](bool relayed, bool lan) {
-                                 noteStreamRoute(appSettings, relayed, lan);
-                             });
+                             [keepRoute](const QJsonObject& event) { keepRoute(event); });
             // The user clicked "Share" in the desktop portal's dialog. Unlike
             // the TTL above this IS persisted — it is a decision the person
             // made, and losing it means asking them again for nothing.
@@ -7178,11 +7264,13 @@ int main(int argc, char* argv[])
                              if (h) h->observedIpTtl = ttl;
                          });
 
-        // See the owner path: a guest's stream crosses the same box.
-        QObject::connect(worker, &StreamWorkerHost::routeObserved, qApp,
-                         [&appSettings](bool relayed, bool lan) {
-                             noteStreamRoute(appSettings, relayed, lan);
-                         });
+        // S3XYCast edition: a guest's way in is NOT kept for the PC's page
+        // (noteStreamRoute). Its slot binds a port of its own (48550 + slot,
+        // from 48552), which is not one the card asks the owner to forward:
+        // with the owner's rule in place, a guest from outside still goes
+        // through the relay, and kept, it would bring the card back to tell
+        // the owner of "your last stream" — his own went direct (18/11/2026
+        // review). The car's notice is never shown to a guest either.
 
         // See the owner path: a grant is persisted wherever it turns up.
         QObject::connect(worker, &StreamWorkerHost::portalGrantReceived, qApp,

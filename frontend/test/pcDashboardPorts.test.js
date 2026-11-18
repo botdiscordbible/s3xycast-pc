@@ -49,30 +49,98 @@ const net = (fields = {}) => ({
     rendezvous: { online: true, url: 'https://pc.example/abcdefghjkmnpqrstvwxyz0123' },
     ...fields,
 });
+// As 0.1.14 kept them: no word of a port open on the box.
 const relayedAt = { relayed: true, at: '2026-11-17T20:19:17Z' };
 const directAt = { relayed: false, at: '2026-11-18T15:29:51Z' };
+// As kept since: whether the box had a port open for that stream.
+const relayedNoHole = { relayed: true, hole: false, at: '2026-11-18T20:41:02Z' };
+const relayedWithHole = { relayed: true, hole: true, at: '2026-11-18T20:41:02Z' };
+const directNoHole = { relayed: false, hole: false, at: '2026-11-18T16:29:51Z' };
 
 describe('when the page says to open the box’s ports', () => {
     it('says it after a stream from outside went through the relay', () => {
         expect(portsAdvice(net({ last_outside_route: relayedAt }))).toBe('relayed');
+        expect(portsAdvice(net({ last_outside_route: relayedNoHole }))).toBe('relayed');
+    });
+
+    it('says it where the box answers but opened no port for the stream', () => {
+        // A box that answers UPnP and then refuses, or gives the port away, is
+        // exactly the one that needs the rule made by hand.
+        expect(portsAdvice(net({ upnp_available: true, last_outside_route: relayedNoHole }))).toBe(
+            'relayed',
+        );
+        // Said of a stream that went: true while the box is being asked again.
+        expect(portsAdvice(net({ upnp_looking: true, last_outside_route: relayedNoHole }))).toBe(
+            'relayed',
+        );
+        // Before any stream: a box that answers and refused the ports asked
+        // of it is one that does not open them by itself.
+        expect(portsAdvice(net({ upnp_available: true, upnp_refusing: true }))).toBe('noUpnp');
+        expect(
+            portsAdvice(
+                net({ upnp_available: true, upnp_refusing: true, last_outside_route: relayedAt }),
+            ),
+        ).toBe('relayed');
+        expect(portsAdvice(net({ upnp_available: true, upnp_refusing: false }))).toBeNull();
+    });
+
+    it('does not say it when the box had a port open for the relayed stream', () => {
+        // The detour was then the car's network's doing: no rule would change it.
+        expect(portsAdvice(net({ last_outside_route: relayedWithHole }))).toBeNull();
+        expect(
+            portsAdvice(net({ upnp_available: true, last_outside_route: relayedWithHole })),
+        ).toBeNull();
+    });
+
+    it('stops saying it once a stream came straight in, by a rule made by hand', () => {
+        // The first owner's case: no UPnP, his own rule, the car came in direct.
+        expect(portsAdvice(net({ last_outside_route: directNoHole }))).toBeNull();
     });
 
     it('says it before any, when the box does not open ports by itself', () => {
         expect(portsAdvice(net())).toBe('noUpnp');
         // The owner switched the box's own opening off: same thing.
         expect(portsAdvice(net({ upnp_enabled: false }))).toBe('noUpnp');
+        // Even where the box had answered before he did: it stays "available",
+        // and nothing is opened any more.
+        expect(portsAdvice(net({ upnp_enabled: false, upnp_available: true }))).toBe('noUpnp');
+        expect(
+            portsAdvice(
+                net({ upnp_enabled: false, upnp_available: true, last_outside_route: relayedAt }),
+            ),
+        ).toBe('relayed');
     });
 
     it('stops saying it once a stream from outside came straight in', () => {
-        expect(portsAdvice(net({ last_outside_route: directAt }))).toBeNull();
+        expect(portsAdvice(net({ last_outside_route: directNoHole }))).toBeNull();
+        expect(
+            portsAdvice(net({ last_outside_route: { ...directNoHole, hole: true } })),
+        ).toBeNull();
+    });
+
+    it('does not trust a direct stream kept by 0.1.14', () => {
+        // 0.1.14 took a phone at home on the box's IPv6, a guest, or a relayed
+        // stream it misread for one: read as no stream yet.
+        expect(portsAdvice(net({ last_outside_route: directAt }))).toBe('noUpnp');
+        expect(portsAdvice(net({ upnp_available: true, last_outside_route: directAt }))).toBeNull();
     });
 
     it('does not say it where the box opens ports by itself', () => {
-        // A relayed stream is then the car's network's doing, not the box's.
         expect(portsAdvice(net({ upnp_available: true }))).toBeNull();
+        // A record of 0.1.14, with no word of a hole: the box's word stands
+        // in for it, as 0.1.14 read it (a relayed stream was then the car's
+        // network's doing).
         expect(
             portsAdvice(net({ upnp_available: true, last_outside_route: relayedAt })),
         ).toBeNull();
+    });
+
+    it('waits while the box is still being asked whether it opens ports', () => {
+        // The search at start-up takes a moment; a box that opens them by
+        // itself would otherwise be told to.
+        expect(portsAdvice(net({ upnp_looking: true }))).toBeNull();
+        expect(portsAdvice(net({ upnp_looking: true, last_outside_route: relayedAt }))).toBeNull();
+        expect(portsAdvice(net({ upnp_looking: false }))).toBe('noUpnp');
     });
 
     it('does not say it where nothing comes from outside', () => {
@@ -156,6 +224,8 @@ describe('the card on the page', () => {
         expect(how.getAttribute('target')).toBe('_blank');
         expect(how.getAttribute('rel')).toContain('noopener');
         expect(how.textContent).toBe('pcDash.portsHow');
+        // For whoever already made the rule: it goes at the first direct stream.
+        expect(card.querySelector('.pc-dash-ports-done').textContent).toBe('pcDash.portsDone');
     });
 
     it('says the box opens nothing before any stream from outside', async () => {
@@ -167,13 +237,13 @@ describe('the card on the page', () => {
     });
 
     it('is not there once a stream from outside came straight in', async () => {
-        expect(await mount(net({ last_outside_route: directAt }))).toBeNull();
+        expect(await mount(net({ last_outside_route: directNoHole }))).toBeNull();
     });
 
     it('goes away by itself when the state it read changes', async () => {
         const card = await mount(net({ last_outside_route: relayedAt }));
         expect(card).not.toBeNull();
-        backend.getInternetStatus.mockResolvedValue(net({ last_outside_route: directAt }));
+        backend.getInternetStatus.mockResolvedValue(net({ last_outside_route: directNoHole }));
         await dash.refresh();
         expect(host.querySelector('.pc-dash-ports')).toBeNull();
     });
@@ -201,6 +271,7 @@ describe('the words and the look', () => {
                 'portsRule',
                 'portsRuleNoIp',
                 'portsHow',
+                'portsDone',
             ]) {
                 expect(typeof words[key], `${lang} ${key}`).toBe('string');
             }
@@ -211,8 +282,47 @@ describe('the words and the look', () => {
             expect(words.portsRuleNoIp).not.toContain('{{ip}}');
             expect(words.portsRelayed).toContain('S3XYCast');
         }
+        // Before any stream from outside, the program cannot know whether a
+        // rule exists: the card says what happens without one, as a condition,
+        // never that the picture does go through the relay (18/11/2026: the
+        // first owner had made his rule, and the card told him otherwise).
+        const conditions = {
+            en: /without a rule/,
+            fr: /sans règle/,
+            tr: /kural olmadan/,
+            zh: /如果没有规则/,
+        };
+        for (const [lang, condition] of Object.entries(conditions)) {
+            const words = JSON.parse(read('locales', lang + '.json')).pcDash;
+            expect(words.portsNoUpnp, lang).toMatch(condition);
+        }
         // In French: the goal first, and the PC called a PC.
         const fr = JSON.parse(read('locales', 'fr.json')).pcDash;
+        expect(fr.portsNoUpnp).not.toMatch(/: depuis l’extérieur, l’image passe par le relais/);
+        // A link from outside goes through the relay; the picture goes from the
+        // PC to the car, never "from outside".
+        const en = JSON.parse(read('locales', 'en.json')).pcDash;
+        expect(en.portsNoUpnp).not.toMatch(/the picture goes through/);
+        expect(en.portsNoUpnp).toMatch(/a link from outside goes through the S3XYCast relay/);
+        // "Has not opened": true while the box is asked, and with UPnP off.
+        expect(fr.portsNoUpnp).toMatch(/^Votre box n’a pas ouvert les ports/);
+        // One rule per port, as the site's guide says.
+        for (const lang of ['en', 'fr', 'tr', 'zh']) {
+            const words = JSON.parse(read('locales', lang + '.json')).pcDash;
+            for (const key of ['portsRule', 'portsRuleNoIp']) {
+                const text = words[key];
+                expect(text.indexOf('{{first}}'), `${lang} ${key}`).toBeLessThan(
+                    text.indexOf('{{second}}'),
+                );
+                // A sentence ends between the two numbers: two rules, not one
+                // that names both.
+                expect(text, `${lang} ${key}`).not.toMatch(/\{\{first\}\}[^.。]*\{\{second\}\}/);
+            }
+        }
+        expect(fr.portsRule).toMatch(/Puis la même avec le port {{second}}./);
+        // The owner's own streams: a guest's does not take the card away.
+        expect(fr.portsDone).toMatch(/disparaît dès qu’un de vos flux arrive en direct/);
+        expect(en.portsDone).toMatch(/one of your streams from outside comes in directly/);
         expect(fr.portsTitle).toMatch(/^Moins de délai dans la voiture/);
         for (const text of Object.values(fr)) {
             if (typeof text === 'string') expect(text).not.toMatch(/hôte|serveur|backend/i);
@@ -230,6 +340,21 @@ describe('the words and the look', () => {
 });
 
 describe('the car’s notice of a relayed stream', () => {
+    it('says what to do only as a condition: the car cannot tell why', () => {
+        // A box that opens ports by itself can still see a stream relayed by
+        // the car's network; the PC's page then asks nothing.
+        const conditional = {
+            en: /If your PC asks you to open your router’s ports/,
+            fr: /Si votre PC vous demande d’ouvrir les ports de votre box/,
+            tr: /portlarını açmanızı isterse/,
+            zh: /如果您的电脑提示您打开路由器端口/,
+        };
+        for (const [lang, expected] of Object.entries(conditional)) {
+            const words = JSON.parse(read('locales', lang + '.json')).stream;
+            expect(words.routeRelay, lang).toMatch(expected);
+        }
+    });
+
     it('says the delay and what to do, in the four languages', () => {
         const said = {
             en: /more delay.*ports/,

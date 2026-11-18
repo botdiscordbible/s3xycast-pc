@@ -18,10 +18,12 @@
 #pragma once
 
 #include "InputPolicy.h"
+#include "common/StreamRoute.h"
 
 #include <QJsonObject>
 #include <QObject>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <cstdint>
 #include <vector>
@@ -170,6 +172,13 @@ public:
     // UDP, and keeps a tunnel peer on the tunnel.
     void setEmitLanHostCandidate(bool enable) { m_EmitLanCandidate = enable; }
 
+    /// S3XYCast edition: the relay servers the browser is given (their hosts,
+    /// route::relayHosts of the grant), so that a check that comes from the
+    /// relay's address is known for what it is before the browser's relay
+    /// candidate arrives (judgeRouteLocked). A name is looked up off the
+    /// connection's threads; an address is taken as it is. Before prepare().
+    void noteRelayServers(const QStringList& hosts);
+
     // ── Status ────────────────────────────────────────────────────────────────
 
     virtual bool isConnected() const = 0;
@@ -196,10 +205,12 @@ signals:
     /// Session ended (disconnect / error).
     void sessionEnded();
 
-    /// S3XYCast edition: the connection is up, and this is the way it went —
-    /// through the relay or not, with a browser on the PC's own network or
-    /// not (common/StreamRoute.h). Emitted from the connection's own thread.
-    void routeSelected(bool relayed, bool lan);
+    /// S3XYCast edition: the connection is up, and this is the way it went
+    /// (common/StreamRoute.h: route::event of a route::Seen) — once at
+    /// Connected, and again only when that changes (the pair ICE nominates,
+    /// a candidate of the browser's arriving late). Emitted from whichever
+    /// thread learnt it: the connection's own, or the relay's.
+    void routeSelected(const QJsonObject& event);
 
 protected:
     /// The HID passthrough was given or taken under a running stream. Runs on
@@ -247,6 +258,21 @@ protected:
     ///
     /// @param logTag prefix for this relay's log lines, e.g. "[MediaTrackRelay]".
     void logSelectedCandidatePair(rtc::PeerConnection& pc, const char* logTag);
+
+    /// S3XYCast edition: the pair again once ICE has nominated one (its state
+    /// Completed). Until then the agent may still move to a pair of higher
+    /// priority that succeeds later — two seconds, for the controlling side —
+    /// and the pair read at Connected would name a way the stream no longer
+    /// takes. Logged and told (routeSelected) only when it changed.
+    void recheckSelectedPair(rtc::PeerConnection& pc, const char* logTag);
+
+    /// S3XYCast edition: one of the browser's candidates, as it was handed to
+    /// the agent. Its relay ones give the relay server's address; its
+    /// reflexive ones, or a host one at a public address, show that it has UDP
+    /// to the internet (route::Seen). Both relays call it from
+    /// addRemoteCandidate(); a candidate that changes what the pair already
+    /// told (a relay one at the address the pair names) tells it again.
+    void noteRemoteCandidate(const rtc::Candidate& candidate);
 
     /// Hands what the browser sends on the audio track to m_Mic. The track
     /// holds a weak reference only: the relay's stopMic() ends the uplink,
@@ -299,4 +325,37 @@ protected:
     ///< through the router. See emitLocalCandidate().
     bool m_SuppressIPv6 = false;
     bool m_EmitLanCandidate = false; ///< Also emit the internal host candidate
+
+private:
+    // ── S3XYCast edition: which way the stream went (routeSelected) ─────────
+    /// The verdict on the pair last read, as the route event, when it differs
+    /// from the last one told (empty: nothing new). With m_RouteMutex held.
+    QJsonObject judgeRouteLocked();
+    /// judgeRouteLocked(), and routeSelected when there is something new —
+    /// emitted with m_RouteMutex held, so that the words of two threads go
+    /// out in the order they were reached (every receiver is queued).
+    void tellRouteLocked();
+    /// One more address of the relay server (QHostAddress text; empty: none),
+    /// and the verdict again when a pair is already read.
+    void addRelayServer(const QString& ip);
+
+    /// Guards everything below: candidates come in on the relay's thread, the
+    /// pair is read on the connection's, the relay's name is answered on the
+    /// relay's.
+    std::mutex m_RouteMutex;
+    /// The relay server's addresses (QHostAddress text): the grant's hosts
+    /// (noteRelayServers), and those of the browser's relay candidates.
+    std::vector<QString> m_RelayServerIps;
+    /// The browser showed UDP to the internet (route::showsInternetUdp).
+    bool m_BrowserUdp = false;
+    /// The pair last read: whether each end is a relay one, the browser's
+    /// address on it (empty when unresolved), and its text for the log.
+    bool m_RouteHavePair = false;
+    bool m_RouteLocalRelay = false;
+    bool m_RouteRemoteRelay = false;
+    QString m_RouteRemoteIp;
+    QString m_RoutePairText;
+    /// The last verdict told, if any.
+    bool m_RouteTold = false;
+    mw::edition::route::Seen m_RouteLast;
 };

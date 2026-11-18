@@ -232,9 +232,10 @@ signals:
     /// supervisor, like the portal's grant.
     void captureHoldReceived(const QJsonObject& verdict);
     /// S3XYCast edition: the stream's connection is up, and this is the way it
-    /// went — through the relay or not, from the PC's own network or not
-    /// (common/StreamRoute.h). Kept by the supervisor for the PC's page.
-    void routeObserved(bool relayed, bool lan);
+    /// went (the worker's route event, common/StreamRoute.h: route::seenOf
+    /// reads it) — told again when that changes. Kept by the supervisor for
+    /// the PC's page when it says something of the box.
+    void routeObserved(const QJsonObject& event);
     /// The child process fully exited (ports are certainly free) — exactly
     /// once, always after ended(). Serialization barrier for slot reuse.
     void exited();

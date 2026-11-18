@@ -28,6 +28,7 @@
 
 #include <QDebug>
 #include <QHostAddress>
+#include <QHostInfo>
 #include <QJsonDocument>
 #include <QString>
 #include <QStringList>
@@ -81,6 +82,36 @@ QString describeCandidate(const rtc::Candidate& c)
         .arg(transport);
 }
 
+/// S3XYCast edition: an address as the route verdict compares it — the text
+/// QHostAddress gives, an IPv4 written as IPv6 (::ffff:a.b.c.d) as IPv4.
+/// Empty when it is not an address.
+QString routeAddress(const std::string& text)
+{
+    const QHostAddress addr(QString::fromStdString(text));
+    if (addr.isNull()) return {};
+    bool isV4 = false;
+    const quint32 v4 = addr.toIPv4Address(&isV4);
+    return isV4 ? QHostAddress(v4).toString() : addr.toString();
+}
+
+/// S3XYCast edition: the candidate's address the same way, when it has one
+/// (a literal one; a .local name stays unresolved here, no lookup made).
+QString routeAddress(const rtc::Candidate& given)
+{
+    rtc::Candidate c = given;
+    if (!c.isResolved()) c.resolve(rtc::Candidate::ResolveMode::Simple);
+    const auto addr = c.address();
+    return addr.has_value() ? routeAddress(*addr) : QString();
+}
+
+void addOnce(std::vector<QString>& list, const QString& value)
+{
+    if (value.isEmpty()) return;
+    for (const QString& v : list)
+        if (v == value) return;
+    list.push_back(value);
+}
+
 } // namespace
 
 void RelayBase::setPublicAddress(const std::string& publicIP, uint16_t publicPort)
@@ -124,22 +155,144 @@ void RelayBase::logSelectedCandidatePair(rtc::PeerConnection& pc, const char* lo
     }
     qInfo() << logTag << "Selected candidate pair: local" << describeCandidate(local) << "-> remote"
             << describeCandidate(remote);
-    // S3XYCast edition: which way it went, for the PC's own page. Through the
-    // relay when either end is the relay's; on the PC's own network when the
-    // browser's address is not a public one (an unresolved .local is a
-    // browser of this network hiding its address).
+    // S3XYCast edition: which way it went, for the PC's own page
+    // (judgeRouteLocked).
     {
-        const bool relayed = local.type() == rtc::Candidate::Type::Relayed ||
-                             remote.type() == rtc::Candidate::Type::Relayed;
-        const auto address = remote.address();
-        const bool lan =
-            !relayed && (!address.has_value() ||
-                         NetClassify::isTrustedPeer(
-                             NetClassify::classify(QString::fromStdString(*address))));
-        emit routeSelected(relayed, lan);
+        std::lock_guard<std::mutex> lock(m_RouteMutex);
+        m_RouteHavePair = true;
+        m_RouteLocalRelay = local.type() == rtc::Candidate::Type::Relayed;
+        m_RouteRemoteRelay = remote.type() == rtc::Candidate::Type::Relayed;
+        m_RouteRemoteIp = routeAddress(remote);
+        m_RoutePairText = describeCandidate(local) + QStringLiteral(" -> ") + describeCandidate(remote);
+        tellRouteLocked();
     }
     // On the server's shared ports, the peer it may now trust for this agent
     mw::icemuxclient::confirmed(remote);
+}
+
+void RelayBase::recheckSelectedPair(rtc::PeerConnection& pc, const char* logTag)
+{
+    rtc::Candidate local;
+    rtc::Candidate remote;
+    if (!pc.getSelectedCandidatePair(&local, &remote)) return;
+    const QString text =
+        describeCandidate(local) + QStringLiteral(" -> ") + describeCandidate(remote);
+    std::lock_guard<std::mutex> lock(m_RouteMutex);
+    // Nominated before the connection is up (no other pair was pending): the
+    // pair read at Connected is this one, and a connection that never comes
+    // up must tell nothing.
+    if (!m_RouteHavePair) return;
+    if (text != m_RoutePairText) {
+        m_RouteLocalRelay = local.type() == rtc::Candidate::Type::Relayed;
+        m_RouteRemoteRelay = remote.type() == rtc::Candidate::Type::Relayed;
+        m_RouteRemoteIp = routeAddress(remote);
+        m_RoutePairText = text;
+        // The shared ports' trust is left to the pair read at Connected, as
+        // it always was: this only says which way the stream now goes.
+        qInfo() << logTag << "Selected candidate pair once nominated: local"
+                << describeCandidate(local) << "-> remote" << describeCandidate(remote);
+    }
+    tellRouteLocked();
+}
+
+void RelayBase::noteRelayServers(const QStringList& hosts)
+{
+    for (const QString& host : hosts) {
+        const QString literal = routeAddress(host.toStdString());
+        if (!literal.isEmpty()) {
+            addRelayServer(literal);
+            continue;
+        }
+        // Looked up off this thread, answered on it; nothing if the relay is
+        // gone by then (this is the context). The relay's candidates still
+        // name it if the answer comes late.
+        QHostInfo::lookupHost(host, this, [this](const QHostInfo& info) {
+            if (info.error() != QHostInfo::NoError) return;
+            for (const QHostAddress& addr : info.addresses())
+                addRelayServer(routeAddress(addr.toString().toStdString()));
+        });
+    }
+}
+
+void RelayBase::addRelayServer(const QString& ip)
+{
+    if (ip.isEmpty()) return;
+    std::lock_guard<std::mutex> lock(m_RouteMutex);
+    addOnce(m_RelayServerIps, ip);
+    if (m_RouteHavePair) tellRouteLocked();
+}
+
+void RelayBase::tellRouteLocked()
+{
+    // Told while the lock is held, so that two threads' words go out in the
+    // order they were reached: every receiver is queued (the main program's
+    // context, never this relay's thread), so emitting only posts an event,
+    // and nothing it posts comes back here.
+    const QJsonObject tell = judgeRouteLocked();
+    if (!tell.isEmpty()) emit routeSelected(tell);
+}
+
+void RelayBase::noteRemoteCandidate(const rtc::Candidate& candidate)
+{
+    using mw::edition::route::CandidateKind;
+    CandidateKind kind = CandidateKind::Other;
+    switch (candidate.type()) {
+    case rtc::Candidate::Type::Host: kind = CandidateKind::Host; break;
+    case rtc::Candidate::Type::ServerReflexive:
+    case rtc::Candidate::Type::PeerReflexive: kind = CandidateKind::Reflexive; break;
+    case rtc::Candidate::Type::Relayed: kind = CandidateKind::Relay; break;
+    case rtc::Candidate::Type::Unknown: break;
+    }
+    const QString ip = routeAddress(candidate);
+    const bool udp = candidate.transportType() == rtc::Candidate::TransportType::Udp;
+    const bool isPublic =
+        !ip.isEmpty() && NetClassify::classify(ip) == NetClassify::Kind::Public;
+    std::lock_guard<std::mutex> lock(m_RouteMutex);
+    if (kind == CandidateKind::Relay) addOnce(m_RelayServerIps, ip);
+    if (mw::edition::route::showsInternetUdp(kind, udp, isPublic)) m_BrowserUdp = true;
+    if (m_RouteHavePair) tellRouteLocked();
+}
+
+QJsonObject RelayBase::judgeRouteLocked()
+{
+    using namespace mw::edition::route;
+    // Through the relay when either end is the relay's — or when the
+    // browser's end is the relay server's own address: a check from the
+    // browser's relay candidate that came in before the candidate did, which
+    // ICE names peer-reflexive and never renames (a box that lets the relay's
+    // packets in, as a forwarded port does). On the PC's own network when the
+    // browser's address is not a public one: an unresolved .local is a
+    // browser of this network hiding its address. Whether a public one is
+    // this network's own (the box's public address, a global IPv6 of the PC's
+    // prefix) is the main program's to say: it has the box's address (peer).
+    bool fromRelayAddress = false;
+    for (const QString& ip : m_RelayServerIps)
+        if (!m_RouteRemoteIp.isEmpty() && ip == m_RouteRemoteIp) fromRelayAddress = true;
+    Seen s;
+    s.relayed = m_RouteLocalRelay || m_RouteRemoteRelay || fromRelayAddress;
+    s.lan = !s.relayed &&
+            (m_RouteRemoteIp.isEmpty() ||
+             NetClassify::isTrustedPeer(NetClassify::classify(m_RouteRemoteIp)));
+    if (!s.relayed) s.peer = m_RouteRemoteIp;
+    // A port the box had open for this stream: its own UPnP hole, or a shared
+    // port the router forwards (only then is m_OnSharedPorts set) — or the
+    // relay's own check came in, from a relayed address this PC had not been
+    // told of yet and so had sent nothing to. A box that filters by port
+    // drops that; one that lets it in has a rule made by hand, or lets in
+    // whatever comes from an address this PC wrote to, and then the car's
+    // own checks come straight in as well. Relayed so, the detour is ICE's
+    // choice between two ways that both work, not the box's doing: no rule
+    // would change it.
+    const bool relayLetIn = fromRelayAddress && !m_RouteLocalRelay && !m_RouteRemoteRelay;
+    s.hole = relayLetIn || (m_OnSharedPorts ? !m_SharedHoles.empty() : m_PublicPort > 0);
+    s.browserUdp = m_BrowserUdp;
+    if (m_RouteTold && s == m_RouteLast) return {};
+    if (relayLetIn)
+        qInfo() << "[Relay] The browser's end of the pair is the relay server's own address:"
+                << "the stream goes through the relay, its check let in by the box";
+    m_RouteTold = true;
+    m_RouteLast = s;
+    return mw::edition::route::event(s);
 }
 
 void RelayBase::wireMicUplink(rtc::Track& audioTrack, const char* logTag)
@@ -198,6 +351,12 @@ void RelayBase::emitLocalCandidate(const rtc::Candidate& candidate, const char* 
     // since the tunnel branch below grants an exemption.
     const NetClassify::Kind kind =
         resolved ? NetClassify::classify(addr.toString()) : NetClassify::Kind::Public;
+
+    // S3XYCast edition: a relay candidate of ours would name the relay server
+    // too (judgeRouteLocked). This PC is given no relay today (buildIceConfig:
+    // the relay is the browser's, SignalingServer::sendIceConfig): kept for
+    // the day it is.
+    if (candidate.type() == rtc::Candidate::Type::Relayed) addRelayServer(routeAddress(candidate));
 
     // If UPnP is active and this is a host candidate, rewrite it with the
     // public IP and mapped port. This gives the browser a reachable endpoint

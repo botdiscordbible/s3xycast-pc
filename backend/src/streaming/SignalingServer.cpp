@@ -469,6 +469,11 @@ void SignalingServer::onNewWsConnection()
                 << m_UpnpExternalPort;
     }
 
+    // S3XYCast edition: the relay the browser was just given (sendIceConfig),
+    // so that the way the stream goes is judged right from its first word
+    // (RelayBase::noteRelayServers). Nothing changes in the connection.
+    if (!m_RelayIce.isEmpty()) m_Relay->noteRelayServers(mw::edition::route::relayHosts(m_RelayIce));
+
     // Prepare the PeerConnection + DataChannels
     // This will trigger signalingSdpReady with the SDP offer to send to browser
     QString why;
