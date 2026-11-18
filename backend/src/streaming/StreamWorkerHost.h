@@ -231,6 +231,10 @@ signals:
     /// when there was enough dense content to judge. Persisted by the
     /// supervisor, like the portal's grant.
     void captureHoldReceived(const QJsonObject& verdict);
+    /// S3XYCast edition: the stream's connection is up, and this is the way it
+    /// went — through the relay or not, from the PC's own network or not
+    /// (common/StreamRoute.h). Kept by the supervisor for the PC's page.
+    void routeObserved(bool relayed, bool lan);
     /// The child process fully exited (ports are certainly free) — exactly
     /// once, always after ended(). Serialization barrier for slot reuse.
     void exited();

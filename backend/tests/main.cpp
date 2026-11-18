@@ -90,6 +90,7 @@ void run_edition_words_tests();
 void run_edition_worker_service_tests();
 void run_edition_update_notice_tests();
 void run_edition_app_window_tests();
+void run_edition_stream_route_tests();
 void run_autostart_entry_tests();
 void run_launch_env_tests();
 void run_kms_helper_protocol_tests();
@@ -244,6 +245,7 @@ int main(int argc, char** argv)
     run_edition_worker_service_tests();
     run_edition_update_notice_tests();
     run_edition_app_window_tests();
+    run_edition_stream_route_tests();
     run_autostart_entry_tests();
     run_launch_env_tests();
     run_kms_helper_protocol_tests();

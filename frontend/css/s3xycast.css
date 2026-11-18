@@ -1273,6 +1273,40 @@ textarea {
     color: var(--text-2);
     font-size: var(--fs-xs);
 }
+/* S3XYCast PC: a rule on the box would shorten the delay in the car. Seen
+   from across the room: the one block on the page that asks for something. */
+.pc-dash-ports {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 18px 20px;
+    background: var(--c-warning-soft);
+    border-left: 4px solid var(--c-warning);
+    border-radius: var(--radius-md);
+}
+.pc-dash-ports-title {
+    margin: 0;
+    font-size: var(--fs-lg);
+    line-height: 1.25;
+}
+.pc-dash-ports-text,
+.pc-dash-ports-rule {
+    margin: 0;
+    font-size: var(--fs-sm);
+    line-height: 1.5;
+}
+.pc-dash-ports-rule {
+    font-weight: 700;
+}
+.pc-dash-ports-how {
+    align-self: flex-start;
+    min-height: 48px;
+    margin-top: 6px;
+    padding: 0 22px;
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+}
 .pc-dash-notes {
     display: flex;
     flex-direction: column;

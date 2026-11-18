@@ -120,7 +120,9 @@ describe('where the route is read and said', () => {
         );
         // Not on the PC's own network, and never to a guest.
         expect(body).toContain('if (this._viewerOnLan === true || sv._playerMode) return;');
-        expect(body).toContain('if (words) Toast.info(t(words.notice));');
+        expect(body).toContain(
+            'if (words) Toast.info(t(words.notice), relayed ? { durationMs: 9000 } : undefined);',
+        );
         // Due at a launch the viewer asked for, not at a relaunch of it.
         expect(app).toContain('this._routeNoticeDue = !suppressShortcuts;');
     });

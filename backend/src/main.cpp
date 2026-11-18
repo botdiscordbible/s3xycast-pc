@@ -484,6 +484,16 @@ static bool arecordRunning()
     return Provisioning::stepStatus(QStringLiteral("arecord")) == QLatin1String("running");
 }
 
+// S3XYCast edition: which way a stream went, kept for the PC's own page when
+// it came from outside the PC's network (common/StreamRoute.h). A stream on
+// that network says nothing of the box, and is not kept.
+static void noteStreamRoute(AppSettings& settings, bool relayed, bool lan)
+{
+    qInfo().noquote() << "[Route] a stream" << (lan ? "on this PC's network" : "from outside")
+                      << "went" << (relayed ? "through the relay" : "direct");
+    if (!lan) settings.setLastOutsideRoute(relayed);
+}
+
 // Open a URL in the user's default browser. On Linux, QDesktopServices::openUrl
 // routes through the XDG desktop portal, which under Ubuntu's snap-packaged
 // Firefox (the distro default) can pop a blank window that never receives the
@@ -5196,6 +5206,11 @@ int main(int argc, char* argv[])
                                  NvComputer* h = computerManager.getHost(hostUuidCopy);
                                  if (h) h->observedIpTtl = ttl;
                              });
+            // S3XYCast edition: straight to the PC or through the relay.
+            QObject::connect(worker, &StreamWorkerHost::routeObserved, qApp,
+                             [&appSettings](bool relayed, bool lan) {
+                                 noteStreamRoute(appSettings, relayed, lan);
+                             });
             // The user clicked "Share" in the desktop portal's dialog. Unlike
             // the TTL above this IS persisted — it is a decision the person
             // made, and losing it means asking them again for nothing.
@@ -7161,6 +7176,12 @@ int main(int argc, char* argv[])
                          [&computerManager, hostUuid](int ttl) {
                              NvComputer* h = computerManager.getHost(hostUuid);
                              if (h) h->observedIpTtl = ttl;
+                         });
+
+        // See the owner path: a guest's stream crosses the same box.
+        QObject::connect(worker, &StreamWorkerHost::routeObserved, qApp,
+                         [&appSettings](bool relayed, bool lan) {
+                             noteStreamRoute(appSettings, relayed, lan);
                          });
 
         // See the owner path: a grant is persisted wherever it turns up.

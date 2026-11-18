@@ -3723,7 +3723,8 @@ export const MoonlightApp = {
         this._routeNoticeDue = false;
         if (this._viewerOnLan === true || sv._playerMode) return;
         const words = routeWords(relayed);
-        if (words) Toast.info(t(words.notice));
+        // Through the relay, it says what to do about it: longer to read.
+        if (words) Toast.info(t(words.notice), relayed ? { durationMs: 9000 } : undefined);
     },
 
     /** The estimate's bitrate, in kbps, for a frame of that size — the LAN

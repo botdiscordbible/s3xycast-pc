@@ -20,6 +20,7 @@
 #include "common/Edition.h"
 #include "common/Logger.h"
 #include "common/PairingCrypto.h"
+#include "common/StreamRoute.h"
 
 #include <QCryptographicHash>
 #include <QDateTime>
@@ -1535,6 +1536,20 @@ QString AppSettings::portalRestoreToken(bool virtualDisplay) const
 {
     QJsonObject obj = readAll();
     return obj.value(portalTokenKey(virtualDisplay)).toString();
+}
+
+QJsonObject AppSettings::lastOutsideRoute() const
+{
+    return mw::edition::route::readable(
+        readAll().value(QLatin1String(mw::edition::route::kSettingsKey)));
+}
+
+void AppSettings::setLastOutsideRoute(bool relayed)
+{
+    QJsonObject obj = readAll();
+    obj[QLatin1String(mw::edition::route::kSettingsKey)] =
+        mw::edition::route::record(relayed, QDateTime::currentDateTimeUtc());
+    writeAll(obj);
 }
 
 void AppSettings::setPortalRestoreToken(const QString& token, bool virtualDisplay)

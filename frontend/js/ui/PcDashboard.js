@@ -16,11 +16,13 @@
  * for. Turning it on records the same agreement text the settings page shows,
  * which is on this page too, under the button, while it is off.
  *
- * Everything it reads is upstream's own status; it adds no state of its own.
+ * Everything it reads is upstream's own status, and one thing of the
+ * edition's: which way the last stream from outside went (portsAdvice).
  */
 import { t } from '../i18n/i18n.js';
 import { BackendClient } from '../api/BackendClient.js';
 import { escapeHtml } from '../util/escapeHtml.js';
+import { BOX_HELP_URL } from '../brand.js';
 import { Toast } from './Toast.js';
 
 /** How often the state is read again while the page shows it. */
@@ -56,6 +58,47 @@ export function pcDashboardView({ internet, auth, native, starting }) {
         // A build that never reaches outside has nothing to allow.
         canSwitch: !!internet && net.lan_only !== true,
     };
+}
+
+/**
+ * Whether to tell the owner that a rule on the box would shorten the delay,
+ * and why. Where the box opens no port for the PC, a stream from a car on a
+ * mobile network goes through the S3XYCast relay, a detour that adds delay;
+ * a rule made on the box lets it come straight in. The first owner's next
+ * stream from the car went direct with no drop of rate and no freeze
+ * (18/11/2026), and he wants the customers told, plainly, where they can act.
+ *
+ *   'relayed' — the last stream from outside went through the relay, and the
+ *               box does not open ports by itself: it is why.
+ *   'noUpnp'  — no stream from outside yet, and the box does not open ports
+ *               by itself: the first one would take the relay.
+ *   null      — nothing to do: the last stream from outside came straight in
+ *               (a rule on the box, or the box's own), the box opens ports by
+ *               itself (a relayed stream is then the car's network's doing),
+ *               or the PC does not allow streaming from outside at all.
+ * @param {any} net /api/internet/status
+ * @returns {'relayed'|'noUpnp'|null}
+ */
+export function portsAdvice(net) {
+    if (!net || net.internet_access_enabled !== true || net.lan_only === true) return null;
+    if (net.upnp_available === true) return null;
+    const route = net.last_outside_route;
+    if (route && typeof route.relayed === 'boolean') return route.relayed ? 'relayed' : null;
+    return 'noUpnp';
+}
+
+/**
+ * The rule to make on the box, as the card says it: the stream's first port
+ * and the next one (a change of quality opens the next stream beside the
+ * first), and this PC's address on the home network when the program gave it.
+ * @param {any} net /api/internet/status
+ * @returns {{ first: number, second: number, ip: string }}
+ */
+export function portsRule(net) {
+    const port = Number(net && net.media_port_first);
+    const first = Number.isInteger(port) && port > 0 && port < 65535 ? port : 48550;
+    const ip = net && typeof net.local_ip === 'string' ? net.local_ip.trim() : '';
+    return { first, second: first + 1, ip: /^[0-9a-fA-F.:]{3,45}$/.test(ip) ? ip : '' };
 }
 
 export class PcDashboard {
@@ -173,6 +216,24 @@ export class PcDashboard {
         const display = v.noDisplay
             ? `<p class="pc-dash-note is-bad"><span>${escapeHtml(t('pcDash.noDisplay'))}</span></p>`
             : '';
+        // S3XYCast PC: a rule on the box would shorten the delay (portsAdvice).
+        const advice = portsAdvice(this._data.internet);
+        const ports = advice
+            ? (() => {
+                  const rule = portsRule(this._data.internet);
+                  const ruleText = t(rule.ip ? 'pcDash.portsRule' : 'pcDash.portsRuleNoIp', {
+                      first: rule.first,
+                      second: rule.second,
+                      ip: rule.ip,
+                  });
+                  return `<div class="pc-dash-ports is-${advice}" role="note">
+                       <h3 class="pc-dash-ports-title">${escapeHtml(t('pcDash.portsTitle'))}</h3>
+                       <p class="pc-dash-ports-text">${escapeHtml(t(advice === 'relayed' ? 'pcDash.portsRelayed' : 'pcDash.portsNoUpnp'))}</p>
+                       <p class="pc-dash-ports-rule">${escapeHtml(ruleText)}</p>
+                       <a class="btn btn-primary pc-dash-ports-how" href="${escapeHtml(BOX_HELP_URL)}" target="_blank" rel="noopener noreferrer">${escapeHtml(t('pcDash.portsHow'))}</a>
+                   </div>`;
+              })()
+            : '';
         el.innerHTML = `
             <div class="pc-dash-state is-${v.state}">
                 <span class="pc-dash-dot${waiting ? ' is-waiting' : ''}" aria-hidden="true"></span>
@@ -184,6 +245,7 @@ export class PcDashboard {
             ${toggle}
             ${consent}
             ${link}
+            ${ports}
             <div class="pc-dash-notes">${this._data.auth ? code : ''}${display}</div>
             <div class="pc-dash-foot">
                 <button type="button" class="btn btn-neutral pc-dash-settings" data-act="settings">${escapeHtml(t('pcDash.settings'))}</button>

@@ -127,6 +127,7 @@ add_executable(run_tests
     test_edition_worker_service.cpp
     test_edition_update_notice.cpp
     test_edition_app_window.cpp
+    test_edition_stream_route.cpp
     test_autostart_entry.cpp
     test_launch_env.cpp
     test_kms_helper_protocol.cpp

@@ -43,6 +43,7 @@
 #include "../../backend/NvHTTP.h"
 #include "../../backend/IdentityManager.h"
 #include "../../common/Types.h"
+#include "../../common/StreamRoute.h"
 #include "../../common/RunFlags.h"
 
 #include <atomic>
@@ -911,12 +912,19 @@ int runStreamWorker(QCoreApplication& app)
     QObject::connect(session, &StreamSession::relayCreated, qApp, [&state](DataChannelRelay* r) {
         state.relay = r;
         QObject::connect(r, &DataChannelRelay::sessionEnded, qApp, []() { teardownAndExit(0); });
+        // S3XYCast edition: which way the connection went, for the PC's page.
+        QObject::connect(r, &RelayBase::routeSelected, qApp, [](bool relayed, bool lan) {
+            emitEvent(mw::edition::route::event(relayed, lan));
+        });
         relayMouseKeys(r->mediaEngine());
     });
     QObject::connect(
         session, &StreamSession::mediaTrackRelayCreated, qApp, [&state](MediaTrackRelay* r) {
             state.mediaRelay = r;
             QObject::connect(r, &MediaTrackRelay::sessionEnded, qApp, []() { teardownAndExit(0); });
+            QObject::connect(r, &RelayBase::routeSelected, qApp, [](bool relayed, bool lan) {
+                emitEvent(mw::edition::route::event(relayed, lan));
+            });
             relayMouseKeys(r->mediaEngine());
         });
     QObject::connect(session, &StreamSession::streamRelayCreated, qApp, [&state](StreamRelay* r) {

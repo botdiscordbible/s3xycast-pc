@@ -196,6 +196,11 @@ signals:
     /// Session ended (disconnect / error).
     void sessionEnded();
 
+    /// S3XYCast edition: the connection is up, and this is the way it went —
+    /// through the relay or not, with a browser on the PC's own network or
+    /// not (common/StreamRoute.h). Emitted from the connection's own thread.
+    void routeSelected(bool relayed, bool lan);
+
 protected:
     /// The HID passthrough was given or taken under a running stream. Runs on
     /// the thread that set the policy, after it is in place. The relays tell

@@ -138,6 +138,12 @@ void registerSystemRoutes(HttpServer& server, AppSettings& appSettings, AuthMana
     server.router()->get("/api/internet/status", [&, rendezvousStatus](const HttpRequest& req) {
         QJsonObject obj = internetAccess.statusJson();
         obj[QStringLiteral("lan_only")] = mw::edition::lanOnly();
+        // S3XYCast edition: the last stream from outside, straight to the PC
+        // or through the relay (common/StreamRoute.h), for the PC's page.
+        {
+            const QJsonObject route = AppSettings().lastOutsideRoute();
+            if (!route.isEmpty()) obj[QStringLiteral("last_outside_route")] = route;
+        }
         const QJsonObject rdv = rendezvousStatus ? rendezvousStatus() : QJsonObject();
         if (rendezvousStatus) obj[QStringLiteral("rendezvous")] = rdv;
         // The admin UI runs on localhost and needs the full payload. Remote
@@ -162,7 +168,7 @@ void registerSystemRoutes(HttpServer& server, AppSettings& appSettings, AuthMana
         // one came in ON the address, so it has nothing to learn.
         if (!req.isLocal) {
             for (const char* key : {"local_ip", "local_ips", "public_ip", "unique_id", "cert_pem",
-                                    "cert_key", "last_error", "rendezvous"})
+                                    "cert_key", "last_error", "rendezvous", "last_outside_route"})
                 obj.remove(QLatin1String(key));
 
             const bool lanDirect =

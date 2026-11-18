@@ -875,6 +875,16 @@ public:
     QString portalRestoreToken(bool virtualDisplay = false) const;
     void setPortalRestoreToken(const QString& token, bool virtualDisplay = false);
 
+    // ── S3XYCast edition: the last stream from outside the PC's network ──────
+    //
+    // Straight to the PC, or through the S3XYCast relay, and when: what the
+    // PC's own page reads to tell its owner whether a rule on the box would
+    // shorten the delay (common/StreamRoute.h). JSON object
+    // "last_outside_route", file-only, written by the program at each stream
+    // from outside. Empty when none was ever seen.
+    QJsonObject lastOutsideRoute() const;
+    void setLastOutsideRoute(bool relayed);
+
     // ── Display rates the capture did not hold (vddmatch) ────────────────────
     //
     // The virtual display rates above 240 Hz this host's capture did not hold

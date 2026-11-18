@@ -124,6 +124,20 @@ void RelayBase::logSelectedCandidatePair(rtc::PeerConnection& pc, const char* lo
     }
     qInfo() << logTag << "Selected candidate pair: local" << describeCandidate(local) << "-> remote"
             << describeCandidate(remote);
+    // S3XYCast edition: which way it went, for the PC's own page. Through the
+    // relay when either end is the relay's; on the PC's own network when the
+    // browser's address is not a public one (an unresolved .local is a
+    // browser of this network hiding its address).
+    {
+        const bool relayed = local.type() == rtc::Candidate::Type::Relayed ||
+                             remote.type() == rtc::Candidate::Type::Relayed;
+        const auto address = remote.address();
+        const bool lan =
+            !relayed && (!address.has_value() ||
+                         NetClassify::isTrustedPeer(
+                             NetClassify::classify(QString::fromStdString(*address))));
+        emit routeSelected(relayed, lan);
+    }
     // On the server's shared ports, the peer it may now trust for this agent
     mw::icemuxclient::confirmed(remote);
 }
